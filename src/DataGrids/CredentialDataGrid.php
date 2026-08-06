@@ -54,6 +54,7 @@ class CredentialDataGrid extends DataGrid
         if (bouncer()->hasPermission('bagisto.credentials.edit')) {
             $this->addAction([
                 'icon'   => 'icon-edit',
+                'index'  => 'edit',
                 'title'  => trans('bagisto::app.bagisto.credentials.index.datagrid.edit'),
                 'method' => 'GET',
                 'url'    => function ($row) {

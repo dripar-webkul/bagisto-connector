@@ -15,47 +15,14 @@
     @pushOnce('scripts')
         <script type="text/x-template" id="v-category-field-mapping-template">
             <x-admin::form
-                v-slot="{ meta, errors, handleSubmit }"
-                as="div"
-                ref="storeCategoryFieldMapping"
+                id="bagisto-category-field-mapping-form"
+                ajax
+                :action="route('admin.bagisto.mappings.category_fields.store')"
             >
-                <form
-                    @submit="handleSubmit($event, storeCategoryFieldMapping)"
-                    ref="storeCategoryFieldMappingForm"
-                >
                     <div class="flex justify-between items-center">
                         <p class="text-xl text-gray-800 dark:text-slate-50 font-bold">
                             @lang('bagisto::app.bagisto.export.mapping.category-fields.title')
                         </p>
-
-                        <div class="flex gap-x-2.5 items-center">
-                            <!-- Save Button -->
-                            <button
-                                type="submit"
-                                class="primary-button"
-                            >
-                                <!-- Spinner -->
-                                <svg v-if="isLoading" class="align-center inline-block animate-spin h-5 w-5 ml-2 text-white-700" xmlns="http://www.w3.org/2000/svg" fill="none"  aria-hidden="true" viewBox="0 0 24 24">
-                                    <circle
-                                        class="opacity-25"
-                                        cx="12"
-                                        cy="12"
-                                        r="10"
-                                        stroke="currentColor"
-                                        stroke-width="4"
-                                    >
-                                    </circle>
-
-                                    <path
-                                        class="opacity-75"
-                                        fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                    >
-                                    </path>
-                                </svg>
-                                @lang('bagisto::app.bagisto.export.mapping.category-fields.save')
-                            </button>
-                        </div>
                     </div>
 
                     <div class="flex gap-2.5 mt-3.5 max-xl:flex-wrap">
@@ -121,7 +88,12 @@
                             </div>
                         </div>
                     </div>
-                </form>
+
+                    <input
+                        type="hidden"
+                        name="standard_category_fields"
+                        :value="JSON.stringify(mappedCategoryFields)"
+                    />
             </x-admin::form>
         </script>
 
@@ -131,7 +103,6 @@
                 props: ['bagistoCategoryFields', 'categoryFields'],
                 data() {
                     return {
-                        isLoading: false,
                         mappedCategoryFields:  Object.assign({}, @json($mappedCategoryFields?->mapped_value)),
                         mappedCategoryFieldsDefault:  Object.assign({}, @json($mappedCategoryFields?->fixed_value)),
                     };
@@ -180,30 +151,6 @@
                                 return matchesType && matchesUnique;
                             });
                     },
-
-                    storeCategoryFieldMapping(params, { resetForm, setErrors  }) {
-                        this.isLoading = true;
-                        let formData = new FormData(this.$refs.storeCategoryFieldMappingForm);
-
-                        formData.append('standard_category_fields', JSON.stringify(this.mappedCategoryFields));
-
-                        this.$axios.post("{{ route('admin.bagisto.mappings.category_fields.store') }}", formData)
-                        .then((response) => {
-                            this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
-                        })
-                        .catch(error => {
-                            this.$emitter.emit('add-flash', { type: 'error', message: error.response.data.message });
-                            if (error.status == 400) {
-                                setErrors(error.data.errors);
-                            }
-
-                            if (error.status == 422) {
-                                setErrors(error.response.data.errors);
-                            }
-                        }).then(() => {
-                            this.isLoading = false;
-                        });
-                    }
                 }
             });
         </script>

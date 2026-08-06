@@ -24,14 +24,6 @@
                 >
                     @lang('bagisto::app.bagisto.credentials.edit.back-btn')
                 </a>
-
-                <button
-                    type="submit"
-                    class="primary-button"
-                    aria-label="Submit"
-                >
-                    @lang('bagisto::app.bagisto.credentials.edit.save-btn')
-                </button>
             </div>
         </div>
 
