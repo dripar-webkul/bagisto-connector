@@ -8,6 +8,7 @@
     </x-slot>
 
     <x-admin::form
+        ajax
         :action="route('admin.bagisto.credentials.update', ['id' => $credential->id])"
     >
         @method('PUT')

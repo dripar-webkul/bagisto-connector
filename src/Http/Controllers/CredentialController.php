@@ -130,7 +130,7 @@ class CredentialController extends Controller
         return view('bagisto::credentials.edit', compact('unoPimChannels', 'storeChannels', 'storefilterableAttribtes', 'credential'));
     }
 
-    public function update(CredentialUpdateRequest $request, $id)
+    public function update(CredentialUpdateRequest $request, $id): JsonResponse
     {
         $additional = [];
         if ($request->filterableAttribtes) {
@@ -165,10 +165,10 @@ class CredentialController extends Controller
         // if exist in cache then remove from cache
         Cache::forget(CacheType::CREDENTIAL->value);
 
-        session()->flash('success', trans('bagisto::app.bagisto.credentials.index.update-success'));
-
-        return redirect()->route('admin.bagisto.credentials.edit', $id);
-
+        return new JsonResponse([
+            'message'      => trans('bagisto::app.bagisto.credentials.index.update-success'),
+            'redirect_url' => route('admin.bagisto.credentials.edit', $id),
+        ]);
     }
 
     public function destroy($id)

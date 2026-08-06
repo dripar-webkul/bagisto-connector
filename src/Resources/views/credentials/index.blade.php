@@ -165,7 +165,7 @@
 
                             this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
 
-                            window.location.href = response.data.redirect_url;
+                            this.$navigate(response.data.redirect_url);
                         })
                         .catch(error => {
                             if (error.response.status == 422) {
