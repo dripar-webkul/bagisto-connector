@@ -20,8 +20,12 @@ trait ExportSummary
     /**
      * Persist the per-batch summary including the updated count.
      */
-    public function updateBatchState(int $id, string $state)
+    public function updateBatchState(int $id, string $state): void
     {
+        if (method_exists($this, 'heartbeat')) {
+            $this->heartbeat(true);
+        }
+
         $processed = $this->getCreatedItemsCount() + $this->getUpdatedItemsCount() - $this->getSkippedtemsCount();
 
         $this->exportBatchRepository->update([

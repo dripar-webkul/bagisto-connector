@@ -396,7 +396,7 @@ class Exporter extends BaseExporter
     /**
      * Prepare categories from current batch
      */
-    public function prepareCategories(JobTrackBatchContract $batch, mixed $filePath)
+    public function prepareCategories(JobTrackBatchContract $batch, mixed $filePath): array
     {
         $categories = [];
 
@@ -492,11 +492,8 @@ class Exporter extends BaseExporter
 
     /**
      * Sets category field values for a product. If an category field is not present in the given values array,
-     *
-     * @param  array  $values
-     * @return array
      */
-    protected function setFieldsAdditionalData(array $additionalData, $filePath, $options = [])
+    protected function setFieldsAdditionalData(array $additionalData, $filePath, $options = []): array
     {
         $fieldValues = [];
         $standardFields = $this->mappingFields['standard_field']->mapped_value ?? [];

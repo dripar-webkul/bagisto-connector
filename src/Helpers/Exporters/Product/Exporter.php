@@ -179,7 +179,7 @@ class Exporter extends AbstractExporter
             $this->initialized = true;
         }
 
-        $preparedData = $this->prepareProducts($batch, $filePath);
+        $preparedData = $this->prepareBagistoProducts($batch, $filePath);
 
         $this->write($preparedData, $batch->id);
 
@@ -194,7 +194,7 @@ class Exporter extends AbstractExporter
     /**
      * {@inheritdoc}
      */
-    protected function getResults()
+    protected function getResults(): CollectionCursor
     {
         $filters = $this->getFilters();
 
@@ -234,7 +234,7 @@ class Exporter extends AbstractExporter
             $products = $products->concat($variants)->unique('sku')->values();
         }
 
-        return $products->getIterator();
+        return new CollectionCursor($products->toArray());
     }
 
     public function write(array $items, int $batchId): void
@@ -269,7 +269,7 @@ class Exporter extends AbstractExporter
         }
     }
 
-    public function prepareProducts(JobTrackBatchContract $batch, $filePath): array
+    public function prepareBagistoProducts(JobTrackBatchContract $batch, $filePath): array
     {
         $products = [];
         $skus = array_column($batch->data, 'sku');
@@ -476,9 +476,10 @@ class Exporter extends AbstractExporter
         return $formatData;
     }
 
-    public function getSuperAttributes($item)
+    public function getSuperAttributes($item): ?string
     {
         $newFormatData = [];
+        $superAttributeCodes = [];
 
         foreach ($item['super_attributes'] as $superAttribute) {
             $superAttributeCodes[] = $superAttribute['code'];
