@@ -14,6 +14,7 @@ return [
 
     'exporters' => [
         'bagisto' => [
+            'filters'            => 'Bagisto Filters',
             'category'           => 'Bagisto Category',
             'attribute'          => 'Bagisto Attribute',
             'attribute-families' => 'Bagisto Attribute Families',
