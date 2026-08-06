@@ -471,6 +471,10 @@ class Exporter extends AbstractExporter
 
             $code = $bagistoAttribute['code'];
 
+            if ($code === 'visible_individually') {
+                continue;
+            }
+
             if (! isset($mergedFields[$code]) || $mergedFields[$code] === '' || $mergedFields[$code] === null) {
                 $mergedFields[$code] = $bagistoAttribute['fixedValue'];
             }
