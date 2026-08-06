@@ -27,6 +27,15 @@ class BagistoServiceProvider extends ServiceProvider
             $viewRenderEventManager->addTemplate('bagisto::style');
         });
 
+        foreach ([
+            'unopim.admin.settings.data_transfer.exports.create.card.scope.after',
+            'unopim.admin.settings.data_transfer.exports.edit.card.scope.after',
+        ] as $exportFilterHook) {
+            Event::listen($exportFilterHook, function ($viewRenderEventManager) {
+                $viewRenderEventManager->addTemplate('bagisto::exports.filters');
+            });
+        }
+
         $this->publishes([
             __DIR__.'/../../publishable' => public_path('themes'),
         ], 'unopim-bagisto-connector');
