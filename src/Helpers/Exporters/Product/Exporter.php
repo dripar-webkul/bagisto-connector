@@ -120,7 +120,7 @@ class Exporter extends AbstractExporter
                 'image_attribute'    => $this->attributeMappingRepository->findByField('section', 'image_attribute')->first(),
             ];
 
-            Cache::put(CacheType::ATTRIBUTE_MAPPING->value, $this->mappingAttributes, Env('SESSION_LIFETIME'));
+            Cache::put(CacheType::ATTRIBUTE_MAPPING->value, $this->mappingAttributes, config('session.lifetime'));
         }
     }
 
@@ -165,7 +165,7 @@ class Exporter extends AbstractExporter
                 'locales'   => $exportBagistoLocales,
             ];
 
-            Cache::put(CacheType::PRODUCT_JOB_FILTERS->value, $this->jobFilters, env('SESSION_LIFETIME'));
+            Cache::put(CacheType::PRODUCT_JOB_FILTERS->value, $this->jobFilters, config('session.lifetime'));
         }
     }
 
@@ -282,6 +282,13 @@ class Exporter extends AbstractExporter
             $rowData = $productModel->toArray();
             $rowData['values'] = $productModel->values ?? [];
 
+            if (! $this->isExportableType($rowData)) {
+                $this->skippedItemsCount++;
+                $this->jobLogger?->warning("Product {$rowData['sku']} not exported: product type '{$rowData['type']}' has no Bagisto equivalent.");
+
+                continue;
+            }
+
             $builtForRow = 0;
 
             foreach ($this->jobFilters['channel'] as $bagistoChannel => $unoPimChannel) {
@@ -349,6 +356,13 @@ class Exporter extends AbstractExporter
     private function isSimpleProductWithParent(array $rowData): bool
     {
         return $rowData['type'] === 'simple' && ! empty($rowData['parent']);
+    }
+
+    private function isExportableType(array $rowData): bool
+    {
+        return $this->isSimpleProductWithoutParent($rowData)
+            || $this->isConfigurableProduct($rowData)
+            || $this->isSimpleProductWithParent($rowData);
     }
 
     protected function getFormatedProductData(array $item, string $locale, string $bagistoLocale, string $channel, string $bagistoChannel, bool $withMedia): array

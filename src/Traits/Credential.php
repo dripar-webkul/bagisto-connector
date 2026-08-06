@@ -28,7 +28,7 @@ trait Credential
                 ];
             }
 
-            Cache::put(CacheType::CREDENTIAL->value, $this->credential, Env('SESSION_LIFETIME'));
+            Cache::put(CacheType::CREDENTIAL->value, $this->credential, config('session.lifetime'));
         }
     }
 

@@ -108,7 +108,7 @@ class Exporter extends BaseExporter
         if (empty($this->categoryFields)) {
             $this->categoryFields = $this->categoryFieldRepository->getActiveCategoryFields();
 
-            Cache::put(CacheType::UNOPIM_CATEGORY_FIELDS->value, $this->categoryFields, env('SESSION_LIFETIME'));
+            Cache::put(CacheType::UNOPIM_CATEGORY_FIELDS->value, $this->categoryFields, config('session.lifetime'));
         }
     }
 
@@ -135,7 +135,7 @@ class Exporter extends BaseExporter
                 'standard_field' => $mapping,
             ];
 
-            Cache::put(CacheType::CATEGORY_FIELD_MAPPING->value, $this->mappingFields, env('SESSION_LIFETIME'));
+            Cache::put(CacheType::CATEGORY_FIELD_MAPPING->value, $this->mappingFields, config('session.lifetime'));
         }
     }
 
@@ -188,7 +188,7 @@ class Exporter extends BaseExporter
                 'locales' => $exportBagistoLocales,
             ];
 
-            Cache::put(CacheType::CATEGORY_JOB_FILTERS->value, $this->jobFilters, env('SESSION_LIFETIME'));
+            Cache::put(CacheType::CATEGORY_JOB_FILTERS->value, $this->jobFilters, config('session.lifetime'));
         }
     }
 
