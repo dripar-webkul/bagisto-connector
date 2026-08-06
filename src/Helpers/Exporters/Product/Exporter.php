@@ -240,6 +240,12 @@ class Exporter extends AbstractExporter
     public function write(array $items, int $batchId): void
     {
         try {
+            $items = $this->rejectIncompleteItems($items);
+
+            if (empty($items)) {
+                return;
+            }
+
             $this->setApiRequest(MethodType::POST->value, self::ENTITY_TYPE, $items, []);
 
             $skusAttempted = array_values(array_unique(array_column($items, 'sku')));
@@ -267,6 +273,37 @@ class Exporter extends AbstractExporter
         } catch (\Exception $e) {
             $this->jobLogger->warning($e);
         }
+    }
+
+    /**
+     * Bagisto validates the bulk payload in one transaction, so a single row
+     * missing a required field fails the whole batch. Drop those rows here and
+     * log them individually, letting the rest of the batch through.
+     */
+    private function rejectIncompleteItems(array $items): array
+    {
+        $required = array_column(
+            array_filter(config('bagisto-attributes', []), fn ($attribute) => ! empty($attribute['required'])),
+            'code'
+        );
+
+        return array_values(array_filter($items, function ($item) use ($required) {
+            $missing = array_values(array_filter(
+                $required,
+                fn ($code) => ! isset($item[$code]) || $item[$code] === '' || $item[$code] === null
+            ));
+
+            if ($missing === []) {
+                return true;
+            }
+
+            $this->skippedItemsCount++;
+            $this->jobLogger?->warning(
+                'Product '.($item['sku'] ?? '(no sku)').' not exported: missing required Bagisto field(s) '.implode(', ', $missing).'.'
+            );
+
+            return false;
+        }));
     }
 
     public function prepareBagistoProducts(JobTrackBatchContract $batch, $filePath): array
@@ -424,6 +461,18 @@ class Exporter extends AbstractExporter
                 $mergedFields[$bagistoAttribute] = $bagistoAttribute === 'inventories'
                     ? 'default='.$value
                     : $value;
+            }
+        }
+
+        foreach (config('bagisto-attributes', []) as $bagistoAttribute) {
+            if (empty($bagistoAttribute['required']) || ! isset($bagistoAttribute['fixedValue'])) {
+                continue;
+            }
+
+            $code = $bagistoAttribute['code'];
+
+            if (! isset($mergedFields[$code]) || $mergedFields[$code] === '' || $mergedFields[$code] === null) {
+                $mergedFields[$code] = $bagistoAttribute['fixedValue'];
             }
         }
 
