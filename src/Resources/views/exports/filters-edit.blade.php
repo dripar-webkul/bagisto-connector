@@ -1,10 +1,8 @@
 @php
-    $bagistoFilterNames = ['credentials', 'channel', 'locale', 'family', 'type', 'code'];
+    $bagistoConnectorFilters = ['credentials', 'channel', 'locale', 'family', 'type', 'code'];
 
     $bagistoExporterConfig = $exporterConfig ?? config('exporters');
 
-    // Neither $export nor $exporterConfig is in scope inside a hooked template,
-    // so resolve the job instance from the route instead.
     $bagistoExport = $export
         ?? \Webkul\DataTransfer\Models\JobInstances::find(request()->route('id'));
 
@@ -15,7 +13,7 @@
     $bagistoHasFilters = $bagistoEntityType
         && collect($bagistoExporterConfig[$bagistoEntityType]['filters']['fields'] ?? [])
             ->pluck('name')
-            ->intersect($bagistoFilterNames)
+            ->intersect($bagistoConnectorFilters)
             ->isNotEmpty();
 @endphp
 
@@ -29,7 +27,7 @@
             :entity-type="$bagistoEntityType"
             :values="$bagistoValues"
             :exporter-config="$bagistoExporterConfig"
-            only="credentials,channel,locale,family,type,code"
+            :only="implode(',', $bagistoConnectorFilters)"
             grid-class="grid grid-cols-1"
         />
     </div>

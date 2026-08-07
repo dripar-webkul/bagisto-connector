@@ -246,10 +246,10 @@ class Exporter extends BaseExporter
 
             $externalId = $this->prepareExternalId($item, $mapData);
             $options = array_merge($options, $externalId);
-            if ($item['logo_path'] == null) {
+            if (($item['logo_path'] ?? null) == null) {
                 unset($item['logo_path']);
             }
-            if ($item['banner_path'] == null) {
+            if (($item['banner_path'] ?? null) == null) {
                 unset($item['banner_path']);
             }
             $this->processApiRequest($item, $options, $mapData, $id, $batchId, $parentCode);
@@ -298,7 +298,10 @@ class Exporter extends BaseExporter
                 $item['slug'] = $slug.'-'.count($mapDataName);
             } elseif (! $mapDataName->isEmpty() && $mapData) {
                 in_array($slug, $this->storeSlug) ? $item['slug'] = $slug.'-'.array_count_values($this->storeSlug)[$slug] : '';
-                $this->storeSlug[] = $slug;
+
+                if ($slug !== null) {
+                    $this->storeSlug[] = $slug;
+                }
             }
         }
     }

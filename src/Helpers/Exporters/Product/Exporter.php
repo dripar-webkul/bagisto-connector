@@ -160,7 +160,7 @@ class Exporter extends AbstractExporter
             }
 
             $this->jobFilters = [
-                'withMedia' => $filters['with_media'],
+                'withMedia' => $filters['with_media'] ?? false,
                 'channel'   => $mappedBagistoChannels,
                 'locales'   => $exportBagistoLocales,
             ];
@@ -553,10 +553,22 @@ class Exporter extends AbstractExporter
         }
 
         foreach ($item['variants'] as $variant) {
+            $commonFields = $this->getCommonFields($variant);
+
+            $missingAxes = array_values(array_diff($superAttributeCodes, array_keys($commonFields)));
+
+            if ($missingAxes !== []) {
+                $this->jobLogger?->warning(
+                    'Variant '.($variant['sku'] ?? '(no sku)').' not exported: no value for super attribute(s) '
+                    .implode(', ', $missingAxes).'.'
+                );
+
+                continue;
+            }
+
             $formatData = [];
             $formatData[] = "sku={$variant['sku']}";
-            $commonFields = $this->getCommonFields($variant);
-            foreach ($superAttributeCodes as $key => $attribute) {
+            foreach ($superAttributeCodes as $attribute) {
                 $formatData[] = "{$attribute}={$commonFields[$attribute]}";
             }
             $newFormatData[] = implode(',', $formatData);
