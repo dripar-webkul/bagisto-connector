@@ -170,7 +170,7 @@ class Exporter extends AbstractExporter
             } else {
                 $this->createMappingAlreadyExistAttributes($response, $item, $mapData, $batchId, $id);
                 if (! empty($response)) {
-                    $this->createdItemsCount++;
+                    $this->updatedItemsCount++;
                 } else {
                     $this->skippedItemsCount++;
                 }

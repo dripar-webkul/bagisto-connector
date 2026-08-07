@@ -158,6 +158,7 @@ class CredentialController extends Controller
 
         // Encrypt password for storage
         $requestData['password'] = $this->encryptValue($password);
+        $requestData['store_info'] = $this->sanitizeStoreInfo($requestData['store_info'] ?? []);
         $requestData = array_merge($requestData, $additional);
 
         $this->credentialRepository->update($requestData, $id);
@@ -169,6 +170,31 @@ class CredentialController extends Controller
             'message'      => trans('bagisto::app.bagisto.credentials.index.update-success'),
             'redirect_url' => route('admin.bagisto.credentials.edit', $id),
         ]);
+    }
+
+    /**
+     * The edit form re-serialises whatever it loaded, so an empty or repeated
+     * mapping saved once keeps coming back and grows on every save.
+     */
+    protected function sanitizeStoreInfo($storeInfo): array
+    {
+        $clean = [];
+
+        foreach ((array) $storeInfo as $mapping) {
+            if (! is_string($mapping) || trim($mapping) === '') {
+                continue;
+            }
+
+            $decoded = json_decode($mapping, true);
+
+            if (! is_array($decoded) || $decoded === [] || empty($decoded['channel'])) {
+                continue;
+            }
+
+            $clean[array_key_first($decoded['channel'])] = $mapping;
+        }
+
+        return array_values($clean);
     }
 
     public function destroy($id)
