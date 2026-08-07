@@ -27,12 +27,16 @@ class BagistoServiceProvider extends ServiceProvider
             $viewRenderEventManager->addTemplate('bagisto::style');
         });
 
+        /**
+         * The create screen is Vue-reactive and the edit screen renders server
+         * side, so each needs its own template.
+         */
         foreach ([
-            'unopim.admin.settings.data_transfer.exports.create.card.scope.after',
-            'unopim.admin.settings.data_transfer.exports.edit.card.scope.after',
-        ] as $exportFilterHook) {
-            Event::listen($exportFilterHook, function ($viewRenderEventManager) {
-                $viewRenderEventManager->addTemplate('bagisto::exports.filters');
+            'unopim.admin.settings.data_transfer.exports.create.card.scope.after' => 'bagisto::exports.filters',
+            'unopim.admin.settings.data_transfer.exports.edit.card.general.after' => 'bagisto::exports.filters-edit',
+        ] as $exportFilterHook => $template) {
+            Event::listen($exportFilterHook, function ($viewRenderEventManager) use ($template) {
+                $viewRenderEventManager->addTemplate($template);
             });
         }
 
