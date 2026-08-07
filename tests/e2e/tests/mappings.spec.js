@@ -7,11 +7,32 @@ const URLS = {
     categoryMapping:  `admin/bagisto/category-fields-mapping/${CREDENTIAL_ID}`,
 };
 
-const SAVE_BTN_RE = /^\s*Save\s*$/i;
-
 async function goToPage(adminPage, url) {
     await adminPage.goto(url);
     await adminPage.waitForLoadState('networkidle');
+}
+
+async function mappingForm(adminPage) {
+    const form = adminPage.locator('form[data-ajax-form="true"]').first();
+    await expect(form).toBeAttached({ timeout: 20_000 });
+
+    return form;
+}
+
+async function makeFormDirty(adminPage) {
+    // The "Fixed Value" column holds the only plain text inputs on these screens.
+    // A bare input[type="text"] also matches vue-multiselect's hidden search box.
+    const field = adminPage
+        .locator('form[data-ajax-form="true"] input[type="text"]:not(.multiselect__input):not([disabled])')
+        .first();
+
+    await expect(field).toBeVisible({ timeout: 20_000 });
+    await field.fill(`e2e-${Date.now()}`);
+    await field.blur();
+}
+
+function saveBarButton(adminPage) {
+    return adminPage.locator('[data-unsaved-save]').first();
 }
 
 async function pageNotFound(adminPage) {
@@ -55,16 +76,20 @@ test.describe('Bagisto Attribute Mappings', () => {
         await goToPage(adminPage, URLS.attributeMapping);
         if (await pageNotFound(adminPage)) { test.skip(true, 'Mapping page not reachable'); return; }
 
-        await expect(
-            adminPage.getByRole('button', { name: SAVE_BTN_RE }).first()
-        ).toBeVisible({ timeout: 15_000 });
+        await mappingForm(adminPage);
+        await makeFormDirty(adminPage);
+
+        await expect(saveBarButton(adminPage)).toBeVisible({ timeout: 15_000 });
     });
 
     test('should post Attribute Mapping save and surface a server response', async ({ adminPage }) => {
         await goToPage(adminPage, URLS.attributeMapping);
         if (await pageNotFound(adminPage)) { test.skip(true, 'Mapping page not reachable'); return; }
 
-        const saveBtn = adminPage.getByRole('button', { name: SAVE_BTN_RE }).first();
+        await mappingForm(adminPage);
+        await makeFormDirty(adminPage);
+
+        const saveBtn = saveBarButton(adminPage);
         await expect(saveBtn).toBeVisible({ timeout: 15_000 });
 
         const responsePromise = adminPage.waitForResponse(
@@ -90,11 +115,9 @@ test.describe('Bagisto Category Fields Mapping', () => {
         await goToPage(adminPage, URLS.categoryMapping);
         if (await pageNotFound(adminPage)) { test.skip(true, 'Mapping page not reachable'); return; }
 
-        // Use the Save button as the canonical "Vue mounted" signal first — its
-        // presence is more reliable than the heading on slow CI runs.
-        await expect(
-            adminPage.getByRole('button', { name: SAVE_BTN_RE }).first()
-        ).toBeVisible({ timeout: 20_000 });
+        // The ajax form is the canonical "Vue mounted" signal — it is always
+        // present, whereas the save bar only appears once the form is dirty.
+        await mappingForm(adminPage);
 
         // Match the full page-heading text. /Category Fields/i alone collides with
         // UnoPim's catalog sidebar link <a>Category Fields</a>, which is hidden when
@@ -108,16 +131,20 @@ test.describe('Bagisto Category Fields Mapping', () => {
         await goToPage(adminPage, URLS.categoryMapping);
         if (await pageNotFound(adminPage)) { test.skip(true, 'Mapping page not reachable'); return; }
 
-        await expect(
-            adminPage.getByRole('button', { name: SAVE_BTN_RE }).first()
-        ).toBeVisible({ timeout: 15_000 });
+        await mappingForm(adminPage);
+        await makeFormDirty(adminPage);
+
+        await expect(saveBarButton(adminPage)).toBeVisible({ timeout: 15_000 });
     });
 
     test('should post Category Fields Mapping save and surface a server response', async ({ adminPage }) => {
         await goToPage(adminPage, URLS.categoryMapping);
         if (await pageNotFound(adminPage)) { test.skip(true, 'Mapping page not reachable'); return; }
 
-        const saveBtn = adminPage.getByRole('button', { name: SAVE_BTN_RE }).first();
+        await mappingForm(adminPage);
+        await makeFormDirty(adminPage);
+
+        const saveBtn = saveBarButton(adminPage);
         await expect(saveBtn).toBeVisible({ timeout: 15_000 });
 
         const responsePromise = adminPage.waitForResponse(
