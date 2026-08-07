@@ -13,6 +13,10 @@
     "homepage": "https://www.unopim.com",
     "type": "library",
     "license": "MIT",
+    "require": {
+        "php": "^8.4.1",
+        "laravel/framework": "^13.0"
+    },
     "autoload": {
         "psr-4": {
             "Webkul\\Bagisto\\": "src/"

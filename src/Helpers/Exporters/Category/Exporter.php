@@ -108,7 +108,7 @@ class Exporter extends BaseExporter
         if (empty($this->categoryFields)) {
             $this->categoryFields = $this->categoryFieldRepository->getActiveCategoryFields();
 
-            Cache::put(CacheType::UNOPIM_CATEGORY_FIELDS->value, $this->categoryFields, env('SESSION_LIFETIME'));
+            Cache::put(CacheType::UNOPIM_CATEGORY_FIELDS->value, $this->categoryFields, config('session.lifetime'));
         }
     }
 
@@ -135,7 +135,7 @@ class Exporter extends BaseExporter
                 'standard_field' => $mapping,
             ];
 
-            Cache::put(CacheType::CATEGORY_FIELD_MAPPING->value, $this->mappingFields, env('SESSION_LIFETIME'));
+            Cache::put(CacheType::CATEGORY_FIELD_MAPPING->value, $this->mappingFields, config('session.lifetime'));
         }
     }
 
@@ -188,7 +188,7 @@ class Exporter extends BaseExporter
                 'locales' => $exportBagistoLocales,
             ];
 
-            Cache::put(CacheType::CATEGORY_JOB_FILTERS->value, $this->jobFilters, env('SESSION_LIFETIME'));
+            Cache::put(CacheType::CATEGORY_JOB_FILTERS->value, $this->jobFilters, config('session.lifetime'));
         }
     }
 
@@ -246,10 +246,10 @@ class Exporter extends BaseExporter
 
             $externalId = $this->prepareExternalId($item, $mapData);
             $options = array_merge($options, $externalId);
-            if ($item['logo_path'] == null) {
+            if (($item['logo_path'] ?? null) == null) {
                 unset($item['logo_path']);
             }
-            if ($item['banner_path'] == null) {
+            if (($item['banner_path'] ?? null) == null) {
                 unset($item['banner_path']);
             }
             $this->processApiRequest($item, $options, $mapData, $id, $batchId, $parentCode);
@@ -298,7 +298,10 @@ class Exporter extends BaseExporter
                 $item['slug'] = $slug.'-'.count($mapDataName);
             } elseif (! $mapDataName->isEmpty() && $mapData) {
                 in_array($slug, $this->storeSlug) ? $item['slug'] = $slug.'-'.array_count_values($this->storeSlug)[$slug] : '';
-                $this->storeSlug[] = $slug;
+
+                if ($slug !== null) {
+                    $this->storeSlug[] = $slug;
+                }
             }
         }
     }
@@ -396,7 +399,7 @@ class Exporter extends BaseExporter
     /**
      * Prepare categories from current batch
      */
-    public function prepareCategories(JobTrackBatchContract $batch, mixed $filePath)
+    public function prepareCategories(JobTrackBatchContract $batch, mixed $filePath): array
     {
         $categories = [];
 
@@ -492,11 +495,8 @@ class Exporter extends BaseExporter
 
     /**
      * Sets category field values for a product. If an category field is not present in the given values array,
-     *
-     * @param  array  $values
-     * @return array
      */
-    protected function setFieldsAdditionalData(array $additionalData, $filePath, $options = [])
+    protected function setFieldsAdditionalData(array $additionalData, $filePath, $options = []): array
     {
         $fieldValues = [];
         $standardFields = $this->mappingFields['standard_field']->mapped_value ?? [];

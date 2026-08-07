@@ -29,7 +29,7 @@ trait ApiRequest
                 ->withPassword($this->credential['password'])
                 ->make();
 
-            Cache::put(CacheType::BAGISTO_API_HTTP->value, $this->httpClient, Env('SESSION_LIFETIME'));
+            Cache::put(CacheType::BAGISTO_API_HTTP->value, $this->httpClient, config('session.lifetime'));
         }
 
         return $this->httpClient;

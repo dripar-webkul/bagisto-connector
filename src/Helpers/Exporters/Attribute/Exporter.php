@@ -135,7 +135,7 @@ class Exporter extends AbstractExporter
             ! empty($additionalInfo['configurable_attribute']) ? $additionalInfoValue = explode(',', $additionalInfo['configurable_attribute']) : $additionalInfoValue = [];
             $mappedAttributes = array_unique(array_values($mappedAttributeValue?->mapped_value));
             $mappedAttributes = array_unique(array_merge($mappedAttributes, $additionalInfoValue));
-            Cache::put(CacheType::ADDITIONAL_INFO->value, $additionalInfoValue, Env('SESSION_LIFETIME'));
+            Cache::put(CacheType::ADDITIONAL_INFO->value, $additionalInfoValue, config('session.lifetime'));
         }
 
         return $attributeCodes
@@ -170,7 +170,7 @@ class Exporter extends AbstractExporter
             } else {
                 $this->createMappingAlreadyExistAttributes($response, $item, $mapData, $batchId, $id);
                 if (! empty($response)) {
-                    $this->createdItemsCount++;
+                    $this->updatedItemsCount++;
                 } else {
                     $this->skippedItemsCount++;
                 }

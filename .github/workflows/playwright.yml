@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         operating-systems: [ubuntu-latest]
-        php-versions: ['8.3']
+        php-versions: ['8.4']
 
     services:
       mysql:
@@ -52,6 +52,8 @@ jobs:
           cd unopim
           composer install --no-interaction --prefer-dist
           cp .env.example .env
+          sed -i "s|^APP_ENV=.*|APP_ENV=testing|" .env
+          sed -i "s|^APP_DEBUG=.*|APP_DEBUG=false|" .env
           sed -i "s|^DB_HOST=.*|DB_HOST=127.0.0.1|" .env
           sed -i "s|^DB_PORT=.*|DB_PORT=3306|" .env
           sed -i "s|^DB_DATABASE=.*|DB_DATABASE=unopim|" .env
@@ -90,6 +92,10 @@ jobs:
           cd unopim
           php artisan migrate:fresh --seed
           php artisan tinker --execute="DB::table('admins')->where('id',1)->update(['email'=>'admin@example.com','password'=>bcrypt('admin123')]);"
+          # The seeded IP-based debug setting renders the debug bar over the page,
+          # and its indicator swallows clicks on controls pinned to the viewport.
+          php artisan tinker --execute="DB::table('core_config')->where('code','like','general.debug.settings.%')->delete();"
+          php artisan optimize:clear
           php artisan serve --host=0.0.0.0 --port=8000 &
 
       - name: Wait for UnoPim to start

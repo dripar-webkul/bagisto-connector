@@ -120,7 +120,7 @@ class Exporter extends AbstractExporter
                 'image_attribute'    => $this->attributeMappingRepository->findByField('section', 'image_attribute')->first(),
             ];
 
-            Cache::put(CacheType::ATTRIBUTE_MAPPING->value, $this->mappingAttributes, Env('SESSION_LIFETIME'));
+            Cache::put(CacheType::ATTRIBUTE_MAPPING->value, $this->mappingAttributes, config('session.lifetime'));
         }
     }
 
@@ -160,12 +160,12 @@ class Exporter extends AbstractExporter
             }
 
             $this->jobFilters = [
-                'withMedia' => $filters['with_media'],
+                'withMedia' => $filters['with_media'] ?? false,
                 'channel'   => $mappedBagistoChannels,
                 'locales'   => $exportBagistoLocales,
             ];
 
-            Cache::put(CacheType::PRODUCT_JOB_FILTERS->value, $this->jobFilters, env('SESSION_LIFETIME'));
+            Cache::put(CacheType::PRODUCT_JOB_FILTERS->value, $this->jobFilters, config('session.lifetime'));
         }
     }
 
@@ -179,7 +179,7 @@ class Exporter extends AbstractExporter
             $this->initialized = true;
         }
 
-        $preparedData = $this->prepareProducts($batch, $filePath);
+        $preparedData = $this->prepareBagistoProducts($batch, $filePath);
 
         $this->write($preparedData, $batch->id);
 
@@ -194,7 +194,7 @@ class Exporter extends AbstractExporter
     /**
      * {@inheritdoc}
      */
-    protected function getResults()
+    protected function getResults(): CollectionCursor
     {
         $filters = $this->getFilters();
 
@@ -234,12 +234,18 @@ class Exporter extends AbstractExporter
             $products = $products->concat($variants)->unique('sku')->values();
         }
 
-        return $products->getIterator();
+        return new CollectionCursor($products->toArray());
     }
 
     public function write(array $items, int $batchId): void
     {
         try {
+            $items = $this->rejectIncompleteItems($items);
+
+            if (empty($items)) {
+                return;
+            }
+
             $this->setApiRequest(MethodType::POST->value, self::ENTITY_TYPE, $items, []);
 
             $skusAttempted = array_values(array_unique(array_column($items, 'sku')));
@@ -269,7 +275,38 @@ class Exporter extends AbstractExporter
         }
     }
 
-    public function prepareProducts(JobTrackBatchContract $batch, $filePath): array
+    /**
+     * Bagisto validates the bulk payload in one transaction, so a single row
+     * missing a required field fails the whole batch. Drop those rows here and
+     * log them individually, letting the rest of the batch through.
+     */
+    private function rejectIncompleteItems(array $items): array
+    {
+        $required = array_column(
+            array_filter(config('bagisto-attributes', []), fn ($attribute) => ! empty($attribute['required'])),
+            'code'
+        );
+
+        return array_values(array_filter($items, function ($item) use ($required) {
+            $missing = array_values(array_filter(
+                $required,
+                fn ($code) => ! isset($item[$code]) || $item[$code] === '' || $item[$code] === null
+            ));
+
+            if ($missing === []) {
+                return true;
+            }
+
+            $this->skippedItemsCount++;
+            $this->jobLogger?->warning(
+                'Product '.($item['sku'] ?? '(no sku)').' not exported: missing required Bagisto field(s) '.implode(', ', $missing).'.'
+            );
+
+            return false;
+        }));
+    }
+
+    public function prepareBagistoProducts(JobTrackBatchContract $batch, $filePath): array
     {
         $products = [];
         $skus = array_column($batch->data, 'sku');
@@ -281,6 +318,13 @@ class Exporter extends AbstractExporter
         foreach ($allProducts as $productModel) {
             $rowData = $productModel->toArray();
             $rowData['values'] = $productModel->values ?? [];
+
+            if (! $this->isExportableType($rowData)) {
+                $this->skippedItemsCount++;
+                $this->jobLogger?->warning("Product {$rowData['sku']} not exported: product type '{$rowData['type']}' has no Bagisto equivalent.");
+
+                continue;
+            }
 
             $builtForRow = 0;
 
@@ -351,6 +395,13 @@ class Exporter extends AbstractExporter
         return $rowData['type'] === 'simple' && ! empty($rowData['parent']);
     }
 
+    private function isExportableType(array $rowData): bool
+    {
+        return $this->isSimpleProductWithoutParent($rowData)
+            || $this->isConfigurableProduct($rowData)
+            || $this->isSimpleProductWithParent($rowData);
+    }
+
     protected function getFormatedProductData(array $item, string $locale, string $bagistoLocale, string $channel, string $bagistoChannel, bool $withMedia): array
     {
         $data = $this->initializeProductData($item, $bagistoLocale, $bagistoChannel, $withMedia);
@@ -410,6 +461,22 @@ class Exporter extends AbstractExporter
                 $mergedFields[$bagistoAttribute] = $bagistoAttribute === 'inventories'
                     ? 'default='.$value
                     : $value;
+            }
+        }
+
+        foreach (config('bagisto-attributes', []) as $bagistoAttribute) {
+            if (empty($bagistoAttribute['required']) || ! isset($bagistoAttribute['fixedValue'])) {
+                continue;
+            }
+
+            $code = $bagistoAttribute['code'];
+
+            if ($code === 'visible_individually') {
+                continue;
+            }
+
+            if (! isset($mergedFields[$code]) || $mergedFields[$code] === '' || $mergedFields[$code] === null) {
+                $mergedFields[$code] = $bagistoAttribute['fixedValue'];
             }
         }
 
@@ -476,19 +543,32 @@ class Exporter extends AbstractExporter
         return $formatData;
     }
 
-    public function getSuperAttributes($item)
+    public function getSuperAttributes($item): ?string
     {
         $newFormatData = [];
+        $superAttributeCodes = [];
 
         foreach ($item['super_attributes'] as $superAttribute) {
             $superAttributeCodes[] = $superAttribute['code'];
         }
 
         foreach ($item['variants'] as $variant) {
+            $commonFields = $this->getCommonFields($variant);
+
+            $missingAxes = array_values(array_diff($superAttributeCodes, array_keys($commonFields)));
+
+            if ($missingAxes !== []) {
+                $this->jobLogger?->warning(
+                    'Variant '.($variant['sku'] ?? '(no sku)').' not exported: no value for super attribute(s) '
+                    .implode(', ', $missingAxes).'.'
+                );
+
+                continue;
+            }
+
             $formatData = [];
             $formatData[] = "sku={$variant['sku']}";
-            $commonFields = $this->getCommonFields($variant);
-            foreach ($superAttributeCodes as $key => $attribute) {
+            foreach ($superAttributeCodes as $attribute) {
                 $formatData[] = "{$attribute}={$commonFields[$attribute]}";
             }
             $newFormatData[] = implode(',', $formatData);

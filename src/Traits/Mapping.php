@@ -9,8 +9,12 @@ trait Mapping
      *
      * @return void
      */
-    protected function setMapping(string|int $credentialId, string|int $relatedId, string|int $externalId, string|int $batchId, ?string $code = null, $entityType = self::ENTITY_TYPE)
+    protected function setMapping(string|int $credentialId, string|int|null $relatedId, string|int|null $externalId, string|int $batchId, ?string $code = null, $entityType = self::ENTITY_TYPE)
     {
+        if ($relatedId === null || $externalId === null) {
+            return null;
+        }
+
         $mapping = $this->getMapping($credentialId, $relatedId, null, $code, null, $entityType);
         $mapping = ($entityType == 'groups') ? null : $mapping;
         if (! $mapping) {

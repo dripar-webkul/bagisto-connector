@@ -45,7 +45,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: curl, fileinfo, gd, intl, mbstring, openssl, pdo, pdo_mysql, tokenizer, zip
           ini-values: error_reporting=E_ALL
           tools: composer:v2
@@ -128,9 +128,26 @@ jobs:
         working-directory: unopim
         run: php artisan bagisto-package:install --no-interaction
 
+      - name: Set Passport OAuth key permissions
+        working-directory: unopim
+        run: chmod 0600 packages/Webkul/AdminApi/src/Secrets/Oauth/oauth-*.key
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      # Admin component suites assert against the shipped vue-multiselect source,
+      # so node_modules has to exist before Pest runs.
+      - name: Install Node dependencies
+        working-directory: unopim
+        run: npm install --no-progress --no-audit --no-fund
+
       - name: Running Pest Tests
         working-directory: unopim
-        run: vendor/bin/pest --colors=always
+        run: |
+          vendor/bin/pest --parallel --processes=3 --colors=always --testsuite "Api Feature Test,Core Unit Test,DataTransfer Unit Test,User Feature Test,Admin Feature Test"
+          vendor/bin/pest --parallel --processes=3 --colors=always --testsuite "Installer Feature Test,ElasticSearch Feature Test,Completeness Feature Test,Product Unit Test,Product Feature Test,Attribute Unit Test,Category Unit Test,Measurement Feature Test,AiAgent Unit Test,AppUrlGuard Unit Test,Webhook Unit Test,AppUrlGuard Feature Test,Resource Unit Test,Resource Feature Test,Publication Feature Test,ProductPassport Feature Test,Bagisto Feature Test"
 
   pest-elasticsearch:
     runs-on: ubuntu-24.04
@@ -181,7 +198,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: curl, fileinfo, gd, intl, mbstring, openssl, pdo, pdo_mysql, tokenizer, zip
           ini-values: error_reporting=E_ALL
           tools: composer:v2
@@ -274,6 +291,23 @@ jobs:
           php artisan unopim:product:index
           php artisan unopim:category:index
 
+      - name: Set Passport OAuth key permissions
+        working-directory: unopim
+        run: chmod 0600 packages/Webkul/AdminApi/src/Secrets/Oauth/oauth-*.key
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      # Admin component suites assert against the shipped vue-multiselect source,
+      # so node_modules has to exist before Pest runs.
+      - name: Install Node dependencies
+        working-directory: unopim
+        run: npm install --no-progress --no-audit --no-fund
+
       - name: Running Pest Tests
         working-directory: unopim
-        run: vendor/bin/pest --colors=always
+        run: |
+          vendor/bin/pest --parallel --processes=3 --colors=always --testsuite "Api Feature Test,Core Unit Test,DataTransfer Unit Test,User Feature Test,Admin Feature Test"
+          vendor/bin/pest --parallel --processes=3 --colors=always --testsuite "Installer Feature Test,ElasticSearch Feature Test,Completeness Feature Test,Product Unit Test,Product Feature Test,Attribute Unit Test,Category Unit Test,Measurement Feature Test,AiAgent Unit Test,AppUrlGuard Unit Test,Webhook Unit Test,AppUrlGuard Feature Test,Resource Unit Test,Resource Feature Test,Publication Feature Test,ProductPassport Feature Test,Bagisto Feature Test"

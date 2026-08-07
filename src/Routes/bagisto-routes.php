@@ -15,8 +15,6 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
             Route::prefix('credentials')->group(function () {
                 Route::get('', 'index')->name('admin.bagisto.credentials.index');
 
-                Route::get('create', 'create')->name('admin.bagisto.credentials.create');
-
                 Route::post('create', 'store')->name('admin.bagisto.credentials.store');
 
                 Route::get('edit/{id}', 'edit')->name('admin.bagisto.credentials.edit');

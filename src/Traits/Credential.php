@@ -28,7 +28,7 @@ trait Credential
                 ];
             }
 
-            Cache::put(CacheType::CREDENTIAL->value, $this->credential, Env('SESSION_LIFETIME'));
+            Cache::put(CacheType::CREDENTIAL->value, $this->credential, config('session.lifetime'));
         }
     }
 
@@ -40,14 +40,36 @@ trait Credential
     protected function getMappedLocales(): array
     {
         $locales = [];
-        foreach ($this->credential['store_info'] as $storeInfo) {
-            $data = json_decode($storeInfo, true);
-            if (! empty($data) && isset($data['locales'])) {
+        foreach ($this->decodeStoreInfo() as $data) {
+            if (isset($data['locales'], $data['channel']) && ! empty($data['channel'])) {
                 $locales[array_key_first($data['channel'])] = $data['locales'];
             }
         }
 
         return $locales;
+    }
+
+    /**
+     * Decode the credential's store mappings, dropping the empty or malformed
+     * entries a partially saved mapping form can leave behind.
+     */
+    protected function decodeStoreInfo(): array
+    {
+        $decoded = [];
+
+        foreach ((array) ($this->credential['store_info'] ?? []) as $storeInfo) {
+            if (! is_string($storeInfo) || trim($storeInfo) === '') {
+                continue;
+            }
+
+            $data = json_decode($storeInfo, true);
+
+            if (is_array($data) && $data !== []) {
+                $decoded[] = $data;
+            }
+        }
+
+        return $decoded;
     }
 
     protected function findMappedChannel(string $channel): ?string
@@ -69,9 +91,8 @@ trait Credential
     protected function getMappedChannels(): array
     {
         $channel = [];
-        foreach ($this->credential['store_info'] as $storeInfo) {
-            $data = json_decode($storeInfo, true);
-            if (! empty($data) && isset($data['channel'])) {
+        foreach ($this->decodeStoreInfo() as $data) {
+            if (! empty($data['channel'])) {
                 $channel[array_key_first($data['channel'])] = $data['channel'][array_key_first($data['channel'])];
             }
         }

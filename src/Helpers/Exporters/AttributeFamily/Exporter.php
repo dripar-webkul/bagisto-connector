@@ -138,7 +138,7 @@ class Exporter extends AbstractExporter
             } else {
                 $this->handleMissingMapping($item, $response, $mapData, $batchId, $id);
                 if (! empty($response)) {
-                    $this->createdItemsCount++;
+                    $this->updatedItemsCount++;
                 } else {
                     $this->skippedItemsCount++;
                     $this->jobLogger->warning(

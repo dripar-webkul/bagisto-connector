@@ -16,6 +16,10 @@ class OptionController extends Controller
 {
     use ApiRequest;
 
+    const PER_PAGE = 20;
+
+    const DEFAULT_PAGE = 1;
+
     /**
      * Create a new controller instance.
      *
@@ -42,11 +46,7 @@ class OptionController extends Controller
 
         $bagistoRepository = $this->searchByCode($bagistoRepository, $query, 'shop_url');
 
-        $allCredential = $bagistoRepository->get()->toArray();
-
-        return new JsonResponse([
-            'options' => $allCredential,
-        ]);
+        return $this->respondWithOptions($bagistoRepository->get()->toArray());
     }
 
     /**
@@ -67,9 +67,7 @@ class OptionController extends Controller
             $allActivateChannel[$key]['name'] = ! empty($channel['name']) ? $channel['name'] : $channel['code'];
         }
 
-        return new JsonResponse([
-            'options' => $allActivateChannel,
-        ]);
+        return $this->respondWithOptions($allActivateChannel);
     }
 
     /**
@@ -84,11 +82,7 @@ class OptionController extends Controller
 
         $currencyRepository = $this->searchByCode($currencyRepository, $query);
 
-        $allActivateCurrency = $currencyRepository->get()->toArray();
-
-        return new JsonResponse([
-            'options' => $allActivateCurrency,
-        ]);
+        return $this->respondWithOptions($currencyRepository->get()->toArray());
     }
 
     /**
@@ -103,11 +97,7 @@ class OptionController extends Controller
 
         $localeRepository = $this->searchByCode($localeRepository, $query);
 
-        $allActivateLocale = $localeRepository->get()->toArray();
-
-        return new JsonResponse([
-            'options' => $allActivateLocale,
-        ]);
+        return $this->respondWithOptions($localeRepository->get()->toArray());
     }
 
     /**
@@ -127,9 +117,7 @@ class OptionController extends Controller
             $allActivateFamilies[$key]['name'] = ! empty($family['name']) ? $family['name'] : $family['code'];
         }
 
-        return new JsonResponse([
-            'options' => $allActivateFamilies,
-        ]);
+        return $this->respondWithOptions($allActivateFamilies);
     }
 
     /**
@@ -153,9 +141,7 @@ class OptionController extends Controller
                 }
             }
 
-            return new JsonResponse([
-                'options' => $types,
-            ]);
+            return $this->respondWithOptions($types);
         }
 
         $types = [];
@@ -171,8 +157,34 @@ class OptionController extends Controller
             }
         }
 
+        return $this->respondWithOptions($types);
+    }
+
+    /**
+     * Shape the option list the way the admin's async select handler expects it.
+     * It reads `options`, `page` and `lastPage` from every response, and its
+     * load-more guard compares `lastPage` against the current page.
+     */
+    protected function respondWithOptions(array $options): JsonResponse
+    {
+        $options = array_values($options);
+
+        if (! empty(request('identifiers.values'))) {
+            return new JsonResponse([
+                'options'  => $options,
+                'page'     => self::DEFAULT_PAGE,
+                'lastPage' => self::DEFAULT_PAGE,
+            ]);
+        }
+
+        $page = max(self::DEFAULT_PAGE, (int) request('page', self::DEFAULT_PAGE));
+
+        $lastPage = max(self::DEFAULT_PAGE, (int) ceil(count($options) / self::PER_PAGE));
+
         return new JsonResponse([
-            'options' => $types,
+            'options'  => array_slice($options, ($page - 1) * self::PER_PAGE, self::PER_PAGE),
+            'page'     => $page,
+            'lastPage' => $lastPage,
         ]);
     }
 
