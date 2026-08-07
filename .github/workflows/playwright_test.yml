@@ -43,11 +43,14 @@ jobs:
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       GROQ_INVALID_KEY: ${{ secrets.GROQ_INVALID_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      UNOPIM_URL: ${{ secrets.UNOPIM_URL }}
-      ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
-      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-      INVALID_ADMIN_EMAIL: ${{ secrets.INVALID_ADMIN_EMAIL }}
-      INVALID_ADMIN_PASSWORD: ${{ secrets.INVALID_ADMIN_PASSWORD }}
+      # The suite logs in with these, so a run that cannot read the secrets must
+      # still fall back to the installer defaults — an empty password fails every
+      # session-backed spec instead of just the ones that need a real account.
+      UNOPIM_URL: ${{ secrets.UNOPIM_URL || 'http://127.0.0.1:8000' }}
+      ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME || 'admin@example.com' }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD || 'admin123' }}
+      INVALID_ADMIN_EMAIL: ${{ secrets.INVALID_ADMIN_EMAIL || 'not-an-admin@example.com' }}
+      INVALID_ADMIN_PASSWORD: ${{ secrets.INVALID_ADMIN_PASSWORD || 'wrong-password' }}
       INSTALLER_ADMIN_EMAIL: ${{ secrets.ADMIN_USERNAME || 'admin@example.com' }}
       INSTALLER_ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD || 'admin123' }}
       # Allow the webhook SSRF guard (SafeWebhookUrl) to accept 127.0.0.1 so the
@@ -155,6 +158,7 @@ jobs:
           # resolved INSTALLER_ADMIN_* in this environment.
           php artisan tinker --execute="DB::table('admins')->where('id',1)->update(['email'=>getenv('ADMIN_USERNAME')?:'admin@example.com','password'=>bcrypt(getenv('ADMIN_PASSWORD')?:'admin123')]);"
           php artisan bagisto-package:install --no-interaction
+          chmod 0600 packages/Webkul/AdminApi/src/Secrets/Oauth/oauth-*.key
           npm install --no-progress
           npm run build
           php artisan serve --host=0.0.0.0 --port=8000 > /tmp/server.log 2>&1 &
