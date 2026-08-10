@@ -2,6 +2,7 @@
 
 namespace Webkul\Bagisto\Helpers\Exporters\Product;
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Attribute\Repositories\AttributeOptionRepository;
@@ -37,6 +38,14 @@ class Exporter extends AbstractExporter
     protected const ENTITY_TYPE = 'bulk_product';
 
     protected const VARIANT = 'variant';
+
+    protected const VARIANT_GROUP = 'variant_group';
+
+    /**
+     * UnoPim bounds a variant tree at two axes (variant_structure_axes.level is
+     * an enum of level_1/level_2), so the walk never needs to go deeper.
+     */
+    protected const MAX_VARIANT_DEPTH = 2;
 
     public const BATCH_SIZE = 100;
 
@@ -224,17 +233,79 @@ class Exporter extends AbstractExporter
             $query->where('status', $status);
         }
 
-        $products = $query->get(['id', 'sku', 'type']);
+        $products = $query->get(['id', 'sku', 'type', 'parent_id']);
 
-        $configurableIds = $products->where('type', 'configurable')->pluck('id')->filter()->all();
+        $parentIds = $products->where('type', 'configurable')->pluck('id')->filter()->all();
+        $descendants = collect();
+        $depth = 0;
 
-        if (! empty($configurableIds)) {
-            $variants = $this->productRepository->whereIn('parent_id', $configurableIds)->get(['id', 'sku', 'type']);
+        while (! empty($parentIds) && $depth++ < self::MAX_VARIANT_DEPTH) {
+            $children = $this->productRepository
+                ->whereIn('parent_id', $parentIds)
+                ->get(['id', 'sku', 'type', 'parent_id']);
 
-            $products = $products->concat($variants)->unique('sku')->values();
+            if ($children->isEmpty()) {
+                break;
+            }
+
+            $descendants = $descendants->concat($children);
+            $parentIds = $children->where('type', self::VARIANT_GROUP)->pluck('id')->filter()->all();
         }
 
-        return new CollectionCursor($products->toArray());
+        if ($descendants->isNotEmpty()) {
+            $products = $products->concat($descendants)->unique('sku')->values();
+        }
+
+        return new CollectionCursor($this->orderFamiliesContiguously($products)->toArray());
+    }
+
+    /**
+     * Bagisto links a variant only once its parent exists, so a family split
+     * across two batches loses the variants in the later batch until the next
+     * run. Emitting each family together keeps it inside one batch unless the
+     * family itself straddles a batch boundary.
+     */
+    private function orderFamiliesContiguously(Collection $products): Collection
+    {
+        $byId = $products->keyBy('id');
+
+        $rootOf = function ($product) use ($byId) {
+            $current = $product;
+
+            for ($hop = 0; $hop <= self::MAX_VARIANT_DEPTH; $hop++) {
+                $parent = $current->parent_id ? $byId->get($current->parent_id) : null;
+
+                if (! $parent) {
+                    return $current->id;
+                }
+
+                $current = $parent;
+            }
+
+            return $current->id;
+        };
+
+        $families = [];
+
+        foreach ($products as $product) {
+            $families[$rootOf($product)][] = $product;
+        }
+
+        $ordered = collect();
+        $flushed = [];
+
+        foreach ($products as $product) {
+            $root = $rootOf($product);
+
+            if (isset($flushed[$root])) {
+                continue;
+            }
+
+            $flushed[$root] = true;
+            $ordered = $ordered->concat($families[$root]);
+        }
+
+        return $ordered->values();
     }
 
     public function write(array $items, int $batchId): void
@@ -311,7 +382,7 @@ class Exporter extends AbstractExporter
         $products = [];
         $skus = array_column($batch->data, 'sku');
         $allProducts = $this->productRepository
-            ->with(['attribute_family', 'parent', 'super_attributes', 'variants'])
+            ->with(['attribute_family', 'parent', 'super_attributes', 'variants.variants'])
             ->whereIn('sku', $skus)
             ->get();
 
@@ -320,8 +391,12 @@ class Exporter extends AbstractExporter
             $rowData['values'] = $productModel->values ?? [];
 
             if (! $this->isExportableType($rowData)) {
-                $this->skippedItemsCount++;
-                $this->jobLogger?->warning("Product {$rowData['sku']} not exported: product type '{$rowData['type']}' has no Bagisto equivalent.");
+                if ($rowData['type'] === self::VARIANT_GROUP) {
+                    $this->jobLogger?->info("Product {$rowData['sku']}: variant group flattened into its variants.");
+                } else {
+                    $this->skippedItemsCount++;
+                    $this->jobLogger?->warning("Product {$rowData['sku']} not exported: product type '{$rowData['type']}' has no Bagisto equivalent.");
+                }
 
                 continue;
             }
@@ -545,36 +620,93 @@ class Exporter extends AbstractExporter
 
     public function getSuperAttributes($item): ?string
     {
-        $newFormatData = [];
-        $superAttributeCodes = [];
+        $superAttributeCodes = array_column($item['super_attributes'] ?? [], 'code');
 
-        foreach ($item['super_attributes'] as $superAttribute) {
-            $superAttributeCodes[] = $superAttribute['code'];
+        if ($superAttributeCodes === []) {
+            $this->jobLogger?->warning(
+                'Product '.($item['sku'] ?? '(no sku)').' has no super attributes, so no variants can be linked.'
+            );
+
+            return '';
         }
 
-        foreach ($item['variants'] as $variant) {
-            $commonFields = $this->getCommonFields($variant);
+        $newFormatData = [];
 
-            $missingAxes = array_values(array_diff($superAttributeCodes, array_keys($commonFields)));
+        foreach ($this->collectVariantLeaves($item, $superAttributeCodes) as $leaf) {
+            $missingAxes = array_values(array_diff($superAttributeCodes, array_keys($leaf['axes'])));
 
             if ($missingAxes !== []) {
                 $this->jobLogger?->warning(
-                    'Variant '.($variant['sku'] ?? '(no sku)').' not exported: no value for super attribute(s) '
+                    'Variant '.$leaf['sku'].' not exported: no value for super attribute(s) '
                     .implode(', ', $missingAxes).'.'
                 );
 
                 continue;
             }
 
-            $formatData = [];
-            $formatData[] = "sku={$variant['sku']}";
+            $formatData = ["sku={$leaf['sku']}"];
+
             foreach ($superAttributeCodes as $attribute) {
-                $formatData[] = "{$attribute}={$commonFields[$attribute]}";
+                $formatData[] = "{$attribute}={$leaf['axes'][$attribute]}";
             }
+
             $newFormatData[] = implode(',', $formatData);
         }
 
+        if ($newFormatData === []) {
+            $this->jobLogger?->warning(
+                'Product '.($item['sku'] ?? '(no sku)').' exported without variants: none of its variants carried a '
+                .'complete set of '.implode(', ', $superAttributeCodes).'.'
+            );
+        }
+
         return implode('|', $newFormatData);
+    }
+
+    /**
+     * Bagisto has no nested variants, so a UnoPim variant_group level is folded
+     * away: every leaf inherits the axis values of the nodes above it and, on a
+     * collision, its own value wins.
+     *
+     * @return list<array{sku: string, axes: array<string, mixed>}>
+     */
+    private function collectVariantLeaves(array $node, array $axisCodes, array $inherited = [], int $depth = 0): array
+    {
+        if ($depth >= self::MAX_VARIANT_DEPTH) {
+            $this->jobLogger?->warning(
+                'Variant tree under '.($node['sku'] ?? '(no sku)').' is deeper than '.self::MAX_VARIANT_DEPTH
+                .' levels; the levels below were not exported.'
+            );
+
+            return [];
+        }
+
+        $leaves = [];
+
+        foreach ($node['variants'] ?? [] as $child) {
+            $axes = array_merge(
+                $inherited,
+                array_intersect_key($this->getCommonFields($child), array_flip($axisCodes))
+            );
+
+            if (($child['type'] ?? null) !== self::VARIANT_GROUP) {
+                $leaves[] = ['sku' => $child['sku'] ?? '(no sku)', 'axes' => $axes];
+
+                continue;
+            }
+
+            if (empty($child['variants'])) {
+                $this->jobLogger?->warning(
+                    'Variant group '.($child['sku'] ?? '(no sku)').' has no variants of its own, so it contributes nothing.'
+                );
+
+                continue;
+            }
+
+            $leaves = array_merge($leaves, $this->collectVariantLeaves($child, $axisCodes, $axes, $depth + 1));
+        }
+
+        return $leaves;
     }
 
     protected function handleAttributeType(array &$mergedFields, bool $withMedia, string $channel): void
