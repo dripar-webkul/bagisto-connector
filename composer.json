@@ -1,7 +1,7 @@
 {
     "name": "unopim/bagisto-connector",
     "description": "UnoPim Bagisto Connector enables users to link their Bagisto store to the UnoPim platform, allowing for seamless synchronization and management of product information.",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "keywords": [
         "laravel",
         "bagisto",
