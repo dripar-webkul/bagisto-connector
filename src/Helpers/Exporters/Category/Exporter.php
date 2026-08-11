@@ -401,15 +401,54 @@ class Exporter extends BaseExporter
      */
     public function prepareCategories(JobTrackBatchContract $batch, mixed $filePath): array
     {
+        $locales = $this->getExportableLocales();
+
+        if ($locales === []) {
+            $this->skippedItemsCount += count($batch->data);
+
+            $this->jobLogger?->warning(
+                count($batch->data).' categories not exported: no usable locale mapping. '
+                .'Open the credential and re-save the channel and locale mapping.'
+            );
+
+            return [];
+        }
+
         $categories = [];
 
         foreach ($batch->data as $rowData) {
-            foreach ($this->jobFilters['locales'] as $bagistoLocale => $unopimLocale) {
+            foreach ($locales as $bagistoLocale => $unopimLocale) {
                 $categories[] = $this->processCategoryRow($rowData, $bagistoLocale, $unopimLocale, $filePath);
             }
         }
 
         return $categories;
+    }
+
+    /**
+     * A half-saved credential mapping can leave a locale entry holding an array
+     * where a locale code belongs, which would fatal the whole batch. Drop those
+     * and say why, so the run reports a skip instead of dying.
+     */
+    private function getExportableLocales(): array
+    {
+        $locales = [];
+
+        foreach ((array) ($this->jobFilters['locales'] ?? []) as $bagistoLocale => $unopimLocale) {
+            if (is_string($bagistoLocale) && is_string($unopimLocale)) {
+                $locales[$bagistoLocale] = $unopimLocale;
+
+                continue;
+            }
+
+            $this->jobLogger?->warning(
+                'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale "'
+                .(is_string($bagistoLocale) ? $bagistoLocale : gettype($bagistoLocale)).'", got '
+                .gettype($unopimLocale).' ('.json_encode($unopimLocale).').'
+            );
+        }
+
+        return $locales;
     }
 
     private function processCategoryRow(array $rowData, string $bagistoLocale, string $unopimLocale, mixed $filePath): array

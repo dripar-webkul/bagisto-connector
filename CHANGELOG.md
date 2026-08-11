@@ -1,3 +1,26 @@
+# 1.0.5 - (10-08-2026)
+
+## Changed
+- Compatibility with UnoPim v3.0.x, on PHP `^8.4.1` and Laravel `^13.0`.
+- Credential and mapping screens submit over AJAX and use the core form component, with clickable datagrid rows.
+- Connector export filters render through the core view hook on both the create and the edit screen.
+
+## Added
+- Locale files for all 32 supported languages.
+
+## Fixed
+- Exporters no longer fatal at class load on UnoPim 3.0 subclass signature changes.
+- Two-level variant groups export as the flat variants Bagisto expects, instead of leaving configurables with no variants.
+- Product types Bagisto cannot represent are reported as skipped with a reason instead of killing the batch.
+- Missing export filter and attribute keys no longer abort an export batch.
+- Categories with an unusable locale mapping are skipped with a reason instead of failing the batch.
+- Required Bagisto fields are filled and incomplete products are skipped individually rather than failing the whole batch.
+- Duplicate-rejected records count as updated, and `store_info` no longer accumulates duplicate channel mappings.
+- Filter option endpoints return `page` and `lastPage` so the async select can load more.
+- The connector filter card no longer repeats the media and SKU fields core already renders.
+- Removed the credentials create route that pointed at a missing controller method.
+- The parent-aware `visible_individually` rule stays authoritative over configured fixed values.
+
 # 1.0.4 - (08-07-2026)
 
 ## Fixed

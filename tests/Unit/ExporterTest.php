@@ -111,6 +111,153 @@ class ExporterTest extends TestCase
         $this->assertSame('1', $mergedFields['visible_individually']);
     }
 
+    public function test_super_attributes_flattens_a_one_level_variant_tree()
+    {
+        $this->jobLogger->shouldReceive('warning')->never();
+
+        $item = $this->configurable(['color'], [
+            $this->leaf('shirt-red', ['color' => 'red']),
+            $this->leaf('shirt-blue', ['color' => 'blue']),
+        ]);
+
+        $this->assertSame(
+            'sku=shirt-red,color=red|sku=shirt-blue,color=blue',
+            $this->exporter->getSuperAttributes($item)
+        );
+    }
+
+    public function test_super_attributes_flattens_a_two_level_variant_tree()
+    {
+        $this->jobLogger->shouldReceive('warning')->never();
+
+        $item = $this->configurable(['color', 'size'], [
+            $this->group('shirt-red', ['color' => 'red'], [
+                $this->leaf('shirt-red-s', ['size' => 's']),
+                $this->leaf('shirt-red-m', ['size' => 'm']),
+            ]),
+            $this->group('shirt-blue', ['color' => 'blue'], [
+                $this->leaf('shirt-blue-m', ['size' => 'm']),
+            ]),
+        ]);
+
+        $this->assertSame(
+            'sku=shirt-red-s,color=red,size=s|sku=shirt-red-m,color=red,size=m|sku=shirt-blue-m,color=blue,size=m',
+            $this->exporter->getSuperAttributes($item)
+        );
+    }
+
+    public function test_super_attributes_lets_a_leaf_override_an_inherited_axis()
+    {
+        $this->jobLogger->shouldReceive('warning')->never();
+
+        $item = $this->configurable(['color', 'size'], [
+            $this->group('shirt-red', ['color' => 'red'], [
+                $this->leaf('shirt-red-s', ['size' => 's']),
+                $this->leaf('shirt-odd-m', ['color' => 'green', 'size' => 'm']),
+            ]),
+        ]);
+
+        $this->assertSame(
+            'sku=shirt-red-s,color=red,size=s|sku=shirt-odd-m,color=green,size=m',
+            $this->exporter->getSuperAttributes($item)
+        );
+    }
+
+    public function test_super_attributes_skips_a_leaf_missing_an_axis_and_says_why()
+    {
+        $this->jobLogger->shouldReceive('warning')
+            ->once()
+            ->with(Mockery::pattern('/Variant shirt-red-none not exported.*size/'));
+
+        $item = $this->configurable(['color', 'size'], [
+            $this->group('shirt-red', ['color' => 'red'], [
+                $this->leaf('shirt-red-s', ['size' => 's']),
+                $this->leaf('shirt-red-none', []),
+            ]),
+        ]);
+
+        $this->assertSame('sku=shirt-red-s,color=red,size=s', $this->exporter->getSuperAttributes($item));
+    }
+
+    public function test_super_attributes_reports_a_variant_group_with_no_variants()
+    {
+        $this->jobLogger->shouldReceive('warning')
+            ->once()
+            ->with(Mockery::pattern('/Variant group shirt-empty has no variants of its own/'));
+
+        $this->jobLogger->shouldReceive('warning')
+            ->once()
+            ->with(Mockery::pattern('/exported without variants/'));
+
+        $item = $this->configurable(['color', 'size'], [
+            $this->group('shirt-empty', ['color' => 'red'], []),
+        ]);
+
+        $this->assertSame('', $this->exporter->getSuperAttributes($item));
+    }
+
+    public function test_super_attributes_stops_below_the_supported_depth()
+    {
+        $this->jobLogger->shouldReceive('warning')
+            ->once()
+            ->with(Mockery::pattern('/deeper than 2 levels/'));
+
+        $this->jobLogger->shouldReceive('warning')
+            ->once()
+            ->with(Mockery::pattern('/exported without variants/'));
+
+        $item = $this->configurable(['color', 'size'], [
+            $this->group('lvl1', ['color' => 'red'], [
+                $this->group('lvl2', ['size' => 's'], [
+                    $this->leaf('lvl3', ['size' => 'm']),
+                ]),
+            ]),
+        ]);
+
+        $this->assertSame('', $this->exporter->getSuperAttributes($item));
+    }
+
+    public function test_super_attributes_reports_a_configurable_with_no_axes()
+    {
+        $this->jobLogger->shouldReceive('warning')
+            ->once()
+            ->with(Mockery::pattern('/has no super attributes/'));
+
+        $item = $this->configurable([], [$this->leaf('shirt-red', ['color' => 'red'])]);
+
+        $this->assertSame('', $this->exporter->getSuperAttributes($item));
+    }
+
+    private function configurable(array $axisCodes, array $variants): array
+    {
+        return [
+            'sku'              => 'shirt',
+            'type'             => 'configurable',
+            'super_attributes' => array_map(fn ($code) => ['code' => $code], $axisCodes),
+            'variants'         => $variants,
+        ];
+    }
+
+    private function group(string $sku, array $axes, array $variants): array
+    {
+        return [
+            'sku'      => $sku,
+            'type'     => 'variant_group',
+            'values'   => ['common' => $axes],
+            'variants' => $variants,
+        ];
+    }
+
+    private function leaf(string $sku, array $axes): array
+    {
+        return [
+            'sku'      => $sku,
+            'type'     => 'simple',
+            'values'   => ['common' => $axes],
+            'variants' => [],
+        ];
+    }
+
     private function setProperty(object $object, string $property, $value): void
     {
         $ref = new \ReflectionProperty($object, $property);

@@ -9,7 +9,7 @@
     <x-admin::data-transfer.filter-fields
         ::entity-type="entityType"
         :exporter-config="$exporterConfig ?? config('exporters')"
-        only="credentials,channel,locale,family,type,code,with_media,sku"
+        only="credentials,channel,locale,family,type,code"
         grid-class="grid grid-cols-1"
     />
 </div>
