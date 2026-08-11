@@ -9,6 +9,7 @@ use Webkul\Bagisto\Repositories\BagistoDataMapping;
 use Webkul\Bagisto\Repositories\CategoryFieldMappingRepository;
 use Webkul\Bagisto\Repositories\CredentialRepository;
 use Webkul\Category\Repositories\CategoryFieldRepository;
+use Webkul\DataTransfer\Contracts\JobTrackBatch as JobTrackBatchContract;
 use Webkul\DataTransfer\Jobs\Export\File\FlatItemBuffer;
 use Webkul\DataTransfer\Repositories\JobTrackBatchRepository;
 
@@ -80,6 +81,63 @@ class CategoryExporterTest extends TestCase
         $method->setAccessible(true);
 
         return $method->invokeArgs($this->exporter, [$rowData, 'en', 'en_US', null]);
+    }
+
+    public function test_exportable_locales_keeps_well_formed_entries()
+    {
+        $this->setProperty($this->exporter, 'jobFilters', [
+            'locales' => ['en' => 'en_US', 'de' => 'de_DE'],
+        ]);
+
+        $this->assertSame(['en' => 'en_US', 'de' => 'de_DE'], $this->exportableLocales());
+    }
+
+    public function test_exportable_locales_drops_an_entry_holding_an_array()
+    {
+        $this->setProperty($this->exporter, 'jobFilters', [
+            'locales' => ['en' => 'en_US', 'default' => ['en' => 'en_US']],
+        ]);
+
+        $this->assertSame(['en' => 'en_US'], $this->exportableLocales());
+    }
+
+    public function test_exportable_locales_drops_non_string_entries()
+    {
+        $this->setProperty($this->exporter, 'jobFilters', [
+            'locales' => ['en' => 'en_US', 'de' => 7, 'fr' => null],
+        ]);
+
+        $this->assertSame(['en' => 'en_US'], $this->exportableLocales());
+    }
+
+    public function test_exportable_locales_is_empty_when_the_mapping_is_missing()
+    {
+        $this->setProperty($this->exporter, 'jobFilters', []);
+
+        $this->assertSame([], $this->exportableLocales());
+    }
+
+    public function test_prepare_categories_skips_every_row_when_no_locale_is_usable()
+    {
+        $this->setProperty($this->exporter, 'jobFilters', [
+            'locales' => ['default' => ['en' => 'en_US']],
+        ]);
+
+        $batch = new class implements JobTrackBatchContract
+        {
+            public $data = [['code' => 'mens'], ['code' => 'womens']];
+        };
+
+        $this->assertSame([], $this->exporter->prepareCategories($batch, null));
+        $this->assertSame(2, $this->exporter->getSkippedtemsCount());
+    }
+
+    private function exportableLocales(): array
+    {
+        $method = new \ReflectionMethod($this->exporter, 'getExportableLocales');
+        $method->setAccessible(true);
+
+        return $method->invoke($this->exporter);
     }
 
     private function setProperty(object $object, string $property, $value): void

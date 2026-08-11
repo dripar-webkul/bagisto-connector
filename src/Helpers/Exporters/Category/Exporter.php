@@ -401,21 +401,22 @@ class Exporter extends BaseExporter
      */
     public function prepareCategories(JobTrackBatchContract $batch, mixed $filePath): array
     {
-        $categories = [];
-
         $locales = $this->getExportableLocales();
 
+        if ($locales === []) {
+            $this->skippedItemsCount += count($batch->data);
+
+            $this->jobLogger?->warning(
+                count($batch->data).' categories not exported: no usable locale mapping. '
+                .'Open the credential and re-save the channel and locale mapping.'
+            );
+
+            return [];
+        }
+
+        $categories = [];
+
         foreach ($batch->data as $rowData) {
-            if ($locales === []) {
-                $this->skippedItemsCount++;
-                $this->jobLogger?->warning(
-                    'Category '.($rowData['code'] ?? '(no code)').' not exported: no usable locale mapping. '
-                    .'Open the credential and re-save the channel and locale mapping.'
-                );
-
-                continue;
-            }
-
             foreach ($locales as $bagistoLocale => $unopimLocale) {
                 $categories[] = $this->processCategoryRow($rowData, $bagistoLocale, $unopimLocale, $filePath);
             }
