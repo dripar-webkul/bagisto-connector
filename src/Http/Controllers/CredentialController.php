@@ -165,6 +165,8 @@ class CredentialController extends Controller
 
         // if exist in cache then remove from cache
         Cache::forget(CacheType::CREDENTIAL->value);
+        Cache::forget(CacheType::PRODUCT_JOB_FILTERS->value);
+        Cache::forget(CacheType::CATEGORY_JOB_FILTERS->value);
 
         return new JsonResponse([
             'message'      => trans('bagisto::app.bagisto.credentials.index.update-success'),
@@ -180,7 +182,7 @@ class CredentialController extends Controller
     {
         $clean = [];
 
-        foreach ((array) $storeInfo as $mapping) {
+        foreach ((array) $storeInfo as $channelId => $mapping) {
             if (! is_string($mapping) || trim($mapping) === '') {
                 continue;
             }
@@ -191,10 +193,10 @@ class CredentialController extends Controller
                 continue;
             }
 
-            $clean[array_key_first($decoded['channel'])] = $mapping;
+            $clean[$channelId] = $mapping;
         }
 
-        return array_values($clean);
+        return $clean;
     }
 
     public function destroy($id)

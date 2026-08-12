@@ -51,11 +51,15 @@ trait ApiRequest
 
                 return $this->setApiRequest($method, $endPoint, $data, $options);
             }
+
+            $this->lastApiErrors = ['authentication' => [$e->getMessage()]];
+            $this->logWarning($this->lastApiErrors, $data['sku'] ?? $data['code'] ?? 'bulk');
         } catch (ValidationException $e) {
             $this->lastApiErrors = $e->validator->errors()->messages();
             $this->logWarning($this->lastApiErrors, $data['sku'] ?? $data['code'] ?? 'bulk');
         } catch (\Exception $e) {
-            $this->jobLogger->warning($e);
+            $this->lastApiErrors = ['exception' => [$e->getMessage()]];
+            $this->logWarning($this->lastApiErrors, $data['sku'] ?? $data['code'] ?? 'bulk');
         }
     }
 

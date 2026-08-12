@@ -127,10 +127,15 @@ class Exporter extends AbstractExporter
             $method = $mapData ? MethodType::PUT->value : MethodType::POST->value;
             $option = $mapData ? ['id' => $mapData->external_id] : [];
 
+            $response = null;
+
             try {
                 $response = $this->setApiRequest($method, self::ENTITY_TYPE, $item, $option);
             } catch (\Exception $e) {
-                $this->jobLogger->warning($e);
+                $this->skippedItemsCount++;
+                $this->jobLogger->warning($item['code'].' export failed: '.$e->getMessage());
+
+                continue;
             }
 
             if (isset($response['id'])) {
