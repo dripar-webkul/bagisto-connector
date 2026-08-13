@@ -130,7 +130,10 @@ jobs:
 
       - name: Set Passport OAuth key permissions
         working-directory: unopim
-        run: chmod 0600 packages/Webkul/AdminApi/src/Secrets/Oauth/oauth-*.key
+        run: |
+          php artisan unopim:passport:keys --no-interaction || true
+          find packages/Webkul/AdminApi/src/Secrets/Oauth storage/app/private/oauth \
+            -name 'oauth-*.key' -exec chmod 0600 {} + 2>/dev/null || true
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -293,7 +296,10 @@ jobs:
 
       - name: Set Passport OAuth key permissions
         working-directory: unopim
-        run: chmod 0600 packages/Webkul/AdminApi/src/Secrets/Oauth/oauth-*.key
+        run: |
+          php artisan unopim:passport:keys --no-interaction || true
+          find packages/Webkul/AdminApi/src/Secrets/Oauth storage/app/private/oauth \
+            -name 'oauth-*.key' -exec chmod 0600 {} + 2>/dev/null || true
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
