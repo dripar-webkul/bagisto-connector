@@ -1,18 +1,4 @@
-# 1.0.6 - (12-08-2026)
-
-## Fixed
-- A failed API call is recorded instead of being swallowed, so an export no longer reports success when nothing reached Bagisto.
-- Attributes export in full when no attribute mapping is configured, instead of exporting nothing.
-- A missing channel or locale mapping is reported with a reason instead of completing the attribute export with zero rows.
-- Attribute family export no longer reuses the previous item's response after a failure and maps it to the wrong Bagisto id.
-- Measurement attributes such as weight export as their numeric value instead of an array.
-- Variants inherit required Bagisto fields from their parent, including through an intermediate variant group.
-- A bulk batch that Bagisto partly accepted maps the queued products instead of counting the whole batch as skipped.
-- Saving a credential no longer requires filterable attributes, which blocked saving the channel and locale mapping.
-- Store Configuration keeps its values after a credential is saved.
-- Saving a credential clears the cached export job filters, so a new mapping takes effect on the next run.
-
-# 1.0.5 - (10-08-2026)
+# 1.1.0 - (13-08-2026)
 
 ## Changed
 - Compatibility with UnoPim v3.0.x, on PHP `^8.4.1` and Laravel `^13.0`.
@@ -32,8 +18,19 @@
 - Duplicate-rejected records count as updated, and `store_info` no longer accumulates duplicate channel mappings.
 - Filter option endpoints return `page` and `lastPage` so the async select can load more.
 - The connector filter card no longer repeats the media and SKU fields core already renders.
+- The connector filter card renders only for Bagisto export types, instead of also appearing on another connector's export and duplicating its credential and channel fields.
 - Removed the credentials create route that pointed at a missing controller method.
 - The parent-aware `visible_individually` rule stays authoritative over configured fixed values.
+- A failed API call is recorded instead of being swallowed, so an export no longer reports success when nothing reached Bagisto.
+- Attributes export in full when no attribute mapping is configured, instead of exporting nothing.
+- A missing channel or locale mapping is reported with a reason instead of completing the attribute export with zero rows.
+- Attribute family export no longer reuses the previous item's response after a failure and maps it to the wrong Bagisto id.
+- Measurement attributes such as weight export as their numeric value instead of an array.
+- Variants inherit required Bagisto fields from their parent, including through an intermediate variant group.
+- A bulk batch that Bagisto partly accepted maps the queued products instead of counting the whole batch as skipped.
+- Saving a credential no longer requires filterable attributes, which blocked saving the channel and locale mapping.
+- Store Configuration keeps its values after a credential is saved.
+- Saving a credential clears the cached export job filters, so a new mapping takes effect on the next run.
 
 # 1.0.4 - (08-07-2026)
 
