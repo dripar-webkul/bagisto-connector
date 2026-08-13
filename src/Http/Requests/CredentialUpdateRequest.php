@@ -18,7 +18,7 @@ class CredentialUpdateRequest extends FormRequest
             'email'               => ['required', 'email'],
             'password'            => ['required'],
             'store_info'          => ['array'],
-            'filterableAttribtes' => ['required'],
+            'filterableAttribtes' => ['nullable'],
         ];
     }
 }

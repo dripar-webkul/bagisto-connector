@@ -165,7 +165,9 @@ jobs:
           # resolved INSTALLER_ADMIN_* in this environment.
           php artisan tinker --execute="DB::table('admins')->where('id',1)->update(['email'=>getenv('ADMIN_USERNAME')?:'admin@example.com','password'=>bcrypt(getenv('ADMIN_PASSWORD')?:'admin123')]);"
           php artisan bagisto-package:install --no-interaction
-          chmod 0600 packages/Webkul/AdminApi/src/Secrets/Oauth/oauth-*.key
+          php artisan unopim:passport:keys --no-interaction || true
+          find packages/Webkul/AdminApi/src/Secrets/Oauth storage/app/private/oauth \
+            -name 'oauth-*.key' -exec chmod 0600 {} + 2>/dev/null || true
           # Fixtures the core suite reads but never creates: the passport preset,
           # the discard QA records and the DPP E2E attribute family.
           php artisan unopim:passport:install-preset

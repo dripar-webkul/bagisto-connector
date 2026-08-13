@@ -21,6 +21,7 @@ class Export
             Cache::forget(CacheType::CREDENTIAL->value);
             Cache::forget(CacheType::PRODUCT_JOB_FILTERS->value);
             Cache::forget(CacheType::CATEGORY_JOB_FILTERS->value);
+            Cache::forget(CacheType::ADDITIONAL_INFO->value);
         }
     }
 }

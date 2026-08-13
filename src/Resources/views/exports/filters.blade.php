@@ -1,5 +1,5 @@
 <div
-    v-if="filterFields.some(field => ['credentials', 'channel', 'locale', 'family', 'type', 'code'].includes(field.name))"
+    v-if="filterFields.some(field => (field.list_route || '').includes('/bagisto/')) && filterFields.some(field => ['credentials', 'channel', 'locale', 'family', 'type', 'code'].includes(field.name))"
     class="p-4 bg-white dark:bg-cherry-900 rounded box-shadow"
 >
     <p class="text-base text-gray-800 dark:text-white font-semibold mb-4">

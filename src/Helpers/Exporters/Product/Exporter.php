@@ -41,6 +41,10 @@ class Exporter extends AbstractExporter
 
     protected const VARIANT_GROUP = 'variant_group';
 
+    protected const MEASUREMENT_ATTRIBUTE_TYPE = 'measurement';
+
+    protected const NON_INHERITABLE_FIELDS = ['sku', 'url_key'];
+
     /**
      * UnoPim bounds a variant tree at two axes (variant_structure_axes.level is
      * an enum of level_1/level_2), so the walk never needs to go deeper.
@@ -317,7 +321,7 @@ class Exporter extends AbstractExporter
                 return;
             }
 
-            $this->setApiRequest(MethodType::POST->value, self::ENTITY_TYPE, $items, []);
+            $response = $this->setApiRequest(MethodType::POST->value, self::ENTITY_TYPE, $items, []);
 
             $skusAttempted = array_values(array_unique(array_column($items, 'sku')));
 
@@ -331,7 +335,25 @@ class Exporter extends AbstractExporter
                 return;
             }
 
-            $products = $this->productRepository->whereIn('sku', $skusAttempted)->get(['id', 'sku']);
+            $queuedSkus = ! empty($response['queued'])
+                ? array_values($response['queued'])
+                : $skusAttempted;
+
+            $rejectedSkus = array_values(array_diff($skusAttempted, $queuedSkus));
+
+            if (! empty($rejectedSkus)) {
+                $this->skippedItemsCount += count($rejectedSkus);
+
+                $this->jobLogger?->warning(
+                    'Bagisto rejected ['.implode(', ', $rejectedSkus).']: '.json_encode($response['errors'] ?? [])
+                );
+            }
+
+            if (empty($queuedSkus)) {
+                return;
+            }
+
+            $products = $this->productRepository->whereIn('sku', $queuedSkus)->get(['id', 'sku']);
 
             foreach ($products as $product) {
                 if ($this->getMapping($this->credential['id'], $product->id, null, null, null, self::ENTITY_TYPE)) {
@@ -342,7 +364,13 @@ class Exporter extends AbstractExporter
                 }
             }
         } catch (\Exception $e) {
-            $this->jobLogger->warning($e);
+            $skusAttempted = array_values(array_unique(array_column($items, 'sku')));
+
+            $this->skippedItemsCount += count($skusAttempted);
+
+            $this->jobLogger?->warning(
+                'Bulk product batch failed ['.implode(', ', $skusAttempted).']: '.$e->getMessage()
+            );
         }
     }
 
@@ -353,10 +381,7 @@ class Exporter extends AbstractExporter
      */
     private function rejectIncompleteItems(array $items): array
     {
-        $required = array_column(
-            array_filter(config('bagisto-attributes', []), fn ($attribute) => ! empty($attribute['required'])),
-            'code'
-        );
+        $required = $this->getRequiredBagistoFields();
 
         return array_values(array_filter($items, function ($item) use ($required) {
             $missing = array_values(array_filter(
@@ -382,7 +407,7 @@ class Exporter extends AbstractExporter
         $products = [];
         $skus = array_column($batch->data, 'sku');
         $allProducts = $this->productRepository
-            ->with(['attribute_family', 'parent', 'super_attributes', 'variants.variants'])
+            ->with(['attribute_family', 'parent.parent', 'super_attributes', 'variants.variants'])
             ->whereIn('sku', $skus)
             ->get();
 
@@ -485,6 +510,8 @@ class Exporter extends AbstractExporter
 
         $this->mapAttributesToBagisto($mergedFields);
 
+        $this->inheritRequiredFieldsFromParent($mergedFields, $item, $locale, $channel, $withMedia);
+
         $this->applyFixedValues($mergedFields, $item['parent'] ?? null);
 
         $this->generateUrlKey($mergedFields);
@@ -558,6 +585,46 @@ class Exporter extends AbstractExporter
         if (! isset($mergedFields['visible_individually']) || $mergedFields['visible_individually'] === '') {
             $mergedFields['visible_individually'] = ! empty($parent) ? '0' : '1';
         }
+    }
+
+    private function inheritRequiredFieldsFromParent(array &$mergedFields, array $item, string $locale, string $channel, bool $withMedia): void
+    {
+        $missing = array_values(array_filter(
+            $this->getRequiredBagistoFields(),
+            fn ($code) => ! in_array($code, self::NON_INHERITABLE_FIELDS, true)
+                && (! isset($mergedFields[$code]) || $mergedFields[$code] === '' || $mergedFields[$code] === null)
+        ));
+
+        if ($missing === []) {
+            return;
+        }
+
+        $ancestor = $item['parent'] ?? null;
+        $hops = 0;
+
+        while (! empty($ancestor) && is_array($ancestor) && $missing !== [] && $hops++ <= self::MAX_VARIANT_DEPTH) {
+            $ancestorFields = $this->mergeAllFields($ancestor, $locale, $channel, $withMedia);
+
+            $this->mapAttributesToBagisto($ancestorFields);
+
+            foreach ($missing as $index => $code) {
+                if (isset($ancestorFields[$code]) && $ancestorFields[$code] !== '' && $ancestorFields[$code] !== null) {
+                    $mergedFields[$code] = $ancestorFields[$code];
+
+                    unset($missing[$index]);
+                }
+            }
+
+            $ancestor = $ancestor['parent'] ?? null;
+        }
+    }
+
+    private function getRequiredBagistoFields(): array
+    {
+        return array_column(
+            array_filter(config('bagisto-attributes', []), fn ($attribute) => ! empty($attribute['required'])),
+            'code'
+        );
     }
 
     private function mapAttributesToBagisto(array &$mergedFields): void
@@ -746,6 +813,12 @@ class Exporter extends AbstractExporter
 
                 case FieldValidator::BOOLEAN_FIELD_TYPE:
                     $mergedFields[$attributeCode] = $this->checkBooleanConversion($attributeValue) ? 1 : 0;
+                    break;
+
+                case self::MEASUREMENT_ATTRIBUTE_TYPE:
+                    $mergedFields[$attributeCode] = is_array($attributeValue)
+                        ? ($attributeValue['base_data'] ?? '')
+                        : $attributeValue;
                     break;
 
                 default:

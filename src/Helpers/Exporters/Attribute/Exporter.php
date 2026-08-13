@@ -138,9 +138,23 @@ class Exporter extends AbstractExporter
             Cache::put(CacheType::ADDITIONAL_INFO->value, $additionalInfoValue, config('session.lifetime'));
         }
 
-        return $attributeCodes
-            ? $this->source->with('options')->whereIn('code', $this->convertCommaSeparatedToArray($attributeCodes))->get()->getIterator()
-            : $this->source->with('options')->whereIn('code', $mappedAttributes)->get()->getIterator();
+        if ($attributeCodes) {
+            return $this->source->with('options')
+                ->whereIn('code', $this->convertCommaSeparatedToArray($attributeCodes))
+                ->get()->getIterator();
+        }
+
+        if (! empty($mappedAttributes)) {
+            return $this->source->with('options')
+                ->whereIn('code', $mappedAttributes)
+                ->get()->getIterator();
+        }
+
+        $this->jobLogger?->warning(
+            'No attribute mapping configured and no code filter set: exporting every attribute.'
+        );
+
+        return $this->source->with('options')->all()->getIterator();
     }
 
     public function write($items, $batchId)
@@ -246,7 +260,14 @@ class Exporter extends AbstractExporter
         $bagistoLocales = $this->getMappedLocales();
         $bagistoChannel = $this->findMappedChannel($filters['channel']);
 
-        if (! $bagistoChannel) {
+        if (! $bagistoChannel || empty($bagistoLocales[$bagistoChannel])) {
+            $this->skippedItemsCount += count($batch->data);
+
+            $this->jobLogger?->warning(
+                count($batch->data).' attributes not exported: no Bagisto channel/locale mapping for "'
+                .$filters['channel'].'". Open the credential and save the channel and locale mapping.'
+            );
+
             return $attributes;
         }
 

@@ -3,6 +3,10 @@
 
     $bagistoExporterConfig = $exporterConfig ?? config('exporters');
 
+    $bagistoOwnedEntityTypes = collect($bagistoExporterConfig)
+        ->filter(fn ($exporter) => str_starts_with($exporter['exporter'] ?? '', 'Webkul\\Bagisto\\'))
+        ->keys();
+
     $bagistoExport = $export
         ?? \Webkul\DataTransfer\Models\JobInstances::find(request()->route('id'));
 
@@ -11,6 +15,7 @@
     $bagistoValues = $exportFilters ?? ($bagistoExport->filters ?? []);
 
     $bagistoHasFilters = $bagistoEntityType
+        && $bagistoOwnedEntityTypes->contains($bagistoEntityType)
         && collect($bagistoExporterConfig[$bagistoEntityType]['filters']['fields'] ?? [])
             ->pluck('name')
             ->intersect($bagistoConnectorFilters)
