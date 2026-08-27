@@ -1,4 +1,4 @@
-# 1.1.0 - (13-08-2026)
+# 1.1.0 - (27-08-2026)
 
 ## Changed
 - Compatibility with UnoPim v3.0.x, on PHP `^8.4.1` and Laravel `^13.0`.
