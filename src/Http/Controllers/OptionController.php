@@ -131,6 +131,8 @@ class OptionController extends Controller
         $supportedTypes = config('product_types');
 
         if (isset($queryParams['identifiers']['values'])) {
+            $types = [];
+
             foreach ($supportedTypes as $id => $type) {
                 $label = trans($type['name']);
                 if (in_array($id, $queryParams['identifiers']['values'])) {
@@ -188,7 +190,7 @@ class OptionController extends Controller
         ]);
     }
 
-    protected function applySearchIdentifiers($repository, array $queryParams, ?string $code = null)
+    protected function applySearchIdentifiers($repository, array $queryParams, ?string $code = null): mixed
     {
         $searchIdentifiers = $queryParams['identifiers']['columnName'] ?? null;
 
@@ -200,7 +202,7 @@ class OptionController extends Controller
         return $repository;
     }
 
-    protected function searchByCode($repository, $query, string $code = 'code')
+    protected function searchByCode($repository, $query, string $code = 'code'): mixed
     {
         if (! empty($query)) {
             $repository = $repository->where($code, 'LIKE', '%'.$query.'%');
@@ -209,7 +211,7 @@ class OptionController extends Controller
         return $repository;
     }
 
-    public function fetchAttribute()
+    public function fetchAttribute(): JsonResponse
     {
         $attribute = $this->attributeRepository->where('code', request()->query('code'))->first();
 

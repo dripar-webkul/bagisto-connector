@@ -279,9 +279,7 @@
                                     this.$refs.attributeTypeGroup.selectedValue = this.selectedType;
                                 }
                             })
-                            .catch((error) => {
-                                // console.error("Error fetching attributes:", error);
-                            });
+                            .catch(() => {});
                     },
                     addBagistoAttribute() {
                         if (!this.newBagistoAttributes || !this.attributeType) {

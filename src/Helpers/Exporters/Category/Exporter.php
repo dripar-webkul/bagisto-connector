@@ -2,6 +2,7 @@
 
 namespace Webkul\Bagisto\Helpers\Exporters\Category;
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Bagisto\Enums\Export\CacheType;
@@ -30,46 +31,29 @@ class Exporter extends BaseExporter
 
     public const ENTITY_TYPE = 'category';
 
-    /*
-     * For exporting file
-     */
     protected bool $exportsFile = false;
 
+    protected array $credential = [];
+
+    protected array $mappingFields = [];
+
+    protected array $jobFilters = [];
+
     /**
-     * Current crenetial.
+     * Active UnoPim category fields, as a Collection once loaded from the
+     * repository and an array when restored from cache.
      *
-     * @var array
-     */
-    protected $credential = [];
-
-    /**
-     * @var array
-     */
-    protected $mappingFields = [];
-
-    /**
-     * @var array
-     */
-    protected $jobFilters = [];
-
-    /**
-     * @var array
+     * @var Collection|array
      */
     protected $categoryFields = [];
 
-    /**
-     * @var array
-     */
-    protected $storeSlug = [];
+    protected array $storeSlug = [];
 
     /**
      * Memoised fallback list of Bagisto filterable attribute IDs.
      */
     protected ?array $defaultFilterableAttributeIds = null;
 
-    /**
-     * Create a new instance of the exporter.
-     */
     public function __construct(
         protected JobTrackBatchRepository $exportBatchRepository,
         protected FileExportFileBuffer $exportFileBuffer,
@@ -81,12 +65,7 @@ class Exporter extends BaseExporter
         parent::__construct($exportBatchRepository, $exportFileBuffer, $categoryFieldRepository);
     }
 
-    /**
-     * Initializes the data for the export process.
-     *
-     * @return void
-     */
-    public function initialize()
+    public function initialize(): void
     {
         $this->initializeCredential($this->getFilters());
 
@@ -99,10 +78,8 @@ class Exporter extends BaseExporter
 
     /**
      * Initializes categoryFields for the export process.
-     *
-     * @return void
      */
-    public function initializeCategoryFields()
+    public function initializeCategoryFields(): void
     {
         $this->categoryFields = Cache::get(CacheType::UNOPIM_CATEGORY_FIELDS->value, []);
         if (empty($this->categoryFields)) {
@@ -114,16 +91,13 @@ class Exporter extends BaseExporter
 
     /**
      * Initializes mappingField for the export process.
-     *
-     * @return void
      */
-    public function initializeMappingFields()
+    public function initializeMappingFields(): void
     {
         $this->mappingFields = Cache::get(CacheType::CATEGORY_FIELD_MAPPING->value, []);
         if (empty($this->mappingFields)) {
             $mapping = $this->categoryFieldMappingRepository->findByField('section', 'standard_field')->first();
 
-            // ensure we always have an object with expected properties to avoid null pointer errors
             if (! $mapping) {
                 $mapping = (object) [
                     'mapped_value' => [],
@@ -148,7 +122,6 @@ class Exporter extends BaseExporter
         if (empty($this->jobFilters)) {
             $filters = $this->getFilters();
 
-            // defaults to avoid undefined variable notices
             $filtersLocales = [];
             $exportBagistoChannel = [];
             $exportBagistoLocales = [];
@@ -192,9 +165,6 @@ class Exporter extends BaseExporter
         }
     }
 
-    /**
-     * Start the export process
-     */
     public function exportBatch(JobTrackBatchContract $batch, $filePath): bool
     {
         $this->initialize();
@@ -214,18 +184,18 @@ class Exporter extends BaseExporter
     /**
      * {@inheritdoc}
      */
-    protected function getResults()
+    protected function getResults(): ?\Iterator
     {
         $filters = $this->getFilters();
         if (! empty($filters['code'])) {
 
-            return $this->source->whereIn('code', $this->convertCommaSeparatedToArray($filters['code']))->orderBy('parent_id')->with('parent_category')->get()?->getIterator();
+            return $this->source->whereIn('code', $this->parseIdentifiers($filters['code']))->orderBy('parent_id')->with('parent_category')->get()?->getIterator();
         }
 
         return $this->source->orderBy('parent_id')->with('parent_category')->all()?->getIterator();
     }
 
-    public function write($items, $batchId)
+    public function write($items, $batchId): void
     {
         foreach ($items as $item) {
             $id = $item['id'];
@@ -464,7 +434,7 @@ class Exporter extends BaseExporter
             'id'       => $rowData['id'],
             'code'     => $rowData['code'],
             'name'     => $rowData['name'] ?? $rowData['code'],
-            'locale'   => $bagistoLocale ?? 'all',
+            'locale'   => $bagistoLocale,
             'position' => 1,
         ], $additionalData, $attributes);
 
@@ -521,7 +491,7 @@ class Exporter extends BaseExporter
         return $this->defaultFilterableAttributeIds = $ids;
     }
 
-    public function getParentId($id = null)
+    public function getParentId($id = null): ?string
     {
         if (! empty($id)) {
             $mapData = $this->getMapping($this->credential['id'], $id);
@@ -597,7 +567,7 @@ class Exporter extends BaseExporter
         return $item;
     }
 
-    protected function getExistingFilePath($field, $additionalData)
+    protected function getExistingFilePath($field, $additionalData): ?string
     {
         $existingFilePath = $additionalData[$field->code] ?? null;
         if ($existingFilePath && Storage::exists($existingFilePath)) {

@@ -8,10 +8,8 @@ class CredentialUpdateRequest extends FormRequest
 {
     /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             'shop_url'            => ['required', 'url', 'unique:wk_bagisto_credential,shop_url,'.$this->id],

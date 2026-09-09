@@ -7,7 +7,7 @@ use Webkul\Bagisto\Enums\Export\CacheType;
 
 class Export
 {
-    public function afterUpdate($export)
+    public function afterUpdate($export): void
     {
         $types = [
             'bagisto_product',
@@ -17,7 +17,6 @@ class Export
         ];
 
         if (in_array($export->entity_type, $types)) {
-            // if exist in cache then remove from cache
             Cache::forget(CacheType::CREDENTIAL->value);
             Cache::forget(CacheType::PRODUCT_JOB_FILTERS->value);
             Cache::forget(CacheType::CATEGORY_JOB_FILTERS->value);

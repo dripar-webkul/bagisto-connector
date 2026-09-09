@@ -9,6 +9,9 @@ use Webkul\Attribute\Repositories\AttributeOptionRepository;
 use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Attribute\Rules\AttributeTypes;
 use Webkul\Bagisto\Enums\Export\CacheType;
+use Webkul\Bagisto\Enums\Export\JobFilter;
+use Webkul\Bagisto\Enums\Export\ProductFilter as BagistoProductFilter;
+use Webkul\Bagisto\Enums\Export\ProductType;
 use Webkul\Bagisto\Enums\Services\MethodType;
 use Webkul\Bagisto\Repositories\AttributeMappingRepository;
 use Webkul\Bagisto\Repositories\BagistoDataMapping;
@@ -21,12 +24,15 @@ use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Category\Validator\FieldValidator;
 use Webkul\Core\Repositories\ChannelRepository;
 use Webkul\DataTransfer\Contracts\JobTrackBatch as JobTrackBatchContract;
+use Webkul\DataTransfer\Enums\ProductFilter;
 use Webkul\DataTransfer\Helpers\Export;
 use Webkul\DataTransfer\Helpers\Exporters\Product\Exporter as AbstractExporter;
+use Webkul\DataTransfer\Helpers\Formatters\ScopeFilterValue;
 use Webkul\DataTransfer\Helpers\Sources\Export\ProductSource;
 use Webkul\DataTransfer\Jobs\Export\File\FlatItemBuffer as FileExportFileBuffer;
 use Webkul\DataTransfer\Repositories\JobTrackBatchRepository;
 use Webkul\Product\Repositories\ProductRepository;
+use Webkul\Product\Services\VariantValueResolver;
 
 class Exporter extends AbstractExporter
 {
@@ -37,13 +43,15 @@ class Exporter extends AbstractExporter
 
     protected const ENTITY_TYPE = 'bulk_product';
 
-    protected const VARIANT = 'variant';
-
-    protected const VARIANT_GROUP = 'variant_group';
-
     protected const MEASUREMENT_ATTRIBUTE_TYPE = 'measurement';
 
     protected const NON_INHERITABLE_FIELDS = ['sku', 'url_key'];
+
+    /**
+     * Columns the batch cursor carries. The rest of each product is loaded
+     * per batch, so the cursor stays small on catalogue-wide exports.
+     */
+    protected const CURSOR_COLUMNS = ['id', 'sku', 'type', 'parent_id'];
 
     /**
      * UnoPim bounds a variant tree at two axes (variant_structure_axes.level is
@@ -53,46 +61,27 @@ class Exporter extends AbstractExporter
 
     public const BATCH_SIZE = 100;
 
-    /*
-     * For check initialization
-     */
     protected bool $initialized = false;
 
-    /*
-     * For exporting file
+    /**
+     * Bagisto is fed over the API, so the abstract exporter's file writing
+     * stays off.
      */
     protected bool $exportsFile = false;
 
-    /*
-     * For mappingAttributes
-     */
     protected array $mappingAttributes = [];
 
-    /**
-     * Current crenetial.
-     *
-     * @var array
-     */
-    protected $credential = [];
+    protected array $credential = [];
+
+    protected array $jobFilters = [];
+
+    protected array $urlKey = [];
 
     /**
-     * @var array
+     * @var array<string, bool> SKU => whether the product still exists.
      */
-    protected $attributes = [];
+    protected array $knownSkus = [];
 
-    /**
-     * @var array
-     */
-    protected $jobFilters = [];
-
-    /**
-     * @var array
-     */
-    protected $urlKey = [];
-
-    /**
-     * Create a new instance of the exporter.
-     */
     public function __construct(
         protected JobTrackBatchRepository $exportBatchRepository,
         protected FileExportFileBuffer $exportFileBuffer,
@@ -109,9 +98,6 @@ class Exporter extends AbstractExporter
         parent::__construct($exportBatchRepository, $exportFileBuffer, $channelRepository, $attributeRepository, $productSource);
     }
 
-    /**
-     * Initializes the data for the export process.
-     */
     public function initialize(): void
     {
         $this->initializeCredential($this->getFilters());
@@ -119,12 +105,7 @@ class Exporter extends AbstractExporter
         $this->initializeJobFilters();
     }
 
-    /**
-     * Initializes mappingAttribute for the export process.
-     *
-     * @return void
-     */
-    public function initializeMappingAttributes()
+    public function initializeMappingAttributes(): void
     {
         $this->mappingAttributes = Cache::get(CacheType::ATTRIBUTE_MAPPING->value, []);
         if (empty($this->mappingAttributes)) {
@@ -137,20 +118,15 @@ class Exporter extends AbstractExporter
         }
     }
 
-    /**
-     * Initializes Job Filters for the export process.
-     *
-     * @return void
-     */
-    public function initializeJobFilters()
+    public function initializeJobFilters(): void
     {
         $this->jobFilters = Cache::get(CacheType::PRODUCT_JOB_FILTERS->value, []);
 
         if (empty($this->jobFilters)) {
             $filters = $this->getFilters();
 
-            $filtersChannels = ! empty($filters['channel']) ? explode(',', $filters['channel']) : [];
-            $filtersLocales = ! empty($filters['locale']) ? explode(',', $filters['locale']) : [];
+            $filtersChannels = ScopeFilterValue::toCodes($filters[BagistoProductFilter::CHANNEL->value] ?? null);
+            $filtersLocales = ScopeFilterValue::toCodes($filters[BagistoProductFilter::LOCALE->value] ?? null);
 
             $bagistoChannels = $this->getMappedChannels();
             $bagistoLocales = $this->getMappedLocales();
@@ -173,18 +149,16 @@ class Exporter extends AbstractExporter
             }
 
             $this->jobFilters = [
-                'withMedia' => $filters['with_media'] ?? false,
-                'channel'   => $mappedBagistoChannels,
-                'locales'   => $exportBagistoLocales,
+                JobFilter::WITH_MEDIA->value        => $filters[BagistoProductFilter::WITH_MEDIA->value] ?? false,
+                JobFilter::WITH_ASSOCIATIONS->value => $filters[BagistoProductFilter::WITH_ASSOCIATIONS->value] ?? false,
+                JobFilter::CHANNEL->value           => $mappedBagistoChannels,
+                JobFilter::LOCALES->value           => $exportBagistoLocales,
             ];
 
             Cache::put(CacheType::PRODUCT_JOB_FILTERS->value, $this->jobFilters, config('session.lifetime'));
         }
     }
 
-    /**
-     * Start the export process
-     */
     public function exportBatch(JobTrackBatchContract $batch, $filePath): bool
     {
         if (! $this->initialized) {
@@ -196,64 +170,34 @@ class Exporter extends AbstractExporter
 
         $this->write($preparedData, $batch->id);
 
-        /**
-         * Update export batch process state summary
-         */
         $this->updateBatchState($batch->id, Export::STATE_PROCESSED);
 
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function getResults(): CollectionCursor
     {
-        $filters = $this->getFilters();
+        $query = $this->source->newQuery();
 
-        $query = $this->source->with(['attribute_family', 'parent', 'super_attributes', 'variants']);
+        resolve(ProductExportFilter::class)->applyToQuery($query, $this->prepareFilters());
 
-        if (! empty($filters['sku'])) {
-            $query->whereIn('sku', $this->convertCommaSeparatedToArray($filters['sku']));
-        }
+        $products = $query->get(self::CURSOR_COLUMNS);
 
-        if (! empty($filters['type'])) {
-            $query->whereIn('type', $this->convertCommaSeparatedToArray($filters['type']));
-        }
-
-        if (! empty($filters['family'])) {
-            $familyIds = \DB::table('attribute_families')
-                ->whereIn('code', $this->convertCommaSeparatedToArray($filters['family']))
-                ->pluck('id')
-                ->toArray();
-
-            if (! empty($familyIds)) {
-                $query->whereIn('attribute_family_id', $familyIds);
-            }
-        }
-
-        if (! empty($filters['status']) && $filters['status'] !== 'all') {
-            $status = ($filters['status'] == 't') ? 1 : 0;
-            $query->where('status', $status);
-        }
-
-        $products = $query->get(['id', 'sku', 'type', 'parent_id']);
-
-        $parentIds = $products->where('type', 'configurable')->pluck('id')->filter()->all();
+        $parentIds = $products->where('type', ProductType::CONFIGURABLE->value)->pluck('id')->filter()->all();
         $descendants = collect();
         $depth = 0;
 
         while (! empty($parentIds) && $depth++ < self::MAX_VARIANT_DEPTH) {
             $children = $this->productRepository
                 ->whereIn('parent_id', $parentIds)
-                ->get(['id', 'sku', 'type', 'parent_id']);
+                ->get(self::CURSOR_COLUMNS);
 
             if ($children->isEmpty()) {
                 break;
             }
 
             $descendants = $descendants->concat($children);
-            $parentIds = $children->where('type', self::VARIANT_GROUP)->pluck('id')->filter()->all();
+            $parentIds = $children->where('type', ProductType::VARIANT_GROUP->value)->pluck('id')->filter()->all();
         }
 
         if ($descendants->isNotEmpty()) {
@@ -261,6 +205,16 @@ class Exporter extends AbstractExporter
         }
 
         return new CollectionCursor($this->orderFamiliesContiguously($products)->toArray());
+    }
+
+    protected function prepareFilters(): array
+    {
+        $filters = $this->getFilters();
+
+        $filters[ProductFilter::UPDATED_AFTER->value] = $this->resolveUpdatedAfter($filters);
+        $filters[ProductFilter::UPDATED_BEFORE->value] = $this->resolveUpdatedBefore($filters);
+
+        return $filters;
     }
 
     /**
@@ -411,12 +365,18 @@ class Exporter extends AbstractExporter
             ->whereIn('sku', $skus)
             ->get();
 
+        $resolvedValues = resolve(VariantValueResolver::class)->resolveBatch($allProducts);
+
         foreach ($allProducts as $productModel) {
             $rowData = $productModel->toArray();
-            $rowData['values'] = $productModel->values ?? [];
+            $ownValues = $productModel->values ?? [];
+            $rowData['values'] = $this->keepOwnIdentityFields(
+                $resolvedValues[$productModel->id] ?? $ownValues,
+                $ownValues
+            );
 
             if (! $this->isExportableType($rowData)) {
-                if ($rowData['type'] === self::VARIANT_GROUP) {
+                if ($rowData['type'] === ProductType::VARIANT_GROUP->value) {
                     $this->jobLogger?->info("Product {$rowData['sku']}: variant group flattened into its variants.");
                 } else {
                     $this->skippedItemsCount++;
@@ -428,12 +388,12 @@ class Exporter extends AbstractExporter
 
             $builtForRow = 0;
 
-            foreach ($this->jobFilters['channel'] as $bagistoChannel => $unoPimChannel) {
-                if (! isset($this->jobFilters['locales'][$bagistoChannel])) {
+            foreach ($this->jobFilters[JobFilter::CHANNEL->value] as $bagistoChannel => $unoPimChannel) {
+                if (! isset($this->jobFilters[JobFilter::LOCALES->value][$bagistoChannel])) {
                     continue;
                 }
 
-                foreach ($this->jobFilters['locales'][$bagistoChannel] as $bagistoLocale => $unoPimLocale) {
+                foreach ($this->jobFilters[JobFilter::LOCALES->value][$bagistoChannel] as $bagistoLocale => $unoPimLocale) {
                     $products[] = $this->processProductRow($rowData, $unoPimLocale, $bagistoLocale, $unoPimChannel, $bagistoChannel);
                     $builtForRow++;
                 }
@@ -453,7 +413,7 @@ class Exporter extends AbstractExporter
                     return 0;
                 }
 
-                return ($a['type'] === 'simple') ? -1 : 1;
+                return ($a['type'] === ProductType::SIMPLE->value) ? -1 : 1;
             }
 
             return strcmp($baseSkuA, $baseSkuB);
@@ -475,24 +435,24 @@ class Exporter extends AbstractExporter
         }
 
         return array_merge(
-            $this->getFormatedProductData($rowData, $unoPimLocale, $bagistoLocale, $unoPimChannel, $bagistoChannel, $this->jobFilters['withMedia']),
+            $this->getFormatedProductData($rowData, $unoPimLocale, $bagistoLocale, $unoPimChannel, $bagistoChannel, $this->jobFilters[JobFilter::WITH_MEDIA->value]),
             $simple ?? $config ?? $variants
         );
     }
 
     private function isSimpleProductWithoutParent(array $rowData): bool
     {
-        return $rowData['type'] === 'simple' && empty($rowData['parent']);
+        return $rowData['type'] === ProductType::SIMPLE->value && empty($rowData['parent']);
     }
 
     private function isConfigurableProduct(array $rowData): bool
     {
-        return $rowData['type'] === 'configurable' && ! empty($rowData['super_attributes']);
+        return $rowData['type'] === ProductType::CONFIGURABLE->value && ! empty($rowData['super_attributes']);
     }
 
     private function isSimpleProductWithParent(array $rowData): bool
     {
-        return $rowData['type'] === 'simple' && ! empty($rowData['parent']);
+        return $rowData['type'] === ProductType::SIMPLE->value && ! empty($rowData['parent']);
     }
 
     private function isExportableType(array $rowData): bool
@@ -509,8 +469,6 @@ class Exporter extends AbstractExporter
         $mergedFields = $this->mergeAllFields($item, $locale, $channel, $withMedia);
 
         $this->mapAttributesToBagisto($mergedFields);
-
-        $this->inheritRequiredFieldsFromParent($mergedFields, $item, $locale, $channel, $withMedia);
 
         $this->applyFixedValues($mergedFields, $item['parent'] ?? null);
 
@@ -587,36 +545,33 @@ class Exporter extends AbstractExporter
         }
     }
 
-    private function inheritRequiredFieldsFromParent(array &$mergedFields, array $item, string $locale, string $channel, bool $withMedia): void
+    /**
+     * Core resolves a variant's values across its whole ancestor chain, which
+     * would also carry a parent's identity fields down to every child. Bagisto
+     * treats sku and url_key as unique, so those stay whatever the product
+     * itself declares, and are dropped when it declares none.
+     */
+    private function keepOwnIdentityFields(array $resolved, array $own): array
     {
-        $missing = array_values(array_filter(
-            $this->getRequiredBagistoFields(),
-            fn ($code) => ! in_array($code, self::NON_INHERITABLE_FIELDS, true)
-                && (! isset($mergedFields[$code]) || $mergedFields[$code] === '' || $mergedFields[$code] === null)
-        ));
+        foreach ($resolved as $key => $value) {
+            if (is_array($value)) {
+                $resolved[$key] = $this->keepOwnIdentityFields($value, is_array($own[$key] ?? null) ? $own[$key] : []);
 
-        if ($missing === []) {
-            return;
-        }
-
-        $ancestor = $item['parent'] ?? null;
-        $hops = 0;
-
-        while (! empty($ancestor) && is_array($ancestor) && $missing !== [] && $hops++ <= self::MAX_VARIANT_DEPTH) {
-            $ancestorFields = $this->mergeAllFields($ancestor, $locale, $channel, $withMedia);
-
-            $this->mapAttributesToBagisto($ancestorFields);
-
-            foreach ($missing as $index => $code) {
-                if (isset($ancestorFields[$code]) && $ancestorFields[$code] !== '' && $ancestorFields[$code] !== null) {
-                    $mergedFields[$code] = $ancestorFields[$code];
-
-                    unset($missing[$index]);
-                }
+                continue;
             }
 
-            $ancestor = $ancestor['parent'] ?? null;
+            if (! in_array($key, self::NON_INHERITABLE_FIELDS, true)) {
+                continue;
+            }
+
+            if (array_key_exists($key, $own)) {
+                $resolved[$key] = $own[$key];
+            } else {
+                unset($resolved[$key]);
+            }
         }
+
+        return $resolved;
     }
 
     private function getRequiredBagistoFields(): array
@@ -653,7 +608,10 @@ class Exporter extends AbstractExporter
 
     private function applyAssociationsAndCategories(array $item, array &$mergedFields): void
     {
-        $this->getAssociationsData($item, $mergedFields);
+        if (! empty($this->jobFilters[JobFilter::WITH_ASSOCIATIONS->value])) {
+            $this->getAssociationsData($item, $mergedFields);
+        }
+
         $this->getCategoryFormatData($item, $mergedFields);
     }
 
@@ -676,7 +634,7 @@ class Exporter extends AbstractExporter
         return $formatData;
     }
 
-    protected function createConfigurableVariantProductDataFormat($item)
+    protected function createConfigurableVariantProductDataFormat($item): array
     {
         $formatData = $this->createSimpleProductDataFormat($item);
 
@@ -756,7 +714,7 @@ class Exporter extends AbstractExporter
                 array_intersect_key($this->getCommonFields($child), array_flip($axisCodes))
             );
 
-            if (($child['type'] ?? null) !== self::VARIANT_GROUP) {
+            if (($child['type'] ?? null) !== ProductType::VARIANT_GROUP->value) {
                 $leaves[] = ['sku' => $child['sku'] ?? '(no sku)', 'axes' => $axes];
 
                 continue;
@@ -866,20 +824,28 @@ class Exporter extends AbstractExporter
 
     protected function getAssociationsFormat(array $item, string $type): ?string
     {
-        $associations = [];
-        $newAssociations = null;
-        if ($association = $this->getAssociations($item, $type)) {
-            $products = explode(',', $association);
-            foreach ($products as $sku) {
-                $productData = $this->productRepository->where('sku', $sku)->first();
-                if ($productData) {
-                    $associations[] = $productData->sku;
-                }
-            }
-            $newAssociations = implode(',', $associations);
+        $association = $this->getAssociations($item, $type);
+
+        if (! $association) {
+            return null;
         }
 
-        return $newAssociations;
+        return implode(',', $this->resolveExistingSkus($this->parseIdentifiers($association)));
+    }
+
+    protected function resolveExistingSkus(array $skus): array
+    {
+        $unresolved = array_values(array_diff($skus, array_keys($this->knownSkus)));
+
+        if ($unresolved !== []) {
+            $found = array_flip($this->productRepository->whereIn('sku', $unresolved)->pluck('sku')->all());
+
+            foreach ($unresolved as $sku) {
+                $this->knownSkus[$sku] = isset($found[$sku]);
+            }
+        }
+
+        return array_values(array_filter($skus, fn (string $sku): bool => $this->knownSkus[$sku]));
     }
 
     protected function getExistingFilePath(string $mediaPath): ?string

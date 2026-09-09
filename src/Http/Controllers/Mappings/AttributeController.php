@@ -5,6 +5,7 @@ namespace Webkul\Bagisto\Http\Controllers\Mappings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\View\View;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Attribute\Repositories\AttributeFamilyRepository;
 use Webkul\Attribute\Repositories\AttributeRepository;
@@ -20,7 +21,7 @@ class AttributeController extends Controller
         protected AttributeMappingRepository $attributeMappingRepository,
     ) {}
 
-    public function index()
+    public function index(): View
     {
         $bagistoAttributes = config('bagisto-attributes');
 
@@ -52,10 +53,8 @@ class AttributeController extends Controller
     public function storeOrUpdate(StandardAttributeRequest $request): JsonResponse
     {
         try {
-            // Format the data for attribute mapping
             $formatedData = $this->setFormatForMapping(request()->all());
 
-            // Check if standard attribute mapping exists, update if exists, otherwise create a new one
             $standardAttributes = $this->attributeMappingRepository->findByField('section', 'standard_attribute')->first();
 
             if (! empty($formatedData['standard_attribute']['fixed_value'])) {
@@ -68,15 +67,12 @@ class AttributeController extends Controller
                 $this->attributeMappingRepository->create($formatedData['standard_attribute']);
             }
 
-            // if exist in cache then remove from cache
             Cache::forget(CacheType::ATTRIBUTE_MAPPING->value);
 
-            // Return a success response
             return new JsonResponse([
                 'message' => trans('bagisto::app.bagisto.bagisto-attributes.success-message'),
             ], 201);
         } catch (\Exception $e) {
-            // Return an error response
             return new JsonResponse([
                 'message' => $e->getMessage(),
             ], 400);
@@ -113,7 +109,7 @@ class AttributeController extends Controller
         return $formatedData;
     }
 
-    public function addAdditionalAttributes(Request $request)
+    public function addAdditionalAttributes(Request $request): JsonResponse
     {
         $data = $request->validate([
             'code' => 'required|string',
@@ -155,7 +151,7 @@ class AttributeController extends Controller
         return response()->json(['message' => 'Attribute added successfully.']);
     }
 
-    public function removeAdditionalAttributes(Request $request)
+    public function removeAdditionalAttributes(Request $request): void
     {
         $additionalAttributeObj = $this->attributeMappingRepository->findByField('section', 'additional_attribute')->first();
         if ($additionalAttributeObj) {

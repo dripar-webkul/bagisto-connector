@@ -9,7 +9,7 @@ class StandardFieldRequest extends FormRequest
     /**
      * Prepare data before validation.
      */
-    protected function prepareForValidation()
+    protected function prepareForValidation(): void
     {
         if ($this->has('standard_category_fields')) {
             $decoded = json_decode($this->input('standard_category_fields'), true);
@@ -26,7 +26,7 @@ class StandardFieldRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      */
-    public function rules()
+    public function rules(): array
     {
         $bagistoFields = config('bagisto-category-fields');
 

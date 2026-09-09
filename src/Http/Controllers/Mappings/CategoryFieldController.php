@@ -4,6 +4,7 @@ namespace Webkul\Bagisto\Http\Controllers\Mappings;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\View\View;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Bagisto\Enums\Export\CacheType;
 use Webkul\Bagisto\Http\Requests\StandardFieldRequest;
@@ -17,7 +18,7 @@ class CategoryFieldController extends Controller
         protected CategoryFieldMappingRepository $categoryFieldMappingRepository,
     ) {}
 
-    public function index()
+    public function index(): View
     {
         $bagistoCategoryFields = config('bagisto-category-fields');
 
@@ -36,10 +37,8 @@ class CategoryFieldController extends Controller
     public function storeOrUpdate(StandardFieldRequest $request): JsonResponse
     {
         try {
-            // Format the data for attribute mapping
             $formatedData = $this->setFormatForMapping(request()->all());
 
-            // Check if standard attribute mapping exists, update if exists, otherwise create a new one
             $standardAttributes = $this->categoryFieldMappingRepository->findByField('section', 'standard_field')->first();
 
             if (! empty($formatedData['standard_field']['fixed_value'])) {
@@ -51,14 +50,12 @@ class CategoryFieldController extends Controller
                 $this->categoryFieldMappingRepository->create($formatedData['standard_field']);
             }
 
-            // if exist in cache then remove from cache
             Cache::forget(CacheType::CATEGORY_FIELD_MAPPING->value);
 
             return new JsonResponse([
                 'message' => trans('bagisto::app.bagisto.bagisto-category-fields.success-message'),
             ], 201);
         } catch (\Exception $e) {
-            // Return an error response
             return new JsonResponse([
                 'message' => $e->getMessage(),
             ], 400);

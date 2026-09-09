@@ -32,7 +32,7 @@ class CredentialController extends Controller
      *
      * @return View
      */
-    public function index()
+    public function index(): View|JsonResponse
     {
         if (request()->ajax()) {
             return app(CredentialDataGrid::class)->toJson();
@@ -61,7 +61,6 @@ class CredentialController extends Controller
                 ->withPassword($requestData['password'])
                 ->make();
 
-            // Encrypt the password for secure storage
             $requestData['password'] = $this->encryptValue($requestData['password']);
 
             $responseData = $this->credentialRepository->create($requestData);
@@ -80,11 +79,10 @@ class CredentialController extends Controller
     /**
      * Display the specified resource for editing.
      *
-     * @return View
      *
      * @throws ModelNotFoundException If the credential with the given ID is not found.
      */
-    public function edit(int $id)
+    public function edit(int $id): View
     {
         $credential = $this->credentialRepository->find($id);
 
@@ -156,14 +154,12 @@ class CredentialController extends Controller
             'store_info',
         ]);
 
-        // Encrypt password for storage
         $requestData['password'] = $this->encryptValue($password);
         $requestData['store_info'] = $this->sanitizeStoreInfo($requestData['store_info'] ?? []);
         $requestData = array_merge($requestData, $additional);
 
         $this->credentialRepository->update($requestData, $id);
 
-        // if exist in cache then remove from cache
         Cache::forget(CacheType::CREDENTIAL->value);
         Cache::forget(CacheType::PRODUCT_JOB_FILTERS->value);
         Cache::forget(CacheType::CATEGORY_JOB_FILTERS->value);
@@ -199,7 +195,7 @@ class CredentialController extends Controller
         return $clean;
     }
 
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
         $this->credentialRepository->delete($id);
 

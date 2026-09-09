@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Webkul\Bagisto\Services;
 
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -23,7 +25,7 @@ final class ApiService implements ApiServiceContract
         private Headers $headers,
     ) {}
 
-    public function setBaseUri(string $baseUri)
+    public function setBaseUri(string $baseUri): self
     {
         $this->baseUri = $baseUri;
 
@@ -33,7 +35,7 @@ final class ApiService implements ApiServiceContract
     /**
      * Creates a new Psr 7 Request instance.
      */
-    public function toRequest(string $method, string $endpoint, array $payload = [], array $options = [])
+    public function toRequest(string $method, string $endpoint, array $payload = [], array $options = []): array
     {
         [$uri, $contentType] = $this->buildUri($endpoint, $options);
 
@@ -69,7 +71,7 @@ final class ApiService implements ApiServiceContract
         return $responseData['data'] ?? [];
     }
 
-    private function sendRequest($method, $uri, $headers, $payload, $options)
+    private function sendRequest($method, $uri, $headers, $payload, $options): Response
     {
         $isMultipart = ! empty($options['isMultipart']) ? true : false;
         $request = $this->initializeRequest($headers, $options['timeout'] ?? 120, $isMultipart);
@@ -83,7 +85,7 @@ final class ApiService implements ApiServiceContract
         return $this->executeRequest($request, $method, $uri, $payload);
     }
 
-    private function initializeRequest($headers, $timeout, $isMultipart)
+    private function initializeRequest($headers, $timeout, $isMultipart): PendingRequest
     {
         $request = Http::withoutVerifying()->withHeaders($headers->toArray())->timeout($timeout);
         if ($isMultipart) {
@@ -105,7 +107,7 @@ final class ApiService implements ApiServiceContract
         }
     }
 
-    private function preparePayload($payload, $options, $isMultipart)
+    private function preparePayload($payload, $options, $isMultipart): array
     {
         $item = [];
         if (! isset($payload['_method']) || ! $isMultipart) {
@@ -150,7 +152,7 @@ final class ApiService implements ApiServiceContract
         }
     }
 
-    private function executeRequest($request, $method, $uri, $payload)
+    private function executeRequest($request, $method, $uri, $payload): Response
     {
         try {
             return $request->$method($uri, $payload);
@@ -163,7 +165,7 @@ final class ApiService implements ApiServiceContract
         }
     }
 
-    private function buildUri(string $endpoint, $options)
+    private function buildUri(string $endpoint, $options): array
     {
         $apiEndPointConfig = config('bagisto-api-end-point');
 

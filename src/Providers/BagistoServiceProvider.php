@@ -59,7 +59,7 @@ class BagistoServiceProvider extends ServiceProvider
     /**
      * Register any application services
      */
-    public function register()
+    public function register(): void
     {
         $this->registerConfig();
 
@@ -72,7 +72,7 @@ class BagistoServiceProvider extends ServiceProvider
     /**
      * Register package configurations
      */
-    public function registerConfig()
+    public function registerConfig(): void
     {
         $this->mergeConfigFrom(dirname(__DIR__).'/Config/menu.php', 'menu.admin');
 

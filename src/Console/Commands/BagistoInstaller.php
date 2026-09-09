@@ -15,7 +15,7 @@ class BagistoInstaller extends Command
 
     protected $description = 'Install the Unopim Bagisto package';
 
-    public function handle()
+    public function handle(): void
     {
         $this->info('Installing Unopim Bagisto...');
 

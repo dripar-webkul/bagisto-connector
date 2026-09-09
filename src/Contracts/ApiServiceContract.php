@@ -12,5 +12,5 @@ interface ApiServiceContract
     /**
      * Sends a content request to a server.
      */
-    public function toRequest(string $method, string $endpoint, array $payload = [], array $options = []);
+    public function toRequest(string $method, string $endpoint, array $payload = [], array $options = []): array;
 }

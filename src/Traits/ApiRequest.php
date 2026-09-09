@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 use Webkul\Bagisto\Enums\Export\CacheType;
 use Webkul\Bagisto\Http\Client\HttpClientFactory;
+use Webkul\Bagisto\Services\ApiService;
 
 trait ApiRequest
 {
@@ -19,7 +20,7 @@ trait ApiRequest
      */
     protected array $lastApiErrors = [];
 
-    public function buildHttpRequest()
+    public function buildHttpRequest(): ApiService
     {
         $this->httpClient = Cache::get(CacheType::BAGISTO_API_HTTP->value);
         if (! $this->httpClient) {
@@ -35,7 +36,7 @@ trait ApiRequest
         return $this->httpClient;
     }
 
-    public function setApiRequest($method, $endPoint, $data = [], array $options = [])
+    public function setApiRequest($method, $endPoint, $data = [], array $options = []): ?array
     {
         $this->lastApiErrors = [];
 
@@ -61,6 +62,8 @@ trait ApiRequest
             $this->lastApiErrors = ['exception' => [$e->getMessage()]];
             $this->logWarning($this->lastApiErrors, $data['sku'] ?? $data['code'] ?? 'bulk');
         }
+
+        return null;
     }
 
     public function logWarning(array $data, string $identifier): void

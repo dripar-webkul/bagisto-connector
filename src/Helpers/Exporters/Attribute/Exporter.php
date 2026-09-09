@@ -32,31 +32,12 @@ class Exporter extends AbstractExporter
 
     public const GET_ENTITY_TYPE = 'getAttribute';
 
-    /*
-     * For exporting file
-     */
     protected bool $exportsFile = false;
 
-    /**
-     * Current crenetial.
-     *
-     * @var array
-     */
-    protected $credential = [];
+    protected array $credential = [];
 
-    /**
-     * @var array
-     */
-    protected $attributes = [];
+    protected array $additionalInfoValue = [];
 
-    /**
-     * @var array
-     */
-    protected $additionalInfoValue = [];
-
-    /**
-     * Create a new instance of the exporter.
-     */
     public function __construct(
         protected JobTrackBatchRepository $exportBatchRepository,
         protected FileExportFileBuffer $exportFileBuffer,
@@ -68,19 +49,14 @@ class Exporter extends AbstractExporter
         parent::__construct($exportBatchRepository, $exportFileBuffer);
     }
 
-    /**
-     * Initializes the data for the export process.
-     *
-     * @return void
-     */
-    public function initialize()
+    public function initialize(): void
     {
         $this->initializeCredential($this->getFilters());
 
         $this->additionalInfoValue = Cache::get(CacheType::ADDITIONAL_INFO->value, []);
     }
 
-    public function checkRequiredCondition()
+    public function checkRequiredCondition(): bool
     {
         if (empty($this->credential)) {
             $this->jobLogger->warning('Credential not found!');
@@ -91,9 +67,6 @@ class Exporter extends AbstractExporter
         return false;
     }
 
-    /**
-     * Start the export process
-     */
     public function exportBatch(JobTrackBatchContract $batch, $filePath): bool
     {
         $this->initialize();
@@ -117,7 +90,7 @@ class Exporter extends AbstractExporter
     /**
      * {@inheritdoc}
      */
-    protected function getResults()
+    protected function getResults(): \Iterator
     {
         $this->initialize();
 
@@ -140,7 +113,7 @@ class Exporter extends AbstractExporter
 
         if ($attributeCodes) {
             return $this->source->with('options')
-                ->whereIn('code', $this->convertCommaSeparatedToArray($attributeCodes))
+                ->whereIn('code', $this->parseIdentifiers($attributeCodes))
                 ->get()->getIterator();
         }
 
@@ -157,7 +130,7 @@ class Exporter extends AbstractExporter
         return $this->source->with('options')->all()->getIterator();
     }
 
-    public function write($items, $batchId)
+    public function write($items, $batchId): void
     {
         foreach ($items as $item) {
             $id = $item['id'];
@@ -253,7 +226,7 @@ class Exporter extends AbstractExporter
     /**
      * Prepare attributes from current batch
      */
-    public function prepareAttributes(JobTrackBatchContract $batch, mixed $filePath)
+    public function prepareAttributes(JobTrackBatchContract $batch, mixed $filePath): array
     {
         $attributes = [];
         $filters = $this->getFilters();
@@ -278,7 +251,7 @@ class Exporter extends AbstractExporter
         return $attributes;
     }
 
-    protected function getCommonFields($item, $locale)
+    protected function getCommonFields($item, $locale): array
     {
         $locale = array_flip($locale);
         unset($item['created_at'], $item['updated_at']);
