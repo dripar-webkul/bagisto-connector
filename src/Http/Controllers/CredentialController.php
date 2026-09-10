@@ -96,13 +96,15 @@ class CredentialController extends Controller
                 ->withEmail($credential->email)
                 ->withPassword($this->decryptValue($credential->password))
                 ->make();
+
+            if (in_array('toRequest', get_class_methods($httpClient))) {
+                $storeChannels = $httpClient->toRequest(MethodType::GET->value, EndPointType::GET_CHANNELS->value);
+                $storefilterableAttribtes = $httpClient->toRequest(MethodType::GET->value, EndPointType::GET_IS_FILTERABLE_ATTRIBUTES->value, ['is_filterable' => 1]);
+            } else {
+                $storeChannels = [];
+                $storefilterableAttribtes = [];
+            }
         } catch (\Exception $e) {
-            session()->flash('credential', trans('bagisto::app.bagisto.credentials.index.invalid'));
-        }
-        if (in_array('toRequest', get_class_methods($httpClient))) {
-            $storeChannels = $httpClient->toRequest(MethodType::GET->value, EndPointType::GET_CHANNELS->value);
-            $storefilterableAttribtes = $httpClient->toRequest(MethodType::GET->value, EndPointType::GET_IS_FILTERABLE_ATTRIBUTES->value, ['is_filterable' => 1]);
-        } else {
             $storeChannels = [];
             $storefilterableAttribtes = [];
         }

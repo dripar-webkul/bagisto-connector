@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'Channel ng UnoPim',
                 'unopim-locale'             => 'Wikang Pinagmulan ng UnoPim',
                 'credential'                => 'Kredensyal',
+                'server-down'               => 'Down ang Bagisto server ngayon; pakibago ang kredensyal o i-restart ang server.',
             ],
         ],
         'bagisto-attributes' => [

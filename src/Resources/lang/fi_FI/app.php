@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'UnoPim-kanava',
                 'unopim-locale'             => 'UnoPim-lähdealue',
                 'credential'                => 'Tunnistetieto',
+                'server-down'               => 'Bagisto-palvelin on tällä hetkellä alhaalla; päivitä tunnistetiedot tai käynnistä palvelin uudelleen.',
             ],
         ],
         'bagisto-attributes' => [

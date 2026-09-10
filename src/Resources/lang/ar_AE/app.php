@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'قناة UnoPim',
                 'unopim-locale'             => 'اللغة المحلية لـ UnoPim',
                 'credential'                => 'بيانات الاعتماد',
+                'server-down'               => 'خادم Bagisto متوقف الآن، يرجى تحديث بيانات الاعتماد أو إعادة تشغيل الخادم.',
             ],
         ],
         'bagisto-attributes' => [

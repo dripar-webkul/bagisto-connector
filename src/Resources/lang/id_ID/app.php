@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'Saluran UnoPim',
                 'unopim-locale'             => 'Bahasa Sumber UnoPim',
                 'credential'                => 'Kredensial',
+                'server-down'               => 'Server Bagisto sedang down sekarang, silakan perbarui kredensial atau restart server.',
             ],
         ],
         'bagisto-attributes' => [

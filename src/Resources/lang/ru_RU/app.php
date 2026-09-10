@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'Канал UnoPim',
                 'unopim-locale'             => 'Локализация UnoPim',
                 'credential'                => 'Реквизиты',
+                'server-down'               => 'Сервер Bagisto в данный момент недоступен. Пожалуйста, обновите учетные данные или перезапустите сервер.',
             ],
         ],
         'bagisto-attributes' => [

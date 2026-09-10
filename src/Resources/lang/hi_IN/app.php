@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'UnoPim चैनल',
                 'unopim-locale'             => 'UnoPim स्थान',
                 'credential'                => 'साख',
+                'server-down'               => 'Bagisto सर्वर अभी डाउन है, कृपया क्रेडेंशियल अपडेट करें या सर्वर को रीस्टार्ट करें।',
             ],
         ],
         'bagisto-attributes' => [

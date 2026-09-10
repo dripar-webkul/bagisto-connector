@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'UnoPim kanal',
                 'unopim-locale'             => 'UnoPim izvorna lokalizacija',
                 'credential'                => 'Vjerodajnica',
+                'server-down'               => 'Bagisto poslužitelj trenutno ne radi, ažurirajte vjerodajnice ili ponovno pokrenite poslužitelj.',
             ],
         ],
         'bagisto-attributes' => [

@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'UnoPim-Kanal',
                 'unopim-locale'             => 'UnoPim-Quellsprache',
                 'credential'                => 'Anmeldeinformationen',
+                'server-down'               => 'Der Bagisto-Server ist momentan ausgefallen. Bitte aktualisieren Sie die Zugangsdaten oder starten Sie den Server neu.',
             ],
         ],
         'bagisto-attributes' => [

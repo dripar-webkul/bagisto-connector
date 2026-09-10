@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'UnoPim 頻道',
                 'unopim-locale'             => 'UnoPim 語區',
                 'credential'                => '憑證',
+                'server-down'               => 'Bagisto 伺服器目前無法使用，請更新憑證或重新啟動伺服器。',
             ],
         ],
         'bagisto-attributes' => [

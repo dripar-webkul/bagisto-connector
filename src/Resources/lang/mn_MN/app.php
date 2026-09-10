@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'UnoPim суваг',
                 'unopim-locale'             => 'UnoPim хэл орон нутгийн тохиргоо',
                 'credential'                => 'Итгэмжлэл',
+                'server-down'               => 'Bagisto сервер одоогоор ажиллахгүй байна, нэвтрэх мэдээллийг шинэчилж эсвэл серверийг дахин эхлүүлнэ үү.',
             ],
         ],
         'bagisto-attributes' => [

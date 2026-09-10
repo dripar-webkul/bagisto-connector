@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'UnoPim-kanaal',
                 'unopim-locale'             => 'UnoPim-taal',
                 'credential'                => 'Gegevens',
+                'server-down'               => 'De Bagisto-server is momenteel niet bereikbaar; werk de inloggegevens bij of herstart de server.',
             ],
         ],
         'bagisto-attributes' => [

@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'Canal UnoPim',
                 'unopim-locale'             => 'Localização UnoPim',
                 'credential'                => 'Credencial',
+                'server-down'               => 'O servidor Bagisto está indisponível neste momento; atualize as credenciais ou reinicie o servidor.',
             ],
         ],
         'bagisto-attributes' => [

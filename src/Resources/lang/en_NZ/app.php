@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'UnoPim Channel',
                 'unopim-locale'             => 'UnoPim Locale',
                 'credential'                => 'Credential',
+                'server-down'               => 'Bagisto Server is down now, please update the credential or restart the server.',
             ],
         ],
         'bagisto-attributes' => [

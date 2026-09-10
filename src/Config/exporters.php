@@ -15,82 +15,143 @@ use Webkul\DataTransfer\Enums\ProductFilter;
 use Webkul\DataTransfer\Enums\TimeCondition;
 use Webkul\Product\Repositories\ProductRepository;
 
-$credentialsField = [
-    'name'       => BagistoProductFilter::CREDENTIALS->value,
-    'title'      => 'bagisto::app.exporters.bagisto.credentials',
-    'required'   => true,
-    'validation' => 'required',
-    'type'       => 'select',
-    'async'      => true,
-    'track_by'   => 'id',
-    'label_by'   => 'shop_url',
-    'list_route' => 'bagisto.credential.fetch-all',
-];
-
-$channelField = [
-    'name'       => BagistoProductFilter::CHANNEL->value,
-    'title'      => 'bagisto::app.exporters.bagisto.channel',
-    'required'   => true,
-    'validation' => 'required',
-    'type'       => 'select',
-    'async'      => true,
-    'track_by'   => 'code',
-    'label_by'   => 'name',
-    'list_route' => 'bagisto.channel.fetch-all',
-];
-
-$localeField = [
-    'name'       => BagistoProductFilter::LOCALE->value,
-    'title'      => 'bagisto::app.exporters.bagisto.locale',
-    'required'   => true,
-    'validation' => 'required',
-    'type'       => 'multiselect',
-    'async'      => true,
-    'track_by'   => 'code',
-    'label_by'   => 'name',
-    'list_route' => 'bagisto.locale.fetch-all',
-];
-
-$codeField = [
-    'name'     => BagistoProductFilter::CODE->value,
-    'title'    => 'bagisto::app.exporters.bagisto.code',
-    'required' => false,
-    'type'     => 'tags',
-];
-
-/**
- * Category, attribute and attribute family exports all take the same scope plus
- * an optional code list, so they share one field set.
- */
-$scopedCodeFilters = [
-    'fields' => [$credentialsField, $channelField, $localeField, $codeField],
-];
-
-$visibleWhenTimeConditionIs = fn (TimeCondition $condition): array => [
-    'field'  => ProductFilter::TIME_CONDITION->value,
-    'values' => [$condition->value],
-];
-
 return [
     'bagisto_categories' => [
         'title'    => 'bagisto::app.exporters.bagisto.category',
         'exporter' => CategoryExporter::class,
         'source'   => CategoryRepository::class,
-        'filters'  => $scopedCodeFilters,
+        'filters'  => [
+            'fields' => [
+                [
+                    'name'       => BagistoProductFilter::CREDENTIALS->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.credentials',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'select',
+                    'async'      => true,
+                    'track_by'   => 'id',
+                    'label_by'   => 'shop_url',
+                    'list_route' => 'bagisto.credential.fetch-all',
+                ], [
+                    'name'       => BagistoProductFilter::CHANNEL->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.channel',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'select',
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'name',
+                    'list_route' => 'bagisto.channel.fetch-all',
+                ], [
+                    'name'       => BagistoProductFilter::LOCALE->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.locale',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'multiselect',
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'name',
+                    'list_route' => 'bagisto.locale.fetch-all',
+                ], [
+                    'name'     => BagistoProductFilter::CODE->value,
+                    'title'    => 'bagisto::app.exporters.bagisto.code',
+                    'required' => false,
+                    'type'     => 'tags',
+                ],
+            ],
+        ],
     ],
 
     'bagisto_attribute' => [
         'title'    => 'bagisto::app.exporters.bagisto.attribute',
         'exporter' => AttributeExporter::class,
         'source'   => AttributeRepository::class,
-        'filters'  => $scopedCodeFilters,
+        'filters'  => [
+            'fields' => [
+                [
+                    'name'       => BagistoProductFilter::CREDENTIALS->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.credentials',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'select',
+                    'async'      => true,
+                    'track_by'   => 'id',
+                    'label_by'   => 'shop_url',
+                    'list_route' => 'bagisto.credential.fetch-all',
+                ], [
+                    'name'       => BagistoProductFilter::CHANNEL->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.channel',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'select',
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'name',
+                    'list_route' => 'bagisto.channel.fetch-all',
+                ], [
+                    'name'       => BagistoProductFilter::LOCALE->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.locale',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'multiselect',
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'name',
+                    'list_route' => 'bagisto.locale.fetch-all',
+                ], [
+                    'name'     => BagistoProductFilter::CODE->value,
+                    'title'    => 'bagisto::app.exporters.bagisto.code',
+                    'required' => false,
+                    'type'     => 'tags',
+                ],
+            ],
+        ],
     ],
 
     'bagisto_attribute_families' => [
         'title'    => 'bagisto::app.exporters.bagisto.attribute-families',
         'exporter' => AttributeFamilyExporter::class,
         'source'   => AttributeFamilyRepository::class,
-        'filters'  => $scopedCodeFilters,
+        'filters'  => [
+            'fields' => [
+                [
+                    'name'       => BagistoProductFilter::CREDENTIALS->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.credentials',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'select',
+                    'async'      => true,
+                    'track_by'   => 'id',
+                    'label_by'   => 'shop_url',
+                    'list_route' => 'bagisto.credential.fetch-all',
+                ], [
+                    'name'       => BagistoProductFilter::CHANNEL->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.channel',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'select',
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'name',
+                    'list_route' => 'bagisto.channel.fetch-all',
+                ], [
+                    'name'       => BagistoProductFilter::LOCALE->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.locale',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'multiselect',
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'name',
+                    'list_route' => 'bagisto.locale.fetch-all',
+                ], [
+                    'name'     => BagistoProductFilter::CODE->value,
+                    'title'    => 'bagisto::app.exporters.bagisto.code',
+                    'required' => false,
+                    'type'     => 'tags',
+                ],
+            ],
+        ],
     ],
 
     'bagisto_product' => [
@@ -100,10 +161,37 @@ return [
         'validator' => ProductJobValidator::class,
         'filters'   => [
             'fields' => [
-                $credentialsField,
-                [...$channelField, 'type' => 'multiselect'],
-                $localeField,
                 [
+                    'name'       => BagistoProductFilter::CREDENTIALS->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.credentials',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'select',
+                    'async'      => true,
+                    'track_by'   => 'id',
+                    'label_by'   => 'shop_url',
+                    'list_route' => 'bagisto.credential.fetch-all',
+                ], [
+                    'name'       => BagistoProductFilter::CHANNEL->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.channel',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'multiselect',
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'name',
+                    'list_route' => 'bagisto.channel.fetch-all',
+                ], [
+                    'name'       => BagistoProductFilter::LOCALE->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.locale',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'multiselect',
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'name',
+                    'list_route' => 'bagisto.locale.fetch-all',
+                ], [
                     'name'       => ProductFilter::ATTRIBUTE_FAMILIES->value,
                     'title'      => 'data_transfer::app.exporters.products.filters.attribute-families',
                     'required'   => false,
@@ -180,19 +268,28 @@ return [
                     'title'        => 'data_transfer::app.exporters.products.filters.time-value',
                     'required'     => false,
                     'type'         => 'number',
-                    'visible_when' => $visibleWhenTimeConditionIs(TimeCondition::LAST_N_DAYS),
+                    'visible_when' => [
+                        'field'  => ProductFilter::TIME_CONDITION->value,
+                        'values' => [TimeCondition::LAST_N_DAYS->value],
+                    ],
                 ], [
                     'name'         => ProductFilter::TIME_DATE->value,
                     'title'        => 'data_transfer::app.exporters.products.filters.time-date',
                     'required'     => false,
                     'type'         => 'date',
-                    'visible_when' => $visibleWhenTimeConditionIs(TimeCondition::BETWEEN_DATES),
+                    'visible_when' => [
+                        'field'  => ProductFilter::TIME_CONDITION->value,
+                        'values' => [TimeCondition::BETWEEN_DATES->value],
+                    ],
                 ], [
                     'name'         => ProductFilter::TIME_DATE_END->value,
                     'title'        => 'data_transfer::app.exporters.products.filters.time-date-end',
                     'required'     => false,
                     'type'         => 'date',
-                    'visible_when' => $visibleWhenTimeConditionIs(TimeCondition::BETWEEN_DATES),
+                    'visible_when' => [
+                        'field'  => ProductFilter::TIME_CONDITION->value,
+                        'values' => [TimeCondition::BETWEEN_DATES->value],
+                    ],
                 ], [
                     'name'       => ProductFilter::CATEGORIES->value,
                     'title'      => 'data_transfer::app.exporters.products.filters.categories',

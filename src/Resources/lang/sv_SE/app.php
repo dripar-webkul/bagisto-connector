@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'UnoPim-kanal',
                 'unopim-locale'             => 'UnoPim-språk',
                 'credential'                => 'Kredential',
+                'server-down'               => 'Bagisto-servern är nere just nu; uppdatera inloggningsuppgifterna eller starta om servern.',
             ],
         ],
         'bagisto-attributes' => [

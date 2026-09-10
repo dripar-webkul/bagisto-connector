@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'Kênh UnoPim',
                 'unopim-locale'             => 'Ngôn ngữ UnoPim',
                 'credential'                => 'Thông tin xác thực',
+                'server-down'               => 'Máy chủ Bagisto hiện đang ngừng hoạt động; vui lòng cập nhật thông tin xác thực hoặc khởi động lại máy chủ.',
             ],
         ],
         'bagisto-attributes' => [

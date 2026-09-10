@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'UnoPimチャネル',
                 'unopim-locale'             => 'UnoPimロケール',
                 'credential'                => '認証情報',
+                'server-down'               => 'Bagistoサーバーは現在ダウンしています。認証情報を更新するか、サーバーを再起動してください。',
             ],
         ],
         'bagisto-attributes' => [

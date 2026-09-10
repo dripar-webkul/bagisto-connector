@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'Canal UnoPim',
                 'unopim-locale'             => 'Setări regionale UnoPim',
                 'credential'                => 'Credențial',
+                'server-down'               => 'Serverul Bagisto este momentan indisponibil; actualizați acreditările sau reporniți serverul.',
             ],
         ],
         'bagisto-attributes' => [

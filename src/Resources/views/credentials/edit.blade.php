@@ -35,7 +35,7 @@
                 <x-admin::accordion>
                     <x-slot:header>
                         <div class="flex items-center justify-between">
-                            <p class="p-2.5 text-gray-800 dark:text-white text-base  font-semibold">
+                            <p class="text-gray-800 dark:text-white text-base  font-semibold">
                                 @lang('bagisto::app.bagisto.credentials.edit.credential')
                             </p>
                         </div>
@@ -100,7 +100,6 @@
 
                             <x-admin::form.control-group.error control-name="password" />
                         </x-admin::form.control-group>
-                        <small class="mt-1 text-red-600 text-xs italic">{{session()->has('credential') ? session('credential') : ''}}</small>
                     </x-slot>
                 </x-admin::accordion>
 
@@ -108,7 +107,7 @@
                 <x-admin::accordion>
                     <x-slot:header>
                         <div class="flex items-center justify-between">
-                            <p class="p-2.5 text-gray-800 dark:text-white text-base  font-semibold">
+                            <p class="text-gray-800 dark:text-white text-base  font-semibold">
                                 @lang('bagisto::app.bagisto.credentials.edit.category-field-mapping')
                             </p>
                         </div>
@@ -177,101 +176,112 @@
     @pushOnce('scripts')
         <script type="text/x-template" id="v-store-config-template">
             <div class="grid gap-2">
-                <div
-                    class="row grid grid-cols-2 grid-rows-1 gap-5 items-center border-b border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300"
-                >
-                    <div>
-                        <p class="col-span-1 text-sm font-bold text-gray-800 dark:text-white">
-                            @lang('bagisto::app.bagisto.credentials.edit.bagisto-channel')
-                        </p>
-                    </div>
-                    <div class="text-left">
-                        <p class="text-sm font-bold text-gray-800 dark:text-white">
-                            @lang('bagisto::app.bagisto.credentials.edit.unopim-channel')
-                        </p>
-                    </div>
-                </div>
-
-                <input
-                    type="hidden"
-                    v-for="(mapping, index) in storeMappings"
-                    :key="index"
-                    :name="'store_info[' + index + ']'"
-                    :value="JSON.stringify(mapping)"
-                />
-
-                <div
-                    class="grid grid-cols-2 gap-2.5 px-4 py-4 border-b dark:border-cherry-800 text-gray-600 dark:text-gray-300 transition-all hover:bg-violet-50 hover:bg-opacity-30 dark:hover:bg-cherry-800"
-                    v-for="(storeChannel, index) in storeChannels"
-                >
-                    <p class="text-sm text-gray-800 dark:text-white">
-                        @{{ storeChannel['name'] }}
-                    </p>
-                    <div>
+                <template v-if="storeChannels && storeChannels.length > 0">
+                    <div
+                        class="row grid grid-cols-2 grid-rows-1 gap-5 items-center border-b border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300"
+                    >
                         <div>
-                            <!-- UnoPim Channel -->
-                            <x-admin::form.control-group>
-                                <x-admin::form.control-group.control
-                                    type="select"
-                                    id="unoPimChannel"
-                                    ::name="'channel['+ storeChannel['id']+ ']'"
-                                    ::value="storeMappings[storeChannel['id']] ? storeMappings[storeChannel['id']]['channel'][storeChannel['code']] : ''"
-                                    label="UnoPim Channel"
-                                    ::options="channels"
-                                    placeholder="UnoPim Channel"
-                                    @input="handleChannelChange($event, storeChannel['id'])"
-                                    track-by="code"
-                                    label-by="name"
-                                />
-
-                                <x-admin::form.control-group.error ::control-name="'channel['+ storeChannel['id']+ ']'" />
-                            </x-admin::form.control-group>
-                        </div>
-                        <div
-                            class="row grid grid-cols-2 grid-rows-1 gap-5 items-center mb-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300"
-                        >
-                            <div>
-                                <p class="col-span-1 text-sm font-bold text-gray-800 dark:text-white">
-                                    @lang('bagisto::app.bagisto.credentials.edit.bagisto-locale')
-                                </p>
-                            </div>
-                            <div class="text-left">
-                                <p class="text-sm font-bold text-gray-800 dark:text-white">
-                                    @lang('bagisto::app.bagisto.credentials.edit.unopim-locale')
-                                </p>
-                            </div>
-                        </div>
-                        <div
-                            class="grid grid-cols-2 gap-2.5 px-4 items-center"
-                            v-for="(storeLocale, index) in storeChannel['locales']"
-                        >
-                            <p class="text-sm text-gray-800 dark:text-white">
-                                @{{ storeLocale['name'] }}
+                            <p class="col-span-1 text-sm font-bold text-gray-800 dark:text-white">
+                                @lang('bagisto::app.bagisto.credentials.edit.bagisto-channel')
                             </p>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-sm font-bold text-gray-800 dark:text-white">
+                                @lang('bagisto::app.bagisto.credentials.edit.unopim-channel')
+                            </p>
+                        </div>
+                    </div>
 
-                            <div v-if="unoPimLocales[storeChannel['id']] && unoPimLocales[storeChannel['id']].length > 0">
-                                <!-- UnoPim locale -->
+                    <input
+                        type="hidden"
+                        v-for="(mapping, index) in storeMappings"
+                        :key="index"
+                        :name="'store_info[' + index + ']'"
+                        :value="JSON.stringify(mapping)"
+                    />
+
+                    <div
+                        class="grid grid-cols-2 gap-2.5 px-4 py-4 border-b dark:border-cherry-800 text-gray-600 dark:text-gray-300 transition-all hover:bg-violet-50 hover:bg-opacity-30 dark:hover:bg-cherry-800"
+                        v-for="(storeChannel, index) in storeChannels"
+                    >
+                        <p class="text-sm text-gray-800 dark:text-white">
+                            @{{ storeChannel['name'] }}
+                        </p>
+                        <div>
+                            <div>
+                                <!-- UnoPim Channel -->
                                 <x-admin::form.control-group>
                                     <x-admin::form.control-group.control
                                         type="select"
-                                        id="unoPimLocale"
-                                        ::name="'locale['+ storeLocale['code']+ ']'"
-                                        label="UnoPim locale"
-                                        ::options="unoPimLocales[storeChannel['id']]"
-                                        ::value="storeMappings[storeChannel['id']]['locales'] ? storeMappings[storeChannel['id']]['locales'][storeLocale['code']] : ''"
-                                        placeholder="UnoPim locale"
-                                        @input="handleLocaleChange($event, storeChannel['id'], storeLocale['code'])"
+                                        id="unoPimChannel"
+                                        ::name="'channel['+ storeChannel['id']+ ']'"
+                                        ::value="storeMappings[storeChannel['id']] ? storeMappings[storeChannel['id']]['channel'][storeChannel['code']] : ''"
+                                        label="UnoPim Channel"
+                                        ::options="channels"
+                                        placeholder="UnoPim Channel"
+                                        @input="handleChannelChange($event, storeChannel['id'])"
                                         track-by="code"
                                         label-by="name"
                                     />
 
-                                    <x-admin::form.control-group.error ::control-name="'locale['+ storeLocale['code']+ ']'" />
+                                    <x-admin::form.control-group.error ::control-name="'channel['+ storeChannel['id']+ ']'" />
                                 </x-admin::form.control-group>
                             </div>
-                        </div>
+                            <div
+                                class="row grid grid-cols-2 grid-rows-1 gap-5 items-center mb-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300"
+                            >
+                                <div>
+                                    <p class="col-span-1 text-sm font-bold text-gray-800 dark:text-white">
+                                        @lang('bagisto::app.bagisto.credentials.edit.bagisto-locale')
+                                    </p>
+                                </div>
+                                <div class="text-left">
+                                    <p class="text-sm font-bold text-gray-800 dark:text-white">
+                                        @lang('bagisto::app.bagisto.credentials.edit.unopim-locale')
+                                    </p>
+                                </div>
+                            </div>
+                            <div
+                                class="grid grid-cols-2 gap-2.5 px-4 items-center"
+                                v-for="(storeLocale, index) in storeChannel['locales']"
+                            >
+                                <p class="text-sm text-gray-800 dark:text-white">
+                                    @{{ storeLocale['name'] }}
+                                </p>
 
+                                <div v-if="unoPimLocales[storeChannel['id']] && unoPimLocales[storeChannel['id']].length > 0">
+                                    <!-- UnoPim locale -->
+                                    <x-admin::form.control-group>
+                                        <x-admin::form.control-group.control
+                                            type="select"
+                                            id="unoPimLocale"
+                                            ::name="'locale['+ storeLocale['code']+ ']'"
+                                            label="UnoPim locale"
+                                            ::options="unoPimLocales[storeChannel['id']]"
+                                            ::value="storeMappings[storeChannel['id']]['locales'] ? storeMappings[storeChannel['id']]['locales'][storeLocale['code']] : ''"
+                                            placeholder="UnoPim locale"
+                                            @input="handleLocaleChange($event, storeChannel['id'], storeLocale['code'])"
+                                            track-by="code"
+                                            label-by="name"
+                                        />
+
+                                        <x-admin::form.control-group.error ::control-name="'locale['+ storeLocale['code']+ ']'" />
+                                    </x-admin::form.control-group>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
-                </div>
+                </template>
+
+                <template v-else>
+                    <div class="flex flex-col items-center justify-center gap-2.5 py-4 bg-red-50 rounded border border-red-200 dark:border-red-800">
+                        <p class="text-sm text-red-600 dark:text-red-600 font-medium py-2">
+                            @lang('bagisto::app.bagisto.credentials.edit.server-down')
+                        </p>
+                    </div>
+                    
+                </template>
             </div>
         </script>
 

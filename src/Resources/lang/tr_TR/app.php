@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'UnoPim Kanalı',
                 'unopim-locale'             => 'UnoPim Yerel Ayarı',
                 'credential'                => 'Kimlik Bilgisi',
+                'server-down'               => 'Bagisto sunucusu şu anda çalışmıyor; lütfen kimlik bilgilerini güncelleyin veya sunucuyu yeniden başlatın.',
             ],
         ],
         'bagisto-attributes' => [

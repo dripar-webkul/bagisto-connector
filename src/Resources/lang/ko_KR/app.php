@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'UnoPim 채널',
                 'unopim-locale'             => 'UnoPim 로케일',
                 'credential'                => '자격 증명',
+                'server-down'               => 'Bagisto 서버가 현재 중단되었습니다. 자격 증명을 업데이트하거나 서버를 재시작하세요.',
             ],
         ],
         'bagisto-attributes' => [

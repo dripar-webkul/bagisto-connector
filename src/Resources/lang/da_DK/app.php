@@ -78,6 +78,7 @@ return [
                 'unopim-channel'            => 'UnoPim-kanal',
                 'unopim-locale'             => 'UnoPim-kildelokalitet',
                 'credential'                => 'Legitimationsoplysning',
+                'server-down'               => 'Bagisto-serveren er nede nu; opdater venligst legitimationsoplysningerne, eller genstart serveren.',
             ],
         ],
         'bagisto-attributes' => [
