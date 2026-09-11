@@ -2,6 +2,7 @@
 
 namespace Webkul\Bagisto\Presenters;
 
+use Webkul\Attribute\Models\Attribute;
 use Webkul\HistoryControl\Interfaces\HistoryPresenterInterface;
 
 class CredentialPresenter implements HistoryPresenterInterface
@@ -71,7 +72,7 @@ class CredentialPresenter implements HistoryPresenterInterface
 
                 $names = [];
                 foreach ($ids as $id) {
-                    $attribute = \Webkul\Attribute\Models\Attribute::query()->find($id);
+                    $attribute = Attribute::query()->find($id);
                     if ($attribute) {
                         $names[] = $attribute->name ?: $attribute->code;
                     } else {
