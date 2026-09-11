@@ -4,6 +4,7 @@ namespace Webkul\Bagisto\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Webkul\Bagisto\Contracts\Credential as CredentialContract;
+use Webkul\Bagisto\Presenters\CredentialPresenter;
 use Webkul\Bagisto\Presenters\JsonDataPresenter;
 use Webkul\HistoryControl\Contracts\HistoryAuditable as HistoryContract;
 use Webkul\HistoryControl\Interfaces\PresentableHistoryInterface;
@@ -33,8 +34,9 @@ class Credential extends Model implements CredentialContract, HistoryContract, P
     public static function getPresenters(): array
     {
         return [
+            'password'        => CredentialPresenter::class,
             'store_info'      => JsonDataPresenter::class,
-            'additional_info' => JsonDataPresenter::class,
+            'additional_info' => CredentialPresenter::class,
         ];
     }
 }
