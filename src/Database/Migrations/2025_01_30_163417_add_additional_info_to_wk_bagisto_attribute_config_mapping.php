@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('wk_bagisto_attribute_config_mapping', function (Blueprint $table) {
@@ -16,9 +13,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('wk_bagisto_attribute_config_mapping', function (Blueprint $table) {

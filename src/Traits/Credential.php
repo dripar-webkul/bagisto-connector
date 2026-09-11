@@ -9,9 +9,6 @@ trait Credential
 {
     use EncryptableTrait;
 
-    /**
-     * Initializes Credential for the export process.
-     */
     protected function initializeCredential($filters): void
     {
         $this->credential = Cache::get(CacheType::CREDENTIAL->value, []);
@@ -49,10 +46,6 @@ trait Credential
         return $locales;
     }
 
-    /**
-     * Decode the credential's store mappings, dropping the empty or malformed
-     * entries a partially saved mapping form can leave behind.
-     */
     protected function decodeStoreInfo(): array
     {
         $decoded = [];

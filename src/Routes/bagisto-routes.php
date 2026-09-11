@@ -2,13 +2,17 @@
 
 use Illuminate\Support\Facades\Route;
 use Webkul\Bagisto\Http\Controllers\CredentialController;
+use Webkul\Bagisto\Http\Controllers\FileController;
 use Webkul\Bagisto\Http\Controllers\Mappings\AttributeController;
 use Webkul\Bagisto\Http\Controllers\Mappings\CategoryFieldController;
 use Webkul\Bagisto\Http\Controllers\OptionController;
 
-/**
- * bagisto plugin routes.
- */
+Route::prefix('bagisto')->withoutMiddleware(['admin'])->group(function () {
+    Route::get('asset/{path}', [FileController::class, 'fetchAsset'])
+        ->where('path', '.*')
+        ->name('bagisto.asset.fetch');
+});
+
 Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], function () {
     Route::prefix('bagisto')->group(function () {
         Route::controller(CredentialController::class)->group(function () {
@@ -25,7 +29,6 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
             });
         });
 
-        /** Attribute Mapping */
         Route::controller(AttributeController::class)->group(function () {
             Route::prefix('attributes-mapping')->group(function () {
                 Route::get('/{id}', 'index')->name('admin.bagisto.mappings.attributes.index');
@@ -35,7 +38,6 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
             });
         });
 
-        /** Category Fields Mapping */
         Route::controller(CategoryFieldController::class)->group(function () {
             Route::prefix('category-fields-mapping')->group(function () {
                 Route::get('/{id}', 'index')->name('admin.bagisto.mappings.category_fields.index');
@@ -43,7 +45,6 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
             });
         });
 
-        /** Get option data */
         Route::controller(OptionController::class)->group(function () {
             Route::get('get-bagisto-credentials', 'listBagistoCredential')->name('bagisto.credential.fetch-all');
 

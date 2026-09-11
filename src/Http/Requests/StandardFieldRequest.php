@@ -6,9 +6,6 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StandardFieldRequest extends FormRequest
 {
-    /**
-     * Prepare data before validation.
-     */
     protected function prepareForValidation(): void
     {
         if ($this->has('standard_category_fields')) {
@@ -23,9 +20,6 @@ class StandardFieldRequest extends FormRequest
         }
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     */
     public function rules(): array
     {
         $bagistoFields = config('bagisto-category-fields');

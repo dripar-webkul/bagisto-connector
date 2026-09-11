@@ -29,9 +29,6 @@ class ProductJobValidator extends JobValidator
         ];
     }
 
-    /**
-     * Resolved at validation time so the labels follow the request locale.
-     */
     public function getAttributeNames(array $options): array
     {
         return [

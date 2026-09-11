@@ -2,14 +2,8 @@
 
 namespace Webkul\Bagisto\Traits;
 
-/**
- * Adds an "updated" dimension to the per-batch export summary for the Job Tracker.
- */
 trait ExportSummary
 {
-    /**
-     * Returns number of updated items count.
-     */
     public function getUpdatedItemsCount(): int
     {
         $count = $this->export->summary['updated'] ?? 0;
@@ -17,9 +11,6 @@ trait ExportSummary
         return $count + $this->updatedItemsCount;
     }
 
-    /**
-     * Persist the per-batch summary including the updated count.
-     */
     public function updateBatchState(int $id, string $state): void
     {
         if (method_exists($this, 'heartbeat')) {

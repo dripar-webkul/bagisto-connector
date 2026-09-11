@@ -6,12 +6,6 @@ trait EncryptableTrait
 {
     private const ENCRYPTION_METHOD = 'AES-128-CBC';
 
-    /**
-     * Encrypt a value securely.
-     *
-     * @param  string  $value  The value to be encrypted.
-     * @return string The encrypted value.
-     */
     private function encryptValue(string $value): string
     {
         $key = config('app.key');
@@ -21,12 +15,6 @@ trait EncryptableTrait
         return base64_encode($iv.$encrypted);
     }
 
-    /**
-     * Decrypt a value securely.
-     *
-     * @param  string  $encryptedValue  The encrypted value to be decrypted.
-     * @return string The decrypted value.
-     */
     private function decryptValue(string $encryptedValue): string
     {
         $key = config('app.key');

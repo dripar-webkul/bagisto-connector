@@ -53,8 +53,33 @@
                                         <small v-if="bagistoAttribute.title" class="text-gray-500"> <i class="icon-information text-xs"></i> @{{bagistoAttribute.title}}</small>
                                     </p>
 
-                                    <!-- UnoPim Attribute -->
-                                    <x-admin::form.control-group class="!mb-0">
+                                    
+                                    <x-admin::form.control-group v-if="bagistoAttribute.multiple" class="!mb-0">
+                                        <x-admin::form.control-group.label>
+                                            @{{ bagistoAttribute.name }}
+                                        </x-admin::form.control-group.label>
+
+                                        <x-admin::form.control-group.control
+                                            type="multiselect"
+                                            ::id="'standard_attributes[' + bagistoAttribute.name + ']'"
+                                            ::name="'standard_attributes[' + bagistoAttribute.name + ']'"
+                                            @input="handleSelectChange($event, bagistoAttribute.code)"
+                                            ::options="getAttributesByType(bagistoAttribute)"
+                                            ::label="bagistoAttribute.name"
+                                            ::placeholder="bagistoAttribute.name"
+                                            ::value="selectMappedStandardAttribute(bagistoAttribute.code)"
+                                            track-by="code"
+                                            label-by="name"
+                                        />
+
+                                        <x-admin::form.control-group.error ::control-name="'standard_attributes[' + bagistoAttribute.name + ']'" />
+                                    </x-admin::form.control-group>
+
+                                    <x-admin::form.control-group v-else class="!mb-0">
+                                        <x-admin::form.control-group.label>
+                                            @{{ bagistoAttribute.name }}
+                                        </x-admin::form.control-group.label>
+
                                         <x-admin::form.control-group.control
                                             type="select"
                                             ::id="'standard_attributes[' + bagistoAttribute.name + ']'"
@@ -71,8 +96,11 @@
                                         <x-admin::form.control-group.error ::control-name="'standard_attributes[' + bagistoAttribute.name + ']'" />
                                     </x-admin::form.control-group>
 
-                                    <!-- Fixed Value -->
-                                    <x-admin::form.control-group class="!mb-0 flex gap-2.5">
+                                    <x-admin::form.control-group class="!mb-0">
+                                        <x-admin::form.control-group.label>
+                                            @{{ bagistoAttribute.name }}
+                                        </x-admin::form.control-group.label>
+
                                         <x-admin::form.control-group.control
                                             type="text"
                                             ::id="'standard_attributes_default[' + bagistoAttribute.code + ']'"
@@ -81,7 +109,7 @@
                                             ::label="bagistoAttribute.name"
                                             ::disabled="isDisabled(bagistoAttribute.code)"
                                         />
-                                        <!-- Remove Field Button (only for merged fields) -->
+
                                         <span v-if="!bagistoAttribute.id" class="mt-2">
                                             <button
                                                 type="button"
@@ -117,14 +145,22 @@
 
         <script type="text/x-template" id="v-additional-attribute-mapping-template">
             <div class="p-4 bg-white dark:bg-cherry-900 rounded box-shadow">
-                <p class="text-base text-gray-800 dark:text-white font-semibold mb-4">
-                    @lang('bagisto::app.bagisto.export.mapping.additional-attributes.title')
-                </p>
-                <span class="text-xs text-gray-500">@lang('bagisto::app.bagisto.export.mapping.additional-attributes.description')</span>
-                
+                <div class="mb-4">
+                    <p class="text-base text-gray-800 dark:text-white font-semibold mb-0">
+                        @lang('bagisto::app.bagisto.export.mapping.additional-attributes.title')
+                    </p>
+                    <span class="mt-2 block text-xs text-gray-500 leading-snug">
+                        @lang('bagisto::app.bagisto.export.mapping.additional-attributes.description')
+                    </span>
+                </div>
+
                 <div>
                     <div class="grid grid-flow-row grid-cols-3 items-center justify-start gap-4">
                         <x-admin::form.control-group class="!mb-0 w-full">
+                            <x-admin::form.control-group.label>
+                                Bagisto Attribute Code
+                            </x-admin::form.control-group.label>
+
                             <x-admin::form.control-group.control
                                 type="text"
                                 id="newBagistoAttributes"
@@ -140,6 +176,10 @@
                         </x-admin::form.control-group>
 
                         <x-admin::form.control-group class="!mb-0 w-full">
+                            <x-admin::form.control-group.label>
+                                Attribute Type
+                            </x-admin::form.control-group.label>
+
                         @php
                             $supportedTypes = ['text', 'textarea', 'price', 'boolean', 'select', 'multiselect', 'datetime', 'date', 'image', 'gallery', 'file', 'checkbox'];
 
@@ -186,48 +226,58 @@
                 </div>
             </div>
             <div class="p-4 bg-white dark:bg-cherry-900 rounded box-shadow">
-                <p class="text-base text-gray-800 dark:text-white font-semibold mb-4">
-                    @lang('bagisto::app.bagisto.export.mapping.configurable-attributes.title')
-                </p>
-                <span class="text-xs text-gray-500">@lang('bagisto::app.bagisto.export.mapping.configurable-attributes.description')</span>
+                <div class="mb-4">
+                    <p class="text-base text-gray-800 dark:text-white font-semibold mb-0">
+                        @lang('bagisto::app.bagisto.export.mapping.configurable-attributes.title')
+                    </p>
+                    <span class="mt-2 block text-xs text-gray-500 leading-snug">
+                        @lang('bagisto::app.bagisto.export.mapping.configurable-attributes.description')
+                    </span>
+                </div>
 
-                <div class="grid grid-flow-row grid-cols-2 items-center justify-start gap-4 max-w-[60%]">
-                    <!-- UnoPim Configurable Attribute -->
-                    <x-admin::form.control-group class="!mb-0 w-full">
-                        <x-admin::form.control-group.control
-                            type="multiselect"
-                            id="configurable_attribute"
-                            name="configurable_attribute"
-                            ref="configurableAttributes"
-                            v-model="selectedAttributes"
-                            :label="trans('bagisto::app.bagisto.export.mapping.configurable-attributes.title')"
-                            :options="$configurableAttributes"
-                            track-by="code"
-                            label-by="name"
-                        >
-                            
-                        </x-admin::form.control-group.control>
+                <div class="grid grid-flow-row grid-cols-2 items-start justify-center gap-4 max-w-[60%]">
+                    <div>
+                        <x-admin::form.control-group class="!mb-0 w-full">
+                            <x-admin::form.control-group.label>
+                                @lang('bagisto::app.bagisto.export.mapping.configurable-attributes.title')
+                            </x-admin::form.control-group.label>
 
-                        <x-admin::form.control-group.error control-name="configurable_attribute"/>
-                    </x-admin::form.control-group>
-                    <!-- Buttons for Select All / Deselect All -->
-                    <div class="flex gap-2.5">
-                        <button 
-                            type="button" 
-                            class="primary-button" 
-                            @click="selectAll"
-                            > 
-                            @lang('bagisto::app.bagisto.export.mapping.attributes.select')
-                        </button>
+                            <x-admin::form.control-group.control
+                                type="multiselect"
+                                id="configurable_attribute"
+                                name="configurable_attribute"
+                                ref="configurableAttributes"
+                                v-model="selectedAttributes"
+                                :label="trans('bagisto::app.bagisto.export.mapping.configurable-attributes.title')"
+                                :options="$configurableAttributes"
+                                track-by="code"
+                                label-by="name"
+                            >
+                            </x-admin::form.control-group.control>
 
-                        <button 
-                            type="button" 
-                            class="primary-button" 
-                            @click="deselectAll"
-                            > 
-                            @lang('bagisto::app.bagisto.export.mapping.attributes.deselect')
-                        </button>
+                            <x-admin::form.control-group.error control-name="configurable_attribute"/>
+                        </x-admin::form.control-group>
                     </div>
+                  
+                    
+                        <div class="flex gap-2.5 mt-6">
+                                <button 
+                                    type="button" 
+                                    class="primary-button" 
+                                    @click="selectAll"
+                                    > 
+                                    @lang('bagisto::app.bagisto.export.mapping.attributes.select')
+                                </button>
+
+                                <button 
+                                    type="button" 
+                                    class="primary-button" 
+                                    @click="deselectAll"
+                                    > 
+                                    @lang('bagisto::app.bagisto.export.mapping.attributes.deselect')
+                                </button>
+                        </div>
+                
                 </div>
             </div>
         </script>
@@ -256,10 +306,22 @@
                     selectAll() {
                         this.selectedAttributes = JSON.parse(this.allConfigurableOption);
                         this.$refs['configurableAttributes'].selectedValue = this.selectedAttributes;
+                        this.dispatchTouch('configurable_attribute');
                     },
                     deselectAll() {
                         this.$refs['configurableAttributes'].selectedValue = null;
                         this.selectedAttributes = [];
+                        this.dispatchTouch('configurable_attribute');
+                    },
+                    dispatchTouch(name) {
+                        const form = this.$el.closest('form');
+
+                        if (form) {
+                            form.dispatchEvent(new CustomEvent('unsaved-changes:touch', {
+                                bubbles: true,
+                                detail: { name },
+                            }));
+                        }
                     },
                     handleInputChange() {
                         clearTimeout(this.timeout);
@@ -337,8 +399,14 @@
                 template: '#v-attribute-mapping-template',
                 props: ['bagistoAttributes', 'attributes'],
                 data() {
+                    const mappedValues = Object.assign({}, @json($standardAttributes?->mapped_value));
+
+                    if (mappedValues['images'] && !Array.isArray(mappedValues['images'])) {
+                        mappedValues['images'] = [mappedValues['images']];
+                    }
+
                     return {
-                        standardAttributes: Object.assign({}, @json($standardAttributes?->mapped_value)),
+                        standardAttributes: mappedValues,
                         standardAttributesDefaults: Object.assign({}, @json($standardAttributes?->fixed_value)),
                         additionalAttributes: [],
                         standardBagistoAttributes: this.bagistoAttributes,
@@ -366,12 +434,25 @@
                 methods: {
                     handleSelectChange(value, fieldCode) {
                         try {
-                            if (value) {
-                                let selectedValue = JSON.parse(value);
-                                this.standardAttributes[fieldCode] = selectedValue.code;
-                            } else {
+                            if (! value) {
                                 delete this.standardAttributes[fieldCode];
+
+                                return;
                             }
+
+                            let selectedValue = Array.isArray(value) ? value : JSON.parse(value);
+
+                            if (Array.isArray(selectedValue)) {
+                                if (selectedValue.length) {
+                                    this.standardAttributes[fieldCode] = selectedValue.map(item => item.code);
+                                } else {
+                                    delete this.standardAttributes[fieldCode];
+                                }
+
+                                return;
+                            }
+
+                            this.standardAttributes[fieldCode] = selectedValue.code;
                         } catch (e) {}
                     },
 

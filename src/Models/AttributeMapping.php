@@ -15,16 +15,8 @@ class AttributeMapping extends Model implements AttributeMappingContract, Histor
 
     protected $historyTags = ['bagitsto_attribute_mapping'];
 
-    /**
-     * The database table used by model
-     *
-     * @var string
-     */
     protected $table = 'wk_bagisto_attribute_config_mapping';
 
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
         'section',
         'mapped_value',
@@ -32,11 +24,6 @@ class AttributeMapping extends Model implements AttributeMappingContract, Histor
         'additional_info',
     ];
 
-    /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array
-     */
     protected $casts = [
         'mapped_value'    => 'json',
         'fixed_value'     => 'json',

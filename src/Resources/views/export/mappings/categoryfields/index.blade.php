@@ -53,8 +53,12 @@
                                     </p>
                                     
 
-                                    <!-- UnoPim CategoryField -->
+                                    
                                     <x-admin::form.control-group class="!mb-0">
+                                        <x-admin::form.control-group.label>
+                                            @{{ bagostoField.name }}
+                                        </x-admin::form.control-group.label>
+
                                         <x-admin::form.control-group.control
                                             type="select"
                                             ::id="'standard_category_fields[' + bagostoField.name + ']'"
@@ -71,8 +75,11 @@
                                         <x-admin::form.control-group.error ::control-name="'standard_category_fields[' + bagostoField.name + ']'" />
                                     </x-admin::form.control-group>
 
-                                    <!-- Fixed Value -->
                                     <x-admin::form.control-group class="!mb-0">
+                                        <x-admin::form.control-group.label>
+                                            @{{ bagostoField.name }}
+                                        </x-admin::form.control-group.label>
+
                                         <x-admin::form.control-group.control
                                             type="text"
                                             ::id="'standard_category_fields_default[' + bagostoField.code + ']'"

@@ -7,10 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 trait Mapping
 {
-    /**
-     * Family groups are keyed by family|group code rather than by record, so an
-     * existing row is never reused for them and the lookup is skipped outright.
-     */
     protected const GROUP_ENTITY_TYPE = 'groups';
 
     protected function setMapping(string|int $credentialId, string|int|null $relatedId, string|int|null $externalId, string|int $batchId, ?string $code = null, $entityType = self::ENTITY_TYPE): ?Model

@@ -1,9 +1,7 @@
 <?php
 
 return [
-    /**
-     * Bagisto menu
-     */
+
     [
         'key'   => 'bagisto',
         'name'  => 'bagisto::app.components.layouts.sidebar.bagisto',

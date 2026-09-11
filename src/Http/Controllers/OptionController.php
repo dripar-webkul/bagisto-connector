@@ -20,11 +20,6 @@ class OptionController extends Controller
 
     const DEFAULT_PAGE = 1;
 
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct(
         protected CredentialRepository $bagistoRepository,
         protected AttributeRepository $attributeRepository,
@@ -34,9 +29,6 @@ class OptionController extends Controller
         protected AttributeFamilyRepository $attributeFamilyRepository,
     ) {}
 
-    /**
-     * Return All credentials
-     */
     public function listBagistoCredential(): JsonResponse
     {
         $queryParams = request()->except(['page', 'query', 'entityName', 'attributeId']);
@@ -49,9 +41,6 @@ class OptionController extends Controller
         return $this->respondWithOptions($bagistoRepository->get()->toArray());
     }
 
-    /**
-     * Return All Channels
-     */
     public function listChannel(): JsonResponse
     {
         $queryParams = request()->except(['page', 'query', 'entityName', 'attributeId']);
@@ -70,9 +59,6 @@ class OptionController extends Controller
         return $this->respondWithOptions($allActivateChannel);
     }
 
-    /**
-     * Return All Currency
-     */
     public function listCurrency(): JsonResponse
     {
         $queryParams = request()->except(['page', 'query', 'entityName', 'attributeId']);
@@ -85,9 +71,6 @@ class OptionController extends Controller
         return $this->respondWithOptions($currencyRepository->get()->toArray());
     }
 
-    /**
-     * Return All Locale
-     */
     public function listLocale(): JsonResponse
     {
         $queryParams = request()->except(['page', 'query', 'entityName', 'attributeId']);
@@ -100,9 +83,6 @@ class OptionController extends Controller
         return $this->respondWithOptions($localeRepository->get()->toArray());
     }
 
-    /**
-     * Return All family
-     */
     public function listFamily(): JsonResponse
     {
         $queryParams = request()->except(['page', 'query', 'entityName', 'attributeId']);
@@ -120,9 +100,6 @@ class OptionController extends Controller
         return $this->respondWithOptions($allActivateFamilies);
     }
 
-    /**
-     * Return All type
-     */
     public function listType(): JsonResponse
     {
         $queryParams = request()->except(['page', 'query', 'entityName', 'attributeId']);
@@ -162,11 +139,6 @@ class OptionController extends Controller
         return $this->respondWithOptions($types);
     }
 
-    /**
-     * Shape the option list the way the admin's async select handler expects it.
-     * It reads `options`, `page` and `lastPage` from every response, and its
-     * load-more guard compares `lastPage` against the current page.
-     */
     protected function respondWithOptions(array $options): JsonResponse
     {
         $options = array_values($options);

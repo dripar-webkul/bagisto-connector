@@ -15,16 +15,8 @@ class Credential extends Model implements CredentialContract, HistoryContract, P
 
     protected $historyTags = ['bagitsto_credentials'];
 
-    /**
-     * The database table used by model
-     *
-     * @var string
-     */
     protected $table = 'wk_bagisto_credential';
 
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
         'shop_url',
         'email',

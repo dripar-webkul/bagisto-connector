@@ -15,7 +15,7 @@
                     @lang('bagisto::app.bagisto.credentials.index.title')
                 </p>
                 <div class="flex gap-x-2.5 items-center">
-                    <!-- Create Credential Button -->
+                    
                     @if (bouncer()->hasPermission('bagisto.credentials.store'))
                         <button
                             type="button"
@@ -40,16 +40,16 @@
                     ref="createCredentialForm"
                 >
                     <x-admin::modal ref="credentialCreateModal">
-                        <!-- Modal Header -->
+                        
                         <x-slot:header>
                             <p class="text-lg text-gray-800 dark:text-white font-bold">
                                 @lang('bagisto::app.bagisto.credentials.index.create.title')
                             </p>
                         </x-slot>
 
-                        <!-- Modal Content -->
+                        
                         <x-slot:content>
-                            <!-- Shop URl -->
+                            
                             <x-admin::form.control-group>
                                 <x-admin::form.control-group.label class="required">
                                     @lang('bagisto::app.bagisto.credentials.index.create.shop_url')
@@ -67,7 +67,7 @@
                                 <x-admin::form.control-group.error control-name="shop_url" />
                             </x-admin::form.control-group>
 
-                            <!-- Email Address -->
+                            
                             <x-admin::form.control-group>
                                 <x-admin::form.control-group.label class="required">
                                     @lang('bagisto::app.bagisto.credentials.index.create.email')
@@ -85,7 +85,7 @@
                                 <x-admin::form.control-group.error control-name="email" />
                             </x-admin::form.control-group>
 
-                            <!-- Password -->
+                            
                             <x-admin::form.control-group>
                                 <x-admin::form.control-group.label class="required">
                                     @lang('bagisto::app.bagisto.credentials.index.create.password')
@@ -104,7 +104,7 @@
                             </x-admin::form.control-group>
                         </x-slot>
 
-                        <!-- Modal Footer -->
+                        
                         <x-slot:footer>
                             <div class="flex gap-x-2.5 items-center">
                                 <button
@@ -112,7 +112,7 @@
                                     class="primary-button"
                                     :disabled="isLoading"
                                 >
-                                    <!-- Spinner -->
+                                    
                                     <svg v-if="isLoading" class="align-center inline-block animate-spin h-5 w-5 ml-2 text-white-700" xmlns="http://www.w3.org/2000/svg" fill="none"  aria-hidden="true" viewBox="0 0 24 24">
                                         <circle
                                             class="opacity-25"

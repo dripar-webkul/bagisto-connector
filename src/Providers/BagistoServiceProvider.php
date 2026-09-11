@@ -11,9 +11,6 @@ use Webkul\DataTransfer\Helpers\Export;
 
 class BagistoServiceProvider extends ServiceProvider
 {
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
         Route::middleware('web')->group(__DIR__.'/../Routes/bagisto-routes.php');
@@ -27,10 +24,6 @@ class BagistoServiceProvider extends ServiceProvider
             $viewRenderEventManager->addTemplate('bagisto::style');
         });
 
-        /**
-         * The create screen is Vue-reactive and the edit screen renders server
-         * side, so each needs its own template.
-         */
         foreach ([
             'unopim.admin.settings.data_transfer.exports.create.card.scope.after' => 'bagisto::exports.filters',
             'unopim.admin.settings.data_transfer.exports.edit.card.general.after' => 'bagisto::exports.filters-edit',
@@ -56,9 +49,6 @@ class BagistoServiceProvider extends ServiceProvider
         }
     }
 
-    /**
-     * Register any application services
-     */
     public function register(): void
     {
         $this->registerConfig();
@@ -69,29 +59,20 @@ class BagistoServiceProvider extends ServiceProvider
         );
     }
 
-    /**
-     * Register package configurations
-     */
     public function registerConfig(): void
     {
         $this->mergeConfigFrom(dirname(__DIR__).'/Config/menu.php', 'menu.admin');
 
-        /** API EndPoint Config */
         $this->mergeConfigFrom(dirname(__DIR__).'/Config/api-end-point.php', 'bagisto-api-end-point');
 
-        /** Bagisto Attributes Config */
         $this->mergeConfigFrom(dirname(__DIR__).'/Config/bagisto-attributes.php', 'bagisto-attributes');
 
-        /** Bagisto Category Fields Config */
         $this->mergeConfigFrom(dirname(__DIR__).'/Config/bagisto-category-fields.php', 'bagisto-category-fields');
 
-        /** Bagisto export Config */
         $this->mergeConfigFrom(dirname(__DIR__).'/Config/exporters.php', 'exporters');
 
-        /** ACL Config */
         $this->mergeConfigFrom(dirname(__DIR__).'/Config/acl.php', 'acl');
 
-        /** Bagisto Unopim Vite Config */
         $this->mergeConfigFrom(dirname(__DIR__).'/Config/unopim-vite.php', 'unopim-vite.viters');
     }
 }

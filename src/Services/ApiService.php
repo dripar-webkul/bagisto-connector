@@ -12,14 +12,8 @@ use Illuminate\Validation\ValidationException;
 use Webkul\Bagisto\Contracts\ApiServiceContract;
 use Webkul\Bagisto\Enums\Services\ContentType;
 
-/**
- * @internal
- */
 final class ApiService implements ApiServiceContract
 {
-    /**
-     * Creates a new Http Transporter instance.
-     */
     public function __construct(
         private string $baseUri,
         private Headers $headers,
@@ -32,9 +26,6 @@ final class ApiService implements ApiServiceContract
         return $this;
     }
 
-    /**
-     * Creates a new Psr 7 Request instance.
-     */
     public function toRequest(string $method, string $endpoint, array $payload = [], array $options = []): array
     {
         [$uri, $contentType] = $this->buildUri($endpoint, $options);
@@ -159,8 +150,6 @@ final class ApiService implements ApiServiceContract
         } catch (\Exception $e) {
             Log::error($e);
 
-            // Re-throw so the caller receives a real exception it can handle,
-            // instead of a null response that later fatals on ->failed().
             throw $e;
         }
     }

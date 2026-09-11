@@ -23,6 +23,8 @@ use Webkul\Bagisto\Traits\Mapping as MappingTrait;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Category\Validator\FieldValidator;
 use Webkul\Core\Repositories\ChannelRepository;
+use Webkul\DAM\Models\Asset;
+use Webkul\DAM\Repositories\AssetRepository;
 use Webkul\DataTransfer\Contracts\JobTrackBatch as JobTrackBatchContract;
 use Webkul\DataTransfer\Enums\ProductFilter;
 use Webkul\DataTransfer\Helpers\Export;
@@ -47,26 +49,14 @@ class Exporter extends AbstractExporter
 
     protected const NON_INHERITABLE_FIELDS = ['sku', 'url_key'];
 
-    /**
-     * Columns the batch cursor carries. The rest of each product is loaded
-     * per batch, so the cursor stays small on catalogue-wide exports.
-     */
     protected const CURSOR_COLUMNS = ['id', 'sku', 'type', 'parent_id'];
 
-    /**
-     * UnoPim bounds a variant tree at two axes (variant_structure_axes.level is
-     * an enum of level_1/level_2), so the walk never needs to go deeper.
-     */
     protected const MAX_VARIANT_DEPTH = 2;
 
     public const BATCH_SIZE = 100;
 
     protected bool $initialized = false;
 
-    /**
-     * Bagisto is fed over the API, so the abstract exporter's file writing
-     * stays off.
-     */
     protected bool $exportsFile = false;
 
     protected array $mappingAttributes = [];
@@ -77,9 +67,6 @@ class Exporter extends AbstractExporter
 
     protected array $urlKey = [];
 
-    /**
-     * @var array<string, bool> SKU => whether the product still exists.
-     */
     protected array $knownSkus = [];
 
     public function __construct(
@@ -93,7 +80,8 @@ class Exporter extends AbstractExporter
         protected AttributeMappingRepository $attributeMappingRepository,
         protected ChannelRepository $channelRepository,
         protected CredentialRepository $credentialRepository,
-        protected ProductSource $productSource
+        protected ProductSource $productSource,
+        protected AssetRepository $assetRepository
     ) {
         parent::__construct($exportBatchRepository, $exportFileBuffer, $channelRepository, $attributeRepository, $productSource);
     }
@@ -107,6 +95,8 @@ class Exporter extends AbstractExporter
 
     public function initializeMappingAttributes(): void
     {
+
+        Cache::forget(CacheType::ATTRIBUTE_MAPPING->value);
         $this->mappingAttributes = Cache::get(CacheType::ATTRIBUTE_MAPPING->value, []);
         if (empty($this->mappingAttributes)) {
             $this->mappingAttributes = [
@@ -217,12 +207,6 @@ class Exporter extends AbstractExporter
         return $filters;
     }
 
-    /**
-     * Bagisto links a variant only once its parent exists, so a family split
-     * across two batches loses the variants in the later batch until the next
-     * run. Emitting each family together keeps it inside one batch unless the
-     * family itself straddles a batch boundary.
-     */
     private function orderFamiliesContiguously(Collection $products): Collection
     {
         $byId = $products->keyBy('id');
@@ -328,11 +312,6 @@ class Exporter extends AbstractExporter
         }
     }
 
-    /**
-     * Bagisto validates the bulk payload in one transaction, so a single row
-     * missing a required field fails the whole batch. Drop those rows here and
-     * log them individually, letting the rest of the batch through.
-     */
     private function rejectIncompleteItems(array $items): array
     {
         $required = $this->getRequiredBagistoFields();
@@ -504,6 +483,8 @@ class Exporter extends AbstractExporter
 
         $mergedFields = array_merge($commonFields, $localeSpecificFields, $channelSpecificFields, $channelLocaleSpecificFields);
 
+        $this->resolveDamAssetPaths($mergedFields);
+
         $this->handleAttributeType($mergedFields, $withMedia, $channel);
 
         return $mergedFields;
@@ -511,7 +492,10 @@ class Exporter extends AbstractExporter
 
     private function applyFixedValues(array &$mergedFields, $parent): void
     {
-        $fixedValue = $this->mappingAttributes['standard_attribute']->fixed_value ?? [];
+        $fixedValueStandard = $this->mappingAttributes['standard_attribute']->fixed_value ?? [];
+        $fixedValueImage = $this->mappingAttributes['image_attribute']->fixed_value ?? [];
+
+        $fixedValue = array_merge($fixedValueStandard, $fixedValueImage);
 
         foreach ($fixedValue as $bagistoAttribute => $value) {
             if (isset($mergedFields[$bagistoAttribute]) && empty($mergedFields[$bagistoAttribute])) {
@@ -545,12 +529,6 @@ class Exporter extends AbstractExporter
         }
     }
 
-    /**
-     * Core resolves a variant's values across its whole ancestor chain, which
-     * would also carry a parent's identity fields down to every child. Bagisto
-     * treats sku and url_key as unique, so those stay whatever the product
-     * itself declares, and are dropped when it declares none.
-     */
     private function keepOwnIdentityFields(array $resolved, array $own): array
     {
         foreach ($resolved as $key => $value) {
@@ -582,17 +560,94 @@ class Exporter extends AbstractExporter
         );
     }
 
+    private function resolveDamAssetPaths(array &$mergedFields): void
+    {
+        foreach ($mergedFields as $code => $value) {
+            if (empty($value)) {
+                continue;
+            }
+
+            $attribute = $this->attributeRepository->where('code', $code)->first();
+
+            if (! $attribute) {
+                continue;
+            }
+
+            if (($attribute->type ?? null) !== Asset::ASSET_ATTRIBUTE_TYPE) {
+                continue;
+            }
+
+            $ids = is_array($value) ? $value : array_filter(array_map('trim', explode(',', (string) $value)), 'strlen');
+
+            if (empty($ids)) {
+                continue;
+            }
+
+            $paths = $this->assetRepository->findWhereIn('id', $ids)->pluck('path')->filter()->values()->all();
+
+            if (empty($paths)) {
+                unset($mergedFields[$code]);
+
+                continue;
+            }
+
+            $mergedFields[$code] = count($paths) > 1 ? $paths : $paths[0];
+        }
+    }
+
     private function mapAttributesToBagisto(array &$mergedFields): void
     {
-        $mapAttributes = $this->mappingAttributes['standard_attribute']->mapped_value ?? [];
+        $mapAttributesStandard = $this->mappingAttributes['standard_attribute']->mapped_value ?? [];
+        $mapAttributesImage = $this->mappingAttributes['image_attribute']->mapped_value ?? [];
+
+        $mapAttributes = array_merge($mapAttributesStandard, $mapAttributesImage);
+
         $mapAttributeValues = [];
+
         foreach ($mapAttributes as $bagistoAttribute => $unpoimAttribute) {
+            if (is_array($unpoimAttribute)) {
+                $combinedValues = [];
+
+                foreach ($unpoimAttribute as $unpoimAttributeCode) {
+                    if (
+                        isset($mergedFields[$unpoimAttributeCode])
+                        && $mergedFields[$unpoimAttributeCode] !== ''
+                        && $mergedFields[$unpoimAttributeCode] !== null
+                    ) {
+                        $combinedValues[] = is_array($mergedFields[$unpoimAttributeCode])
+                            ? implode(',', $mergedFields[$unpoimAttributeCode])
+                            : $mergedFields[$unpoimAttributeCode];
+                    }
+                }
+
+                if ($combinedValues !== []) {
+                    $mapAttributeValues[$bagistoAttribute] = implode(',', $combinedValues);
+                } elseif (isset($mergedFields[$bagistoAttribute]) && $mergedFields[$bagistoAttribute] !== null && $mergedFields[$bagistoAttribute] !== '') {
+                    $mapAttributeValues[$bagistoAttribute] = $mergedFields[$bagistoAttribute];
+                }
+
+                continue;
+            }
+
             if (isset($mergedFields[$unpoimAttribute])) {
                 $mapAttributeValues[$bagistoAttribute] = $bagistoAttribute === 'inventories'
                     ? 'default='.$mergedFields[$unpoimAttribute]
                     : $mergedFields[$unpoimAttribute];
+
+                continue;
+            }
+
+            if (is_string((string) $unpoimAttribute) && trim((string) $unpoimAttribute) !== '') {
+                $attributeExists = (bool) $this->attributeRepository->where('code', $unpoimAttribute)->first();
+
+                if (! $attributeExists) {
+                    $mapAttributeValues[$bagistoAttribute] = $bagistoAttribute === 'inventories'
+                        ? 'default='.$unpoimAttribute
+                        : $unpoimAttribute;
+                }
             }
         }
+
         $mergedFields = $mapAttributeValues;
     }
 
@@ -688,13 +743,6 @@ class Exporter extends AbstractExporter
         return implode('|', $newFormatData);
     }
 
-    /**
-     * Bagisto has no nested variants, so a UnoPim variant_group level is folded
-     * away: every leaf inherits the axis values of the nodes above it and, on a
-     * collision, its own value wins.
-     *
-     * @return list<array{sku: string, axes: array<string, mixed>}>
-     */
     private function collectVariantLeaves(array $node, array $axisCodes, array $inherited = [], int $depth = 0): array
     {
         if ($depth >= self::MAX_VARIANT_DEPTH) {
@@ -742,10 +790,30 @@ class Exporter extends AbstractExporter
                 continue;
             }
             switch ($attribute->type) {
+                case Asset::ASSET_ATTRIBUTE_TYPE:
+                    if ($withMedia && $attributeValue !== '' && $attributeValue !== null) {
+                        if (is_array($attributeValue)) {
+                            $mergedFields[$attributeCode] = implode(',', array_map(fn ($path) => $this->makeDamPublicUrl((string) $path), $attributeValue));
+                        } else {
+                            $mergedFields[$attributeCode] = $this->makeDamPublicUrl((string) $attributeValue);
+                        }
+                    } else {
+                        unset($mergedFields[$attributeCode]);
+                    }
+                    break;
                 case AttributeTypes::GALLERY_ATTRIBUTE_TYPE:
                     if ($withMedia) {
-                        $mergedFields[$attributeCode] = array_map(fn ($path) => $this->getExistingFilePath($path), (array) $attributeValue);
-                        $mergedFields[$attributeCode] = implode(',', $mergedFields[$attributeCode]);
+                        $paths = is_array($attributeValue) ? $attributeValue : preg_split('/[\s,]+/', (string) $attributeValue);
+                        $paths = array_values(array_filter(
+                            array_map(fn ($path) => $this->getExistingFilePath((string) $path), (array) $paths),
+                            'strlen'
+                        ));
+
+                        if ($paths === []) {
+                            unset($mergedFields[$attributeCode]);
+                        } else {
+                            $mergedFields[$attributeCode] = implode(',', $paths);
+                        }
                     } else {
                         unset($mergedFields[$attributeCode]);
                     }
@@ -753,7 +821,18 @@ class Exporter extends AbstractExporter
                 case AttributeTypes::IMAGE_ATTRIBUTE_TYPE:
                 case AttributeTypes::FILE_ATTRIBUTE_TYPE:
                     if ($withMedia) {
-                        $mergedFields[$attributeCode] = is_array($attributeValue) ? $this->getExistingFilePath($attributeValue[0]) : $this->getExistingFilePath($attributeValue);
+                        $path = is_array($attributeValue) ? ($attributeValue[0] ?? null) : $attributeValue;
+
+                        if ($path) {
+                            $resolved = $this->getExistingFilePath((string) $path);
+                            if ($resolved) {
+                                $mergedFields[$attributeCode] = $resolved;
+                            } else {
+                                unset($mergedFields[$attributeCode]);
+                            }
+                        } else {
+                            unset($mergedFields[$attributeCode]);
+                        }
                     } else {
                         unset($mergedFields[$attributeCode]);
                     }
@@ -786,6 +865,43 @@ class Exporter extends AbstractExporter
                     break;
             }
         }
+
+        $bagistoConfig = config('bagisto-attributes', []);
+
+        $multiTypeMap = [];
+        foreach ($bagistoConfig as $cfg) {
+            if (empty($cfg['multiple']) || empty($cfg['type'])) {
+                continue;
+            }
+            $types = array_map('trim', explode(',', $cfg['type']));
+            $multiTypeMap[$cfg['code']] = $types;
+        }
+
+        foreach ($multiTypeMap as $bagistoCode => $types) {
+            $combined = [];
+            foreach ($mergedFields as $code => $val) {
+                if ($val === null || $val === '' || $val === []) {
+                    continue;
+                }
+                $attr = $this->attributeRepository->where('code', $code)->first();
+                if ($attr && in_array($attr->type, $types, true)) {
+                    $combined[] = is_array($val) ? implode(',', $val) : $val;
+                    unset($mergedFields[$code]);
+                }
+            }
+            if ($combined !== []) {
+                $mergedFields[$bagistoCode] = implode(',', $combined);
+            }
+        }
+    }
+
+    protected function makeDamPublicUrl(string $filePath): string
+    {
+        if (config('filesystems.default') === 's3') {
+            return $this->resolveMediaUrl($filePath);
+        }
+
+        return route('bagisto.asset.fetch', ['path' => $filePath]);
     }
 
     protected function getCategoryFormatData(array $item, &$mergedFields): void
@@ -850,7 +966,41 @@ class Exporter extends AbstractExporter
 
     protected function getExistingFilePath(string $mediaPath): ?string
     {
-        return Storage::exists($mediaPath) ? Storage::url($mediaPath) : null;
+        if (config('filesystems.default') === 's3') {
+            $disk = Storage::disk('s3');
+
+            if (! $disk->exists($mediaPath)) {
+                return null;
+            }
+
+            return $this->resolveMediaUrl($mediaPath);
+        }
+
+        if (! Storage::exists($mediaPath)) {
+            return null;
+        }
+
+        $encodedPath = implode('/', array_map('rawurlencode', explode('/', $mediaPath)));
+
+        return Storage::url($encodedPath);
+    }
+
+    protected function resolveMediaUrl(string $mediaPath): string
+    {
+        $disk = Storage::disk('s3');
+        $visibility = config('filesystems.disks.s3.visibility') ?? 'public';
+
+        if ($visibility === 'private') {
+            return $disk->temporaryUrl($mediaPath, now()->addMinutes(5));
+        }
+
+        $bucketUrl = config('filesystems.disks.s3.url');
+
+        if (! empty($bucketUrl)) {
+            return rtrim($bucketUrl, '/').'/'.ltrim($mediaPath, '/');
+        }
+
+        return $disk->url(ltrim($mediaPath, '/'));
     }
 
     protected function createSlug(string $name): string

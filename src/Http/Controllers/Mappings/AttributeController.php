@@ -47,9 +47,6 @@ class AttributeController extends Controller
         ));
     }
 
-    /**
-     * Handles the process of storing or updating attribute mappings.
-     */
     public function storeOrUpdate(StandardAttributeRequest $request): JsonResponse
     {
         try {
@@ -79,9 +76,6 @@ class AttributeController extends Controller
         }
     }
 
-    /**
-     * Arrange Data for the attribute mapping
-     */
     private function setFormatForMapping(array $data): array
     {
         $formatedData = [];
@@ -98,7 +92,6 @@ class AttributeController extends Controller
 
         $configurableAttribute['configurable_attribute'] = $data['configurable_attribute'] ?? null;
 
-        /** Format for standard attributes */
         $formatedData['standard_attribute'] = [
             'section'         => 'standard_attribute',
             'mapped_value'    => $standardAttributes,

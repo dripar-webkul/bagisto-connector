@@ -86,9 +86,6 @@ class Exporter extends AbstractExporter
         return true;
     }
 
-    /**
-     * Get results based on filters.
-     */
     protected function getResults(): \Iterator
     {
         $this->initialize();
@@ -108,9 +105,6 @@ class Exporter extends AbstractExporter
                 ->all()->getIterator();
     }
 
-    /**
-     * Writes the export data.
-     */
     public function write($items, $batchId): void
     {
         foreach ($items as $item) {
@@ -153,9 +147,6 @@ class Exporter extends AbstractExporter
         }
     }
 
-    /**
-     * Prepare attribute Families from current batch
-     */
     public function prepareAttributeFamilies(JobTrackBatchContract $batch, mixed $filePath): array
     {
         $attributeFamilies = [];
@@ -166,9 +157,6 @@ class Exporter extends AbstractExporter
         return $attributeFamilies;
     }
 
-    /**
-     * Handles API response and sets mapping.
-     */
     protected function handleResponse($item, $response, $batchId, $mapData, $id): void
     {
         $this->mapResponseGroups($item, $response, $batchId);
@@ -178,9 +166,6 @@ class Exporter extends AbstractExporter
         }
     }
 
-    /**
-     * Maps response groups if not already mapped.
-     */
     private function mapResponseGroups($item, $response, $batchId): void
     {
         if (empty($response['groups'])) {
@@ -202,9 +187,6 @@ class Exporter extends AbstractExporter
         }
     }
 
-    /**
-     * Handles missing mappings by retrieving Bagisto families.
-     */
     private function handleMissingMapping($item, &$response, &$mapData, $batchId, $id): void
     {
         $bagistoFamily = $this->setApiRequest(MethodType::GET->value, self::GET_ENTITY_TYPE, [], ['id' => $item['code']]);
@@ -242,9 +224,6 @@ class Exporter extends AbstractExporter
         return $this->setApiRequest(MethodType::PUT->value, self::ENTITY_TYPE, $item, ['id' => $response['id']]);
     }
 
-    /**
-     * Maps Bagisto groups with UnoPIM groups.
-     */
     private function mapBagistoGroups($family, &$item, $batchId): void
     {
         $bagistoGroups = array_combine(
@@ -271,9 +250,6 @@ class Exporter extends AbstractExporter
         }
     }
 
-    /**
-     * Formats common fields for export.
-     */
     protected function getCommonFields($item): array
     {
         $formatData = [
@@ -286,9 +262,6 @@ class Exporter extends AbstractExporter
         return $formatData;
     }
 
-    /**
-     * Formats attribute groups.
-     */
     private function formatAttributeGroups($item): array
     {
         $formattedAttributes = [];
@@ -310,9 +283,6 @@ class Exporter extends AbstractExporter
         return $formattedAttributes;
     }
 
-    /**
-     * Formats custom attributes.
-     */
     private function formatCustomAttributes($groupMapping): array
     {
         $attributeIds = [];
@@ -331,9 +301,6 @@ class Exporter extends AbstractExporter
         return $attributeIds;
     }
 
-    /**
-     * Gets the formatted group key.
-     */
     private function getFormattedGroupKey($familyGroup): string
     {
         $mapData = $this->getMapping($this->credential['id'], $familyGroup['id'], null, null, null, self::GROUP_ENTITY_TYPE);

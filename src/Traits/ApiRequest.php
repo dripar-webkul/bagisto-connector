@@ -15,9 +15,6 @@ trait ApiRequest
 
     protected $tokenReneratedAt = false;
 
-    /**
-     * Validation/error messages from the most recent API call (empty when it succeeded).
-     */
     protected array $lastApiErrors = [];
 
     public function buildHttpRequest(): ApiService

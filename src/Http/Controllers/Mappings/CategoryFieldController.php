@@ -31,9 +31,6 @@ class CategoryFieldController extends Controller
         return view('bagisto::export.mappings.categoryfields.index', compact('bagistoCategoryFields', 'categoryFields', 'mappedCategoryFields'));
     }
 
-    /**
-     * Handles the process of storing or updating attribute mappings.
-     */
     public function storeOrUpdate(StandardFieldRequest $request): JsonResponse
     {
         try {
@@ -62,9 +59,6 @@ class CategoryFieldController extends Controller
         }
     }
 
-    /**
-     * Arrange Data for the attribute mapping
-     */
     private function setFormatForMapping(array $data): array
     {
         $formatedData = [];
@@ -78,7 +72,6 @@ class CategoryFieldController extends Controller
             return $value !== '';
         });
 
-        /** Format for standard category fields */
         $formatedData['standard_field'] = [
             'section'      => 'standard_field',
             'mapped_value' => $standardCategoryFields,

@@ -11,29 +11,13 @@ class InstallSampleData extends Command
 {
     use EncryptableTrait;
 
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'bagisto:sample-config:generate
                             {--file= : Path to a custom sample-data JSON file (defaults to the bundled one)}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Load Bagisto connector sample data (credential, job instances, mappings, data mapping). The credential is verified against the store before it is encrypted and stored in the database.';
 
-    /**
-     * Default path to the bundled sample data (used when --file is not given).
-     */
     protected string $dataFile = __DIR__.'/../../Database/SampleData/sample-data.json';
 
-    /**
-     * Execute the console command.
-     */
     public function handle(): int
     {
         $dataFile = $this->option('file') ?: $this->dataFile;
@@ -89,10 +73,6 @@ class InstallSampleData extends Command
         return self::SUCCESS;
     }
 
-    /**
-     * Whether the credential already has shop URL, email and password set in the
-     * database. If so the command keeps it and does not prompt or overwrite it.
-     */
     protected function credentialConfigured($id): bool
     {
         $credential = DB::table('wk_bagisto_credential')->where('id', $id)->first();
@@ -103,11 +83,6 @@ class InstallSampleData extends Command
             && ! empty($credential->password);
     }
 
-    /**
-     * Prompt for any blank credential field, verify it against the store, and
-     * encrypt the password. Returns null (and skips storing) when the credential
-     * is not accepted by the store.
-     */
     protected function resolveCredential(array $row): ?array
     {
         if (empty($row['shop_url'])) {
@@ -136,9 +111,6 @@ class InstallSampleData extends Command
         return $row;
     }
 
-    /**
-     * Verify the credential by attempting an admin login against the Bagisto store.
-     */
     protected function credentialIsValid(string $shopUrl, string $email, string $password): bool
     {
         try {

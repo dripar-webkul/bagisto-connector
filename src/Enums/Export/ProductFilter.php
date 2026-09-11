@@ -18,10 +18,6 @@ enum ProductFilter: string
 
     case WITH_ASSOCIATIONS = 'with_associations';
 
-    /**
-     * Fields the connector renders in its own filter card, ahead of the core
-     * ones. Shared by the create and edit export views.
-     */
     public static function connectorFields(): array
     {
         return array_column([

@@ -2,7 +2,6 @@
 
 namespace Webkul\Bagisto\Http\Controllers;
 
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
@@ -27,11 +26,6 @@ class CredentialController extends Controller
         protected CredentialRepository $credentialRepository
     ) {}
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return View
-     */
     public function index(): View|JsonResponse
     {
         if (request()->ajax()) {
@@ -41,9 +35,6 @@ class CredentialController extends Controller
         return view('bagisto::credentials.index');
     }
 
-    /**
-     * Store a credential.
-     */
     public function store(CredentialCreateRequest $request): JsonResponse
     {
         $requestData = $request->only([
@@ -76,12 +67,6 @@ class CredentialController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource for editing.
-     *
-     *
-     * @throws ModelNotFoundException If the credential with the given ID is not found.
-     */
     public function edit(int $id): View
     {
         $credential = $this->credentialRepository->find($id);
@@ -172,10 +157,6 @@ class CredentialController extends Controller
         ]);
     }
 
-    /**
-     * The edit form re-serialises whatever it loaded, so an empty or repeated
-     * mapping saved once keeps coming back and grows on every save.
-     */
     protected function sanitizeStoreInfo($storeInfo): array
     {
         $clean = [];

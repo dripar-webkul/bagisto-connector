@@ -7,14 +7,6 @@ use Webkul\HistoryControl\Presenters\JsonDataPresenter as JsonDataPresenters;
 
 class JsonDataPresenter extends JsonDataPresenters implements HistoryPresenterInterface
 {
-    /**
-     * Represents value changes for history tracking.
-     *
-     * @param  mixed  $oldValues  Old values that will be compared.
-     * @param  mixed  $newValues  New values to compare against old values.
-     * @param  string  $fieldName  Name of the field being tracked.
-     * @return array Normalized array of changes for history tracking.
-     */
     public static function representValueForHistory(mixed $oldValues, mixed $newValues, string $fieldName): array
     {
         $oldArray = is_string($oldValues) ? json_decode($oldValues, true) : [];

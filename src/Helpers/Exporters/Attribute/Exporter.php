@@ -79,17 +79,11 @@ class Exporter extends AbstractExporter
 
         $this->write($preparedData, $batch->id);
 
-        /**
-         * Update export batch process state summary
-         */
         $this->updateBatchState($batch->id, Export::STATE_PROCESSED);
 
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function getResults(): \Iterator
     {
         $this->initialize();
@@ -223,9 +217,6 @@ class Exporter extends AbstractExporter
         $mapData = $response;
     }
 
-    /**
-     * Prepare attributes from current batch
-     */
     public function prepareAttributes(JobTrackBatchContract $batch, mixed $filePath): array
     {
         $attributes = [];

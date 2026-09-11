@@ -129,7 +129,7 @@ return [
                 'width'                => 'The width field is a text type attribute',
                 'height'               => 'The height field is a text type attribute',
                 'weight'               => 'The weight field is a required text type attribute',
-                'images'               => 'The images field is a image and gallery type attribute',
+                'images'               => 'The images field is an image, gallery and asset type attribute',
                 'inventories'          => 'The inventories field is a text number type attribute',
                 'title'                => 'The :code field is a :type type attribute',
             ],

@@ -2,7 +2,6 @@
 
 namespace Webkul\Bagisto\Helpers\Exporters\Category;
 
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Bagisto\Enums\Export\CacheType;
@@ -39,19 +38,10 @@ class Exporter extends BaseExporter
 
     protected array $jobFilters = [];
 
-    /**
-     * Active UnoPim category fields, as a Collection once loaded from the
-     * repository and an array when restored from cache.
-     *
-     * @var Collection|array
-     */
     protected $categoryFields = [];
 
     protected array $storeSlug = [];
 
-    /**
-     * Memoised fallback list of Bagisto filterable attribute IDs.
-     */
     protected ?array $defaultFilterableAttributeIds = null;
 
     public function __construct(
@@ -76,9 +66,6 @@ class Exporter extends BaseExporter
         $this->initializeJobFilters();
     }
 
-    /**
-     * Initializes categoryFields for the export process.
-     */
     public function initializeCategoryFields(): void
     {
         $this->categoryFields = Cache::get(CacheType::UNOPIM_CATEGORY_FIELDS->value, []);
@@ -89,9 +76,6 @@ class Exporter extends BaseExporter
         }
     }
 
-    /**
-     * Initializes mappingField for the export process.
-     */
     public function initializeMappingFields(): void
     {
         $this->mappingFields = Cache::get(CacheType::CATEGORY_FIELD_MAPPING->value, []);
@@ -113,9 +97,6 @@ class Exporter extends BaseExporter
         }
     }
 
-    /**
-     * Initializes Job Filters for the export process.
-     */
     public function initializeJobFilters(): void
     {
         $this->jobFilters = Cache::get(CacheType::CATEGORY_JOB_FILTERS->value, []);
@@ -173,17 +154,11 @@ class Exporter extends BaseExporter
 
         $this->write($preparedData, $batch->id);
 
-        /**
-         * Update export batch process state summary
-         */
         $this->updateBatchState($batch->id, Export::STATE_PROCESSED);
 
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function getResults(): ?\Iterator
     {
         $filters = $this->getFilters();
@@ -322,9 +297,6 @@ class Exporter extends BaseExporter
         $this->logSkippedItem($item, $response);
     }
 
-    /**
-     * Recreate a category whose Bagisto mapping became stale, then refresh the mapping.
-     */
     private function recreateMissingCategory(array $item, array $options, $id, $batchId, $parentCode): void
     {
         $locale = $item['locale'];
@@ -347,9 +319,6 @@ class Exporter extends BaseExporter
         }
     }
 
-    /**
-     * Whether the most recent API error indicates the target entity no longer exists in Bagisto (HTTP 404).
-     */
     private function isMissingEntityError(): bool
     {
         return array_key_exists('endpoint', $this->lastApiErrors);
@@ -366,9 +335,6 @@ class Exporter extends BaseExporter
         );
     }
 
-    /**
-     * Prepare categories from current batch
-     */
     public function prepareCategories(JobTrackBatchContract $batch, mixed $filePath): array
     {
         $locales = $this->getExportableLocales();
@@ -395,11 +361,6 @@ class Exporter extends BaseExporter
         return $categories;
     }
 
-    /**
-     * A half-saved credential mapping can leave a locale entry holding an array
-     * where a locale code belongs, which would fatal the whole batch. Drop those
-     * and say why, so the run reports a skip instead of dying.
-     */
     private function getExportableLocales(): array
     {
         $locales = [];
@@ -502,9 +463,6 @@ class Exporter extends BaseExporter
         return null;
     }
 
-    /**
-     * Sets category field values for a product. If an category field is not present in the given values array,
-     */
     protected function setFieldsAdditionalData(array $additionalData, $filePath, $options = []): array
     {
         $fieldValues = [];

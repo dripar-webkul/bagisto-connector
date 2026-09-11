@@ -2,6 +2,8 @@
 
 namespace Webkul\Bagisto\Tests\Unit;
 
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Psr\Log\LoggerInterface;
 use Tests\TestCase;
@@ -13,6 +15,7 @@ use Webkul\Bagisto\Repositories\BagistoDataMapping;
 use Webkul\Bagisto\Repositories\CredentialRepository;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Core\Repositories\ChannelRepository;
+use Webkul\DAM\Repositories\AssetRepository;
 use Webkul\DataTransfer\Helpers\Sources\Export\ProductSource;
 use Webkul\DataTransfer\Jobs\Export\File\FlatItemBuffer;
 use Webkul\DataTransfer\Repositories\JobTrackBatchRepository;
@@ -41,6 +44,7 @@ class ExporterTest extends TestCase
         $channelRepo = Mockery::mock(ChannelRepository::class);
         $credentialRepo = Mockery::mock(CredentialRepository::class);
         $productSource = Mockery::mock(ProductSource::class);
+        $assetRepo = Mockery::mock(AssetRepository::class);
 
         $this->exporter = new Exporter(
             $batchRepo,
@@ -53,7 +57,8 @@ class ExporterTest extends TestCase
             $attrMappingRepo,
             $channelRepo,
             $credentialRepo,
-            $productSource
+            $productSource,
+            $assetRepo
         );
 
         $this->jobLogger = Mockery::mock(LoggerInterface::class);
@@ -197,6 +202,101 @@ class ExporterTest extends TestCase
         $method->invokeArgs($this->exporter, [&$mergedFields, null]);
 
         $this->assertSame('1', $mergedFields['visible_individually']);
+    }
+
+    public function test_map_attributes_combines_multiple_mapped_attributes_into_one_value()
+    {
+        $this->setProperty($this->exporter, 'mappingAttributes', [
+            'standard_attribute' => (object) ['mapped_value' => ['images' => ['image_1', 'image_2']]],
+            'image_attribute'    => (object) ['mapped_value' => []],
+        ]);
+
+        $mergedFields = [
+            'image_1' => 'storage#image-one.jpg',
+            'image_2' => 'storage#image-two.jpg',
+        ];
+
+        $method = new \ReflectionMethod($this->exporter, 'mapAttributesToBagisto');
+        $method->setAccessible(true);
+        $method->invokeArgs($this->exporter, [&$mergedFields]);
+
+        $this->assertSame('storage#image-one.jpg,storage#image-two.jpg', $mergedFields['images']);
+    }
+
+    public function test_map_attributes_skips_mapped_attributes_without_values()
+    {
+        $this->setProperty($this->exporter, 'mappingAttributes', [
+            'standard_attribute' => (object) ['mapped_value' => ['images' => ['image_1', 'image_2']]],
+            'image_attribute'    => (object) ['mapped_value' => []],
+        ]);
+
+        $mergedFields = ['image_1' => 'storage#image-one.jpg'];
+
+        $method = new \ReflectionMethod($this->exporter, 'mapAttributesToBagisto');
+        $method->setAccessible(true);
+        $method->invokeArgs($this->exporter, [&$mergedFields]);
+
+        $this->assertSame('storage#image-one.jpg', $mergedFields['images']);
+    }
+
+    public function test_map_attributes_keeps_single_attribute_mapping()
+    {
+        $this->setProperty($this->exporter, 'mappingAttributes', [
+            'standard_attribute' => (object) ['mapped_value' => ['images' => 'image_1']],
+            'image_attribute'    => (object) ['mapped_value' => []],
+        ]);
+
+        $mergedFields = ['image_1' => 'storage#image-one.jpg'];
+
+        $method = new \ReflectionMethod($this->exporter, 'mapAttributesToBagisto');
+        $method->setAccessible(true);
+        $method->invokeArgs($this->exporter, [&$mergedFields]);
+
+        $this->assertSame('storage#image-one.jpg', $mergedFields['images']);
+    }
+
+    public function test_s3_media_urls_are_generated_from_the_active_s3_disk()
+    {
+        Config::set('filesystems.default', 's3');
+        Config::set('filesystems.disks.s3', [
+            'driver'     => 'local',
+            'root'       => storage_path('framework/testing/disks/s3'),
+            'url'        => 'https://cdn.example.com',
+            'visibility' => 'public',
+        ]);
+
+        Storage::fake('s3');
+        Storage::disk('s3')->put('product/1/image/a.webp', 'image');
+
+        $method = new \ReflectionMethod($this->exporter, 'makeDamPublicUrl');
+        $method->setAccessible(true);
+
+        $this->assertSame(
+            'https://cdn.example.com/product/1/image/a.webp',
+            $method->invoke($this->exporter, 'product/1/image/a.webp')
+        );
+    }
+
+    public function test_s3_media_paths_are_resolved_from_the_active_s3_disk()
+    {
+        Config::set('filesystems.default', 's3');
+        Config::set('filesystems.disks.s3', [
+            'driver'     => 'local',
+            'root'       => storage_path('framework/testing/disks/s3'),
+            'url'        => 'https://cdn.example.com',
+            'visibility' => 'public',
+        ]);
+
+        Storage::fake('s3');
+        Storage::disk('s3')->put('product/1/image/a.webp', 'image');
+
+        $method = new \ReflectionMethod($this->exporter, 'getExistingFilePath');
+        $method->setAccessible(true);
+
+        $this->assertSame(
+            'https://cdn.example.com/product/1/image/a.webp',
+            $method->invoke($this->exporter, 'product/1/image/a.webp')
+        );
     }
 
     public function test_super_attributes_flattens_a_one_level_variant_tree()
