@@ -37,9 +37,9 @@ return [
     'bagisto' => [
         'credentials' => [
             'tabs' => [
-                'credential'        => 'Credential',
-                'attribute-mapping' => 'Attribute Mapping',
-                'category-mapping'  => 'Category Mapping',
+                'credential'        => 'Credenciales',
+                'attribute-mapping' => 'Mapeo de atributos',
+                'category-mapping'  => 'Mapeo de categorías',
             ],
 
             'index' => [
@@ -172,21 +172,21 @@ return [
         ],
         'export' => [
             'skipped' => [
-                'skipped-heading'          => ':count product(s) were not exported',
-                'skipped-description'      => 'These products stayed in UnoPim. Fix the cause below and run the export again — the download log has the full detail.',
-                'skipped-reason'           => 'Why it was not exported',
-                'excluded-heading'         => ':count file(s) were left out of the export',
-                'excluded-description'     => 'These products reached Bagisto, but the files below were left behind. Everything else about them exported normally.',
-                'excluded-reason'          => 'Why the file was left out',
-                'product'                  => 'Product',
-                'missing-required-fields'  => 'Product :identifier was not exported: Bagisto requires :fields, and the mapped UnoPim attribute(s) had no value for this product. Set a value, or give the field a Fixed Value on the Attribute Mapping tab.',
-                'unsupported-type'         => 'Product :identifier was not exported: product type :type has no Bagisto equivalent.',
-                'no-scope-match'           => 'Product :identifier was not exported: none of the selected channels and locales are mapped to this Bagisto store.',
-                'rejected-by-bagisto'      => 'Product :identifier was rejected by Bagisto: :errors',
-                'request-failed'           => 'Product :identifier was not exported because the request to Bagisto failed: :errors',
-                'unsupported-media-type'   => 'Product :identifier: :file was left out because Bagisto product images only accept image files.',
-                'unsupported-image-format' => 'Product :identifier: :file was left out because Bagisto cannot decode that image format. Use JPG, PNG, GIF, WEBP, BMP or AVIF.',
-                'media-not-found'          => 'Product :identifier: :file was left out because the file is no longer in storage.',
+                'skipped-heading'          => ':count producto(s) no se exportaron',
+                'skipped-description'      => 'Estos productos se quedaron en UnoPim. Corrija la causa indicada abajo y vuelva a ejecutar la exportación — el registro de descarga tiene todo el detalle.',
+                'skipped-reason'           => 'Por qué no se exportó',
+                'excluded-heading'         => ':count archivo(s) quedaron fuera de la exportación',
+                'excluded-description'     => 'Estos productos llegaron a Bagisto, pero los archivos siguientes se quedaron fuera. Todo lo demás se exportó con normalidad.',
+                'excluded-reason'          => 'Por qué se omitió el archivo',
+                'product'                  => 'Producto',
+                'missing-required-fields'  => 'El producto :identifier no se exportó: Bagisto requiere :fields, y el atributo de UnoPim asignado no tenía valor para este producto. Asigne un valor o dé al campo un valor fijo en la pestaña Mapeo de atributos.',
+                'unsupported-type'         => 'El producto :identifier no se exportó: el tipo de producto :type no tiene equivalente en Bagisto.',
+                'no-scope-match'           => 'El producto :identifier no se exportó: ninguno de los canales y locales seleccionados está asignado a esta tienda Bagisto.',
+                'rejected-by-bagisto'      => 'Bagisto rechazó el producto :identifier: :errors',
+                'request-failed'           => 'El producto :identifier no se exportó porque la solicitud a Bagisto falló: :errors',
+                'unsupported-media-type'   => 'Producto :identifier: :file se omitió porque las imágenes de producto de Bagisto solo admiten archivos de imagen.',
+                'unsupported-image-format' => 'Producto :identifier: :file se omitió porque Bagisto no puede decodificar ese formato de imagen. Use JPG, PNG, GIF, WEBP, BMP o AVIF.',
+                'media-not-found'          => 'Producto :identifier: :file se omitió porque el archivo ya no está en el almacenamiento.',
             ],
             'mapping' => [
                 'attributes' => [
@@ -208,8 +208,8 @@ return [
                 'additional-attributes' => [
                     'title'          => 'Mapeos de atributos adicionales',
                     'description'    => 'Escriba el código de atributo de Bagisto para agregar un atributo adicional y mapearlo.',
-                    'attribute-code' => 'Bagisto Attribute Code',
-                    'attribute-type' => 'Attribute Type',
+                    'attribute-code' => 'Código de atributo de Bagisto',
+                    'attribute-type' => 'Tipo de atributo',
                 ],
 
                 'configurable-attributes' => [

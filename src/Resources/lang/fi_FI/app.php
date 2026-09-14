@@ -37,9 +37,9 @@ return [
     'bagisto' => [
         'credentials' => [
             'tabs' => [
-                'credential'        => 'Credential',
-                'attribute-mapping' => 'Attribute Mapping',
-                'category-mapping'  => 'Category Mapping',
+                'credential'        => 'Tunnistetiedot',
+                'attribute-mapping' => 'Attribuuttien määritys',
+                'category-mapping'  => 'Kategorioiden määritys',
             ],
 
             'index' => [
@@ -172,21 +172,21 @@ return [
         ],
         'export' => [
             'skipped' => [
-                'skipped-heading'          => ':count product(s) were not exported',
-                'skipped-description'      => 'These products stayed in UnoPim. Fix the cause below and run the export again — the download log has the full detail.',
-                'skipped-reason'           => 'Why it was not exported',
-                'excluded-heading'         => ':count file(s) were left out of the export',
-                'excluded-description'     => 'These products reached Bagisto, but the files below were left behind. Everything else about them exported normally.',
-                'excluded-reason'          => 'Why the file was left out',
-                'product'                  => 'Product',
-                'missing-required-fields'  => 'Product :identifier was not exported: Bagisto requires :fields, and the mapped UnoPim attribute(s) had no value for this product. Set a value, or give the field a Fixed Value on the Attribute Mapping tab.',
-                'unsupported-type'         => 'Product :identifier was not exported: product type :type has no Bagisto equivalent.',
-                'no-scope-match'           => 'Product :identifier was not exported: none of the selected channels and locales are mapped to this Bagisto store.',
-                'rejected-by-bagisto'      => 'Product :identifier was rejected by Bagisto: :errors',
-                'request-failed'           => 'Product :identifier was not exported because the request to Bagisto failed: :errors',
-                'unsupported-media-type'   => 'Product :identifier: :file was left out because Bagisto product images only accept image files.',
-                'unsupported-image-format' => 'Product :identifier: :file was left out because Bagisto cannot decode that image format. Use JPG, PNG, GIF, WEBP, BMP or AVIF.',
-                'media-not-found'          => 'Product :identifier: :file was left out because the file is no longer in storage.',
+                'skipped-heading'          => ':count tuotetta ei viety',
+                'skipped-description'      => 'Nämä tuotteet jäivät UnoPimiin. Korjaa alla mainittu syy ja suorita vienti uudelleen — latausloki sisältää kaikki tiedot.',
+                'skipped-reason'           => 'Miksi sitä ei viety',
+                'excluded-heading'         => ':count tiedostoa jätettiin viennistä pois',
+                'excluded-description'     => 'Nämä tuotteet päätyivät Bagistoon, mutta alla olevat tiedostot jäivät pois. Kaikki muu vietiin normaalisti.',
+                'excluded-reason'          => 'Miksi tiedosto jätettiin pois',
+                'product'                  => 'Tuote',
+                'missing-required-fields'  => 'Tuotetta :identifier ei viety: Bagisto vaatii kentät :fields, eikä määritetyllä UnoPim-attribuutilla ollut arvoa tälle tuotteelle. Aseta arvo tai anna kentälle kiinteä arvo Attribuuttien määritys -välilehdellä.',
+                'unsupported-type'         => 'Tuotetta :identifier ei viety: tuotetyypille :type ei ole vastinetta Bagistossa.',
+                'no-scope-match'           => 'Tuotetta :identifier ei viety: mitään valituista kanavista ja kielistä ei ole määritetty tähän Bagisto-kauppaan.',
+                'rejected-by-bagisto'      => 'Bagisto hylkäsi tuotteen :identifier: :errors',
+                'request-failed'           => 'Tuotetta :identifier ei viety, koska pyyntö Bagistoon epäonnistui: :errors',
+                'unsupported-media-type'   => 'Tuote :identifier: :file jätettiin pois, koska Bagiston tuotekuvat hyväksyvät vain kuvatiedostoja.',
+                'unsupported-image-format' => 'Tuote :identifier: :file jätettiin pois, koska Bagisto ei pysty purkamaan tätä kuvamuotoa. Käytä muotoa JPG, PNG, GIF, WEBP, BMP tai AVIF.',
+                'media-not-found'          => 'Tuote :identifier: :file jätettiin pois, koska tiedostoa ei enää ole tallennustilassa.',
             ],
             'mapping' => [
                 'attributes' => [
@@ -208,8 +208,8 @@ return [
                 'additional-attributes' => [
                     'title'          => 'Lisäattribuuttien yhdistämiset',
                     'description'    => 'Kirjoita Bagisto-attribuuttikoodi lisätäksesi lisäattribuutin ja yhdistääksesi sen.',
-                    'attribute-code' => 'Bagisto Attribute Code',
-                    'attribute-type' => 'Attribute Type',
+                    'attribute-code' => 'Bagiston attribuuttikoodi',
+                    'attribute-type' => 'Attribuutin tyyppi',
                 ],
 
                 'configurable-attributes' => [

@@ -37,9 +37,9 @@ return [
     'bagisto' => [
         'credentials' => [
             'tabs' => [
-                'credential'        => 'Credential',
-                'attribute-mapping' => 'Attribute Mapping',
-                'category-mapping'  => 'Category Mapping',
+                'credential'        => 'Kredensial',
+                'attribute-mapping' => 'Pemetaan atribut',
+                'category-mapping'  => 'Pemetaan kategori',
             ],
 
             'index' => [
@@ -172,21 +172,21 @@ return [
         ],
         'export' => [
             'skipped' => [
-                'skipped-heading'          => ':count product(s) were not exported',
-                'skipped-description'      => 'These products stayed in UnoPim. Fix the cause below and run the export again — the download log has the full detail.',
-                'skipped-reason'           => 'Why it was not exported',
-                'excluded-heading'         => ':count file(s) were left out of the export',
-                'excluded-description'     => 'These products reached Bagisto, but the files below were left behind. Everything else about them exported normally.',
-                'excluded-reason'          => 'Why the file was left out',
-                'product'                  => 'Product',
-                'missing-required-fields'  => 'Product :identifier was not exported: Bagisto requires :fields, and the mapped UnoPim attribute(s) had no value for this product. Set a value, or give the field a Fixed Value on the Attribute Mapping tab.',
-                'unsupported-type'         => 'Product :identifier was not exported: product type :type has no Bagisto equivalent.',
-                'no-scope-match'           => 'Product :identifier was not exported: none of the selected channels and locales are mapped to this Bagisto store.',
-                'rejected-by-bagisto'      => 'Product :identifier was rejected by Bagisto: :errors',
-                'request-failed'           => 'Product :identifier was not exported because the request to Bagisto failed: :errors',
-                'unsupported-media-type'   => 'Product :identifier: :file was left out because Bagisto product images only accept image files.',
-                'unsupported-image-format' => 'Product :identifier: :file was left out because Bagisto cannot decode that image format. Use JPG, PNG, GIF, WEBP, BMP or AVIF.',
-                'media-not-found'          => 'Product :identifier: :file was left out because the file is no longer in storage.',
+                'skipped-heading'          => ':count produk tidak diekspor',
+                'skipped-description'      => 'Produk-produk ini tetap berada di UnoPim. Perbaiki penyebab di bawah ini lalu jalankan ekspor lagi — log unduhan memuat detail lengkapnya.',
+                'skipped-reason'           => 'Alasan tidak diekspor',
+                'excluded-heading'         => ':count berkas dikeluarkan dari ekspor',
+                'excluded-description'     => 'Produk-produk ini berhasil masuk ke Bagisto, tetapi berkas di bawah ini dilewati. Selebihnya diekspor seperti biasa.',
+                'excluded-reason'          => 'Alasan berkas dilewati',
+                'product'                  => 'Produk',
+                'missing-required-fields'  => 'Produk :identifier tidak diekspor: Bagisto mewajibkan :fields, dan atribut UnoPim yang dipetakan tidak memiliki nilai untuk produk ini. Isi nilainya, atau beri kolom tersebut Nilai Tetap di tab Pemetaan atribut.',
+                'unsupported-type'         => 'Produk :identifier tidak diekspor: tipe produk :type tidak memiliki padanan di Bagisto.',
+                'no-scope-match'           => 'Produk :identifier tidak diekspor: tidak ada saluran dan lokal terpilih yang dipetakan ke toko Bagisto ini.',
+                'rejected-by-bagisto'      => 'Produk :identifier ditolak oleh Bagisto: :errors',
+                'request-failed'           => 'Produk :identifier tidak diekspor karena permintaan ke Bagisto gagal: :errors',
+                'unsupported-media-type'   => 'Produk :identifier: :file dilewati karena gambar produk Bagisto hanya menerima berkas gambar.',
+                'unsupported-image-format' => 'Produk :identifier: :file dilewati karena Bagisto tidak dapat membaca format gambar tersebut. Gunakan JPG, PNG, GIF, WEBP, BMP, atau AVIF.',
+                'media-not-found'          => 'Produk :identifier: :file dilewati karena berkas tersebut sudah tidak ada di penyimpanan.',
             ],
             'mapping' => [
                 'attributes' => [
@@ -208,8 +208,8 @@ return [
                 'additional-attributes' => [
                     'title'          => 'Pemetaan Atribut Tambahan',
                     'description'    => 'Tulis kode atribut Bagisto untuk menambahkan atribut tambahan dan memetakannya.',
-                    'attribute-code' => 'Bagisto Attribute Code',
-                    'attribute-type' => 'Attribute Type',
+                    'attribute-code' => 'Kode atribut Bagisto',
+                    'attribute-type' => 'Tipe atribut',
                 ],
 
                 'configurable-attributes' => [

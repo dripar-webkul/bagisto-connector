@@ -37,9 +37,9 @@ return [
     'bagisto' => [
         'credentials' => [
             'tabs' => [
-                'credential'        => 'Credential',
-                'attribute-mapping' => 'Attribute Mapping',
-                'category-mapping'  => 'Category Mapping',
+                'credential'        => '憑證',
+                'attribute-mapping' => '屬性對應',
+                'category-mapping'  => '分類對應',
             ],
 
             'index' => [
@@ -172,21 +172,21 @@ return [
         ],
         'export' => [
             'skipped' => [
-                'skipped-heading'          => ':count product(s) were not exported',
-                'skipped-description'      => 'These products stayed in UnoPim. Fix the cause below and run the export again — the download log has the full detail.',
-                'skipped-reason'           => 'Why it was not exported',
-                'excluded-heading'         => ':count file(s) were left out of the export',
-                'excluded-description'     => 'These products reached Bagisto, but the files below were left behind. Everything else about them exported normally.',
-                'excluded-reason'          => 'Why the file was left out',
-                'product'                  => 'Product',
-                'missing-required-fields'  => 'Product :identifier was not exported: Bagisto requires :fields, and the mapped UnoPim attribute(s) had no value for this product. Set a value, or give the field a Fixed Value on the Attribute Mapping tab.',
-                'unsupported-type'         => 'Product :identifier was not exported: product type :type has no Bagisto equivalent.',
-                'no-scope-match'           => 'Product :identifier was not exported: none of the selected channels and locales are mapped to this Bagisto store.',
-                'rejected-by-bagisto'      => 'Product :identifier was rejected by Bagisto: :errors',
-                'request-failed'           => 'Product :identifier was not exported because the request to Bagisto failed: :errors',
-                'unsupported-media-type'   => 'Product :identifier: :file was left out because Bagisto product images only accept image files.',
-                'unsupported-image-format' => 'Product :identifier: :file was left out because Bagisto cannot decode that image format. Use JPG, PNG, GIF, WEBP, BMP or AVIF.',
-                'media-not-found'          => 'Product :identifier: :file was left out because the file is no longer in storage.',
+                'skipped-heading'          => '有 :count 項商品未匯出',
+                'skipped-description'      => '這些商品仍留在 UnoPim 中。請修正下方列出的原因後重新執行匯出 — 下載記錄中包含完整詳情。',
+                'skipped-reason'           => '未匯出的原因',
+                'excluded-heading'         => '有 :count 個檔案被排除於匯出之外',
+                'excluded-description'     => '這些商品已成功匯入 Bagisto，但下列檔案被略過。其餘內容均已正常匯出。',
+                'excluded-reason'          => '檔案被略過的原因',
+                'product'                  => '商品',
+                'missing-required-fields'  => '商品 :identifier 未匯出：Bagisto 要求填寫 :fields，而對應的 UnoPim 屬性在此商品上沒有值。請設定一個值，或在「屬性對應」分頁中為該欄位指定固定值。',
+                'unsupported-type'         => '商品 :identifier 未匯出：商品類型 :type 在 Bagisto 中沒有對應類型。',
+                'no-scope-match'           => '商品 :identifier 未匯出：所選通路與語系均未對應到此 Bagisto 商店。',
+                'rejected-by-bagisto'      => '商品 :identifier 遭 Bagisto 拒絕：:errors',
+                'request-failed'           => '商品 :identifier 未匯出，因為向 Bagisto 發送的請求失敗：:errors',
+                'unsupported-media-type'   => '商品 :identifier：檔案 :file 被略過，因為 Bagisto 商品圖片僅接受圖片檔案。',
+                'unsupported-image-format' => '商品 :identifier：檔案 :file 被略過，因為 Bagisto 無法解碼該圖片格式。請使用 JPG、PNG、GIF、WEBP、BMP 或 AVIF。',
+                'media-not-found'          => '商品 :identifier：檔案 :file 被略過，因為該檔案已不在儲存空間中。',
             ],
             'mapping' => [
                 'attributes' => [
@@ -208,8 +208,8 @@ return [
                 'additional-attributes' => [
                     'title'          => '附加屬性對應',
                     'description'    => '請輸入 Bagisto 屬性代碼以新增附加屬性並進行對應。',
-                    'attribute-code' => 'Bagisto Attribute Code',
-                    'attribute-type' => 'Attribute Type',
+                    'attribute-code' => 'Bagisto 屬性代碼',
+                    'attribute-type' => '屬性類型',
                 ],
 
                 'configurable-attributes' => [

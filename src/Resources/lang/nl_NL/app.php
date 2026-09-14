@@ -37,9 +37,9 @@ return [
     'bagisto' => [
         'credentials' => [
             'tabs' => [
-                'credential'        => 'Credential',
-                'attribute-mapping' => 'Attribute Mapping',
-                'category-mapping'  => 'Category Mapping',
+                'credential'        => 'Inloggegevens',
+                'attribute-mapping' => 'Attribuuttoewijzing',
+                'category-mapping'  => 'Categorietoewijzing',
             ],
 
             'index' => [
@@ -172,21 +172,21 @@ return [
         ],
         'export' => [
             'skipped' => [
-                'skipped-heading'          => ':count product(s) were not exported',
-                'skipped-description'      => 'These products stayed in UnoPim. Fix the cause below and run the export again — the download log has the full detail.',
-                'skipped-reason'           => 'Why it was not exported',
-                'excluded-heading'         => ':count file(s) were left out of the export',
-                'excluded-description'     => 'These products reached Bagisto, but the files below were left behind. Everything else about them exported normally.',
-                'excluded-reason'          => 'Why the file was left out',
+                'skipped-heading'          => ':count product(en) zijn niet geëxporteerd',
+                'skipped-description'      => 'Deze producten zijn in UnoPim gebleven. Los de onderstaande oorzaak op en voer de export opnieuw uit — het downloadlogboek bevat alle details.',
+                'skipped-reason'           => 'Waarom het niet is geëxporteerd',
+                'excluded-heading'         => ':count bestand(en) zijn buiten de export gelaten',
+                'excluded-description'     => 'Deze producten hebben Bagisto bereikt, maar de onderstaande bestanden zijn achtergebleven. Al het overige is normaal geëxporteerd.',
+                'excluded-reason'          => 'Waarom het bestand is overgeslagen',
                 'product'                  => 'Product',
-                'missing-required-fields'  => 'Product :identifier was not exported: Bagisto requires :fields, and the mapped UnoPim attribute(s) had no value for this product. Set a value, or give the field a Fixed Value on the Attribute Mapping tab.',
-                'unsupported-type'         => 'Product :identifier was not exported: product type :type has no Bagisto equivalent.',
-                'no-scope-match'           => 'Product :identifier was not exported: none of the selected channels and locales are mapped to this Bagisto store.',
-                'rejected-by-bagisto'      => 'Product :identifier was rejected by Bagisto: :errors',
-                'request-failed'           => 'Product :identifier was not exported because the request to Bagisto failed: :errors',
-                'unsupported-media-type'   => 'Product :identifier: :file was left out because Bagisto product images only accept image files.',
-                'unsupported-image-format' => 'Product :identifier: :file was left out because Bagisto cannot decode that image format. Use JPG, PNG, GIF, WEBP, BMP or AVIF.',
-                'media-not-found'          => 'Product :identifier: :file was left out because the file is no longer in storage.',
+                'missing-required-fields'  => 'Product :identifier is niet geëxporteerd: Bagisto vereist :fields, en het toegewezen UnoPim-attribuut had geen waarde voor dit product. Stel een waarde in of geef het veld een vaste waarde op het tabblad Attribuuttoewijzing.',
+                'unsupported-type'         => 'Product :identifier is niet geëxporteerd: producttype :type heeft geen equivalent in Bagisto.',
+                'no-scope-match'           => 'Product :identifier is niet geëxporteerd: geen van de geselecteerde kanalen en locales is toegewezen aan deze Bagisto-winkel.',
+                'rejected-by-bagisto'      => 'Product :identifier is door Bagisto geweigerd: :errors',
+                'request-failed'           => 'Product :identifier is niet geëxporteerd omdat het verzoek aan Bagisto is mislukt: :errors',
+                'unsupported-media-type'   => 'Product :identifier: :file is overgeslagen omdat Bagisto-productafbeeldingen alleen afbeeldingsbestanden accepteren.',
+                'unsupported-image-format' => 'Product :identifier: :file is overgeslagen omdat Bagisto dat afbeeldingsformaat niet kan decoderen. Gebruik JPG, PNG, GIF, WEBP, BMP of AVIF.',
+                'media-not-found'          => 'Product :identifier: :file is overgeslagen omdat het bestand niet meer in de opslag staat.',
             ],
             'mapping' => [
                 'attributes' => [
@@ -208,8 +208,8 @@ return [
                 'additional-attributes' => [
                     'title'          => 'Aanvullende attribuutkoppelingen',
                     'description'    => 'Schrijf de Bagisto-attribuutcode om een extra attribuut toe te voegen en te koppelen.',
-                    'attribute-code' => 'Bagisto Attribute Code',
-                    'attribute-type' => 'Attribute Type',
+                    'attribute-code' => 'Bagisto-attribuutcode',
+                    'attribute-type' => 'Attribuuttype',
                 ],
 
                 'configurable-attributes' => [
