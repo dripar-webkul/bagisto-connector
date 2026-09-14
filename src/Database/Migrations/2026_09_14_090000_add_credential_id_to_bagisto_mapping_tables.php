@@ -4,6 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 
 return new class extends Migration
 {
@@ -23,6 +24,10 @@ return new class extends Migration
         $credentialIds = DB::table('wk_bagisto_credential')->orderBy('id')->pluck('id')->all();
 
         foreach (self::TABLES as $table => $indexNames) {
+            $this->guardAgainstOrphanedRows($table, $credentialIds);
+
+            $this->keepOneRowPerSection($table);
+
             Schema::table($table, function (Blueprint $blueprint) {
                 $blueprint->unsignedInteger('credential_id')->nullable()->after('id');
             });
@@ -60,6 +65,18 @@ return new class extends Migration
     /**
      * @param  array<int, int>  $credentialIds
      */
+    private function guardAgainstOrphanedRows(string $table, array $credentialIds): void
+    {
+        if ($credentialIds !== [] || DB::table($table)->doesntExist()) {
+            return;
+        }
+
+        throw new RuntimeException(
+            "Table [{$table}] holds mappings but no Bagisto credential owns them. "
+            .'Create a credential before migrating, or empty the table if the mappings are no longer needed.'
+        );
+    }
+
     private function fanOutExistingRows(string $table, array $credentialIds): void
     {
         if ($credentialIds === []) {
@@ -98,6 +115,10 @@ return new class extends Migration
             ->pluck('id')
             ->all();
 
-        DB::table($table)->when($keep !== [], fn ($query) => $query->whereNotIn('id', $keep))->delete();
+        if ($keep === []) {
+            return;
+        }
+
+        DB::table($table)->whereNotIn('id', $keep)->delete();
     }
 };

@@ -40,13 +40,6 @@ class Export
         ] as $cacheType) {
             Cache::forget($cacheType->forCredential($credentialId));
         }
-
-        foreach ([
-            CacheType::PRODUCT_JOB_FILTERS,
-            CacheType::CATEGORY_JOB_FILTERS,
-        ] as $cacheType) {
-            Cache::forget($cacheType->forJob($credentialId, data_get($export, 'id')));
-        }
     }
 
     public function afterCompleted($export): void

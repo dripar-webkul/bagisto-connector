@@ -12,22 +12,23 @@ it('falls back to a stable key when there is no credential', function () {
         ->toBe(CacheType::ATTRIBUTE_MAPPING->forCredential(null));
 });
 
-it('keeps two export profiles on one credential apart', function () {
-    expect(CacheType::PRODUCT_JOB_FILTERS->forJob(1, 6))
-        ->not->toBe(CacheType::PRODUCT_JOB_FILTERS->forJob(1, 7));
+it('keeps each cache type in its own key', function () {
+    $keys = array_map(fn (CacheType $type) => $type->forCredential(1), CacheType::cases());
+
+    expect(array_unique($keys))->toHaveCount(count(CacheType::cases()));
 });
 
-it('still separates credentials when the profile id matches', function () {
-    expect(CacheType::PRODUCT_JOB_FILTERS->forJob(1, 6))
-        ->not->toBe(CacheType::PRODUCT_JOB_FILTERS->forJob(2, 6));
-});
+it('caches nothing that a credential update cannot reach', function () {
+    $invalidated = [
+        CacheType::CREDENTIAL,
+        CacheType::BAGISTO_API_HTTP,
+        CacheType::ATTRIBUTE_MAPPING,
+        CacheType::CATEGORY_FIELD_MAPPING,
+        CacheType::ADDITIONAL_INFO,
+        CacheType::UNOPIM_CATEGORY_FIELDS,
+    ];
 
-it('never collides a job scoped key with the credential scoped one', function () {
-    expect(CacheType::PRODUCT_JOB_FILTERS->forJob(1, 6))
-        ->not->toBe(CacheType::PRODUCT_JOB_FILTERS->forCredential(1));
-});
+    $names = fn (array $types) => array_map(fn (CacheType $type) => $type->name, $types);
 
-it('keeps product and category filters in separate keys', function () {
-    expect(CacheType::PRODUCT_JOB_FILTERS->forJob(1, 6))
-        ->not->toBe(CacheType::CATEGORY_JOB_FILTERS->forJob(1, 6));
+    expect(array_diff($names(CacheType::cases()), $names($invalidated)))->toBe([]);
 });

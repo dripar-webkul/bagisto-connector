@@ -49,7 +49,10 @@ it('renders filterable attributes using the labels stored alongside the ids', fu
 });
 
 it('falls back to the raw id when no label was stored for it', function () {
-    $old = json_encode([['filterableAttribtes' => '23,24']]);
+    $old = json_encode([[
+        'filterableAttribtes'      => '23',
+        'filterableAttribteLabels' => ['23' => 'Color'],
+    ]]);
     $new = json_encode([[
         'filterableAttribtes'      => '23,24',
         'filterableAttribteLabels' => ['23' => 'Color'],
@@ -57,7 +60,16 @@ it('falls back to the raw id when no label was stored for it', function () {
 
     $result = CredentialPresenter::representValueForHistory($old, $new, 'additional_info');
 
-    expect($result)->toBe([]);
+    expect($result['filterableAttribtes']['new'])->toBe('Color, 24');
+});
+
+it('reports no change when the selection is untouched', function () {
+    $value = json_encode([[
+        'filterableAttribtes'      => '23,24',
+        'filterableAttribteLabels' => ['23' => 'Color'],
+    ]]);
+
+    expect(CredentialPresenter::representValueForHistory($value, $value, 'additional_info'))->toBe([]);
 });
 
 it('does not resolve bagisto attribute ids against unopim attributes', function () {

@@ -12,7 +12,6 @@ use Webkul\Bagisto\Repositories\BagistoDataMapping;
 use Webkul\Bagisto\Repositories\CredentialRepository;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Core\Repositories\ChannelRepository;
-use Webkul\DAM\Repositories\AssetRepository;
 use Webkul\DataTransfer\Helpers\Sources\Export\ProductSource;
 use Webkul\DataTransfer\Jobs\Export\File\FlatItemBuffer;
 use Webkul\DataTransfer\Repositories\JobTrackBatchRepository;
@@ -38,7 +37,6 @@ class SkuMappingTest extends TestCase
             Mockery::mock(ChannelRepository::class),
             Mockery::mock(CredentialRepository::class),
             Mockery::mock(ProductSource::class),
-            Mockery::mock(AssetRepository::class),
         );
     }
 

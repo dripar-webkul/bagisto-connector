@@ -4,6 +4,7 @@ namespace Webkul\Bagisto\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Webkul\Admin\Http\Controllers\Controller;
@@ -60,9 +61,13 @@ class CredentialController extends Controller
 
             $requestData['password'] = $this->encryptValue($requestData['password']);
 
-            $responseData = $this->credentialRepository->create($requestData);
+            $responseData = DB::transaction(function () use ($requestData) {
+                $credential = $this->credentialRepository->create($requestData);
 
-            $this->mappingSeeder->seed($responseData->id);
+                $this->mappingSeeder->seed($credential->id);
+
+                return $credential;
+            });
 
             return new JsonResponse([
                 'message'      => trans('bagisto::app.bagisto.credentials.index.create-success'),
@@ -141,18 +146,19 @@ class CredentialController extends Controller
 
         $requestData = $request->only([
             'email',
+            'shop_url',
             'store_info',
         ]);
 
+        $requestData['shop_url'] = rtrim((string) $requestData['shop_url'], '/');
         $requestData['password'] = $encryptedPassword;
         $requestData['store_info'] = $this->sanitizeStoreInfo($requestData['store_info'] ?? []);
-
-        if ($request->filterableAttribtes) {
-            $requestData['additional_info'] = [[
+        $requestData['additional_info'] = $request->filterableAttribtes
+            ? [[
                 CredentialPresenter::FILTERABLE_ATTRIBUTES_KEY       => $request->filterableAttribtes,
                 CredentialPresenter::FILTERABLE_ATTRIBUTE_LABELS_KEY => $this->fetchFilterableAttributeLabels($httpClient, $request->filterableAttribtes),
-            ]];
-        }
+            ]]
+            : [];
 
         $this->credentialRepository->update($requestData, $id);
 
@@ -214,8 +220,7 @@ class CredentialController extends Controller
     {
         foreach ([
             CacheType::CREDENTIAL,
-            CacheType::PRODUCT_JOB_FILTERS,
-            CacheType::CATEGORY_JOB_FILTERS,
+            CacheType::BAGISTO_API_HTTP,
             CacheType::ATTRIBUTE_MAPPING,
             CacheType::CATEGORY_FIELD_MAPPING,
         ] as $cacheType) {

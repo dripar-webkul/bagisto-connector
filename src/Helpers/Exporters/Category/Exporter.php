@@ -103,56 +103,46 @@ class Exporter extends BaseExporter
 
     public function initializeJobFilters(): void
     {
-        $jobFilterCacheKey = CacheType::CATEGORY_JOB_FILTERS->forJob(
-            $this->credential['id'] ?? null,
-            $this->export->jobInstance->id ?? null
-        );
+        $filters = $this->getFilters();
 
-        $this->jobFilters = Cache::get($jobFilterCacheKey, []);
-        if (empty($this->jobFilters)) {
-            $filters = $this->getFilters();
+        $filtersLocales = [];
+        $exportBagistoChannel = [];
+        $exportBagistoLocales = [];
 
-            $filtersLocales = [];
-            $exportBagistoChannel = [];
-            $exportBagistoLocales = [];
-
-            if (! empty($filters['locale'])) {
-                $filtersLocales = explode(',', $filters['locale']);
-            }
-
-            $bagistoLocales = $this->getMappedLocales();
-            $bagistoChannels = $this->getMappedChannels();
-
-            if (empty($filters['channel'])) {
-                foreach ($bagistoChannels as $bChannel => $uChannel) {
-                    $exportBagistoChannel[$uChannel] = $bChannel;
-                    $mappedLocales = $bagistoLocales[$bChannel] ?? [];
-                    foreach ($mappedLocales as $bagistoLocaleCode => $unopimLocaleCode) {
-                        if (empty($filtersLocales) || in_array($unopimLocaleCode, $filtersLocales)) {
-                            $exportBagistoLocales[$bagistoLocaleCode] = $unopimLocaleCode;
-                        }
-                    }
-                }
-            } else {
-                $bagistoChannel = array_search($filters['channel'], $bagistoChannels);
-                if ($bagistoChannel !== false && $bagistoChannel !== null) {
-                    $exportBagistoChannel[$filters['channel']] = $bagistoChannel;
-                    $mappedLocales = $bagistoLocales[$bagistoChannel] ?? [];
-                    foreach ($mappedLocales as $bagistoLocaleCode => $unopimLocaleCode) {
-                        if (empty($filtersLocales) || in_array($unopimLocaleCode, $filtersLocales)) {
-                            $exportBagistoLocales[$bagistoLocaleCode] = $unopimLocaleCode;
-                        }
-                    }
-                }
-            }
-
-            $this->jobFilters = [
-                'channel' => $exportBagistoChannel,
-                'locales' => $exportBagistoLocales,
-            ];
-
-            Cache::put($jobFilterCacheKey, $this->jobFilters, config('session.lifetime'));
+        if (! empty($filters['locale'])) {
+            $filtersLocales = explode(',', $filters['locale']);
         }
+
+        $bagistoLocales = $this->getMappedLocales();
+        $bagistoChannels = $this->getMappedChannels();
+
+        if (empty($filters['channel'])) {
+            foreach ($bagistoChannels as $bChannel => $uChannel) {
+                $exportBagistoChannel[$uChannel] = $bChannel;
+                $mappedLocales = $bagistoLocales[$bChannel] ?? [];
+                foreach ($mappedLocales as $bagistoLocaleCode => $unopimLocaleCode) {
+                    if (empty($filtersLocales) || in_array($unopimLocaleCode, $filtersLocales)) {
+                        $exportBagistoLocales[$bagistoLocaleCode] = $unopimLocaleCode;
+                    }
+                }
+            }
+        } else {
+            $bagistoChannel = array_search($filters['channel'], $bagistoChannels);
+            if ($bagistoChannel !== false && $bagistoChannel !== null) {
+                $exportBagistoChannel[$filters['channel']] = $bagistoChannel;
+                $mappedLocales = $bagistoLocales[$bagistoChannel] ?? [];
+                foreach ($mappedLocales as $bagistoLocaleCode => $unopimLocaleCode) {
+                    if (empty($filtersLocales) || in_array($unopimLocaleCode, $filtersLocales)) {
+                        $exportBagistoLocales[$bagistoLocaleCode] = $unopimLocaleCode;
+                    }
+                }
+            }
+        }
+
+        $this->jobFilters = [
+            'channel' => $exportBagistoChannel,
+            'locales' => $exportBagistoLocales,
+        ];
     }
 
     public function exportBatch(JobTrackBatchContract $batch, $filePath): bool

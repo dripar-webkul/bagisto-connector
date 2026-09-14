@@ -15,7 +15,6 @@ use Webkul\Bagisto\Repositories\BagistoDataMapping;
 use Webkul\Bagisto\Repositories\CredentialRepository;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Core\Repositories\ChannelRepository;
-use Webkul\DAM\Repositories\AssetRepository;
 use Webkul\DataTransfer\Helpers\Sources\Export\ProductSource;
 use Webkul\DataTransfer\Jobs\Export\File\FlatItemBuffer;
 use Webkul\DataTransfer\Repositories\JobTrackBatchRepository;
@@ -44,7 +43,6 @@ class ExporterTest extends TestCase
         $channelRepo = Mockery::mock(ChannelRepository::class);
         $credentialRepo = Mockery::mock(CredentialRepository::class);
         $productSource = Mockery::mock(ProductSource::class);
-        $assetRepo = Mockery::mock(AssetRepository::class);
 
         $this->exporter = new Exporter(
             $batchRepo,
@@ -57,8 +55,7 @@ class ExporterTest extends TestCase
             $attrMappingRepo,
             $channelRepo,
             $credentialRepo,
-            $productSource,
-            $assetRepo
+            $productSource
         );
 
         $this->jobLogger = Mockery::mock(LoggerInterface::class);

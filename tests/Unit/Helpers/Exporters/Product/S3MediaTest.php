@@ -14,7 +14,6 @@ use Webkul\Bagisto\Repositories\BagistoDataMapping;
 use Webkul\Bagisto\Repositories\CredentialRepository;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Core\Repositories\ChannelRepository;
-use Webkul\DAM\Repositories\AssetRepository;
 use Webkul\DataTransfer\Helpers\Sources\Export\ProductSource;
 use Webkul\DataTransfer\Jobs\Export\File\FlatItemBuffer;
 use Webkul\DataTransfer\Repositories\JobTrackBatchRepository;
@@ -40,7 +39,6 @@ class S3MediaTest extends TestCase
             Mockery::mock(ChannelRepository::class),
             Mockery::mock(CredentialRepository::class),
             Mockery::mock(ProductSource::class),
-            Mockery::mock(AssetRepository::class),
         );
     }
 
@@ -183,10 +181,10 @@ class S3MediaTest extends TestCase
     {
         Config::set('filesystems.default', 'local');
 
-        $this->assertSame(
-            route('bagisto.asset.fetch', ['path' => 'assets/Root/front.jpg']),
-            $this->invoke('makeDamPublicUrl', ['assets/Root/front.jpg'])
-        );
+        $url = $this->invoke('makeDamPublicUrl', ['assets/Root/front.jpg']);
+
+        $this->assertStringContainsString('/bagisto/asset/assets/Root/front.jpg', $url);
+        $this->assertStringContainsString('signature=', $url);
     }
 
     public function test_it_reads_product_media_back_from_the_bucket()

@@ -5,6 +5,7 @@ namespace Webkul\Bagisto\Helpers\Exporters\Product;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Webkul\Attribute\Repositories\AttributeOptionRepository;
 use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Attribute\Rules\AttributeTypes;
@@ -28,8 +29,6 @@ use Webkul\Bagisto\Traits\SkippedItems as SkippedItemsTrait;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Category\Validator\FieldValidator;
 use Webkul\Core\Repositories\ChannelRepository;
-use Webkul\DAM\Models\Asset;
-use Webkul\DAM\Repositories\AssetRepository;
 use Webkul\DataTransfer\Contracts\JobTrackBatch as JobTrackBatchContract;
 use Webkul\DataTransfer\Enums\ProductFilter;
 use Webkul\DataTransfer\Helpers\Export;
@@ -52,6 +51,10 @@ class Exporter extends AbstractExporter
     protected const ENTITY_TYPE = 'bulk_product';
 
     protected const MEASUREMENT_ATTRIBUTE_TYPE = 'measurement';
+
+    protected const DAM_ASSET_ATTRIBUTE_TYPE = 'asset';
+
+    protected const DAM_ASSET_REPOSITORY = 'Webkul\\DAM\\Repositories\\AssetRepository';
 
     protected const NON_INHERITABLE_FIELDS = ['sku', 'url_key'];
 
@@ -77,6 +80,8 @@ class Exporter extends AbstractExporter
 
     protected array $knownSkus = [];
 
+    protected ?object $assetRepository = null;
+
     public function __construct(
         protected JobTrackBatchRepository $exportBatchRepository,
         protected FileExportFileBuffer $exportFileBuffer,
@@ -88,8 +93,7 @@ class Exporter extends AbstractExporter
         protected AttributeMappingRepository $attributeMappingRepository,
         protected ChannelRepository $channelRepository,
         protected CredentialRepository $credentialRepository,
-        protected ProductSource $productSource,
-        protected AssetRepository $assetRepository
+        protected ProductSource $productSource
     ) {
         parent::__construct($exportBatchRepository, $exportFileBuffer, $channelRepository, $attributeRepository, $productSource);
     }
@@ -103,10 +107,7 @@ class Exporter extends AbstractExporter
 
     public function initializeMappingAttributes(): void
     {
-
         $cacheKey = CacheType::ATTRIBUTE_MAPPING->forCredential($this->credential['id'] ?? null);
-
-        Cache::forget($cacheKey);
 
         $this->mappingAttributes = Cache::get($cacheKey, []);
 
@@ -124,48 +125,37 @@ class Exporter extends AbstractExporter
 
     public function initializeJobFilters(): void
     {
-        $jobFilterCacheKey = CacheType::PRODUCT_JOB_FILTERS->forJob(
-            $this->credential['id'] ?? null,
-            $this->export->jobInstance->id ?? null
-        );
+        $filters = $this->getFilters();
 
-        $this->jobFilters = Cache::get($jobFilterCacheKey, []);
+        $filtersChannels = ScopeFilterValue::toCodes($filters[BagistoProductFilter::CHANNEL->value] ?? null);
+        $filtersLocales = ScopeFilterValue::toCodes($filters[BagistoProductFilter::LOCALE->value] ?? null);
 
-        if (empty($this->jobFilters)) {
-            $filters = $this->getFilters();
+        $bagistoChannels = $this->getMappedChannels();
+        $bagistoLocales = $this->getMappedLocales();
 
-            $filtersChannels = ScopeFilterValue::toCodes($filters[BagistoProductFilter::CHANNEL->value] ?? null);
-            $filtersLocales = ScopeFilterValue::toCodes($filters[BagistoProductFilter::LOCALE->value] ?? null);
+        $mappedBagistoChannels = [];
+        $exportBagistoLocales = [];
 
-            $bagistoChannels = $this->getMappedChannels();
-            $bagistoLocales = $this->getMappedLocales();
+        foreach ($bagistoChannels as $bagistoChannel => $unopimChannel) {
+            if (empty($filtersChannels) || in_array($unopimChannel, $filtersChannels, true)) {
+                $mappedBagistoChannels[$bagistoChannel] = $unopimChannel;
 
-            $mappedBagistoChannels = [];
-            $exportBagistoLocales = [];
-
-            foreach ($bagistoChannels as $bagistoChannel => $unopimChannel) {
-                if (empty($filtersChannels) || in_array($unopimChannel, $filtersChannels, true)) {
-                    $mappedBagistoChannels[$bagistoChannel] = $unopimChannel;
-
-                    if (isset($bagistoLocales[$bagistoChannel])) {
-                        foreach ($bagistoLocales[$bagistoChannel] as $bagistoLocal => $unopimLocal) {
-                            if (empty($filtersLocales) || in_array($unopimLocal, $filtersLocales, true)) {
-                                $exportBagistoLocales[$bagistoChannel][$bagistoLocal] = $unopimLocal;
-                            }
+                if (isset($bagistoLocales[$bagistoChannel])) {
+                    foreach ($bagistoLocales[$bagistoChannel] as $bagistoLocal => $unopimLocal) {
+                        if (empty($filtersLocales) || in_array($unopimLocal, $filtersLocales, true)) {
+                            $exportBagistoLocales[$bagistoChannel][$bagistoLocal] = $unopimLocal;
                         }
                     }
                 }
             }
-
-            $this->jobFilters = [
-                JobFilter::WITH_MEDIA->value        => $filters[BagistoProductFilter::WITH_MEDIA->value] ?? false,
-                JobFilter::WITH_ASSOCIATIONS->value => $filters[BagistoProductFilter::WITH_ASSOCIATIONS->value] ?? false,
-                JobFilter::CHANNEL->value           => $mappedBagistoChannels,
-                JobFilter::LOCALES->value           => $exportBagistoLocales,
-            ];
-
-            Cache::put($jobFilterCacheKey, $this->jobFilters, config('session.lifetime'));
         }
+
+        $this->jobFilters = [
+            JobFilter::WITH_MEDIA->value        => $filters[BagistoProductFilter::WITH_MEDIA->value] ?? false,
+            JobFilter::WITH_ASSOCIATIONS->value => $filters[BagistoProductFilter::WITH_ASSOCIATIONS->value] ?? false,
+            JobFilter::CHANNEL->value           => $mappedBagistoChannels,
+            JobFilter::LOCALES->value           => $exportBagistoLocales,
+        ];
     }
 
     public function exportBatch(JobTrackBatchContract $batch, $filePath): bool
@@ -600,7 +590,7 @@ class Exporter extends AbstractExporter
                 continue;
             }
 
-            if (($attribute->type ?? null) !== Asset::ASSET_ATTRIBUTE_TYPE) {
+            if (($attribute->type ?? null) !== self::DAM_ASSET_ATTRIBUTE_TYPE) {
                 continue;
             }
 
@@ -610,7 +600,7 @@ class Exporter extends AbstractExporter
                 continue;
             }
 
-            $assets = $this->assetRepository->findWhereIn('id', $ids)->keyBy('id');
+            $assets = $this->damAssets($ids);
 
             $paths = [];
 
@@ -648,6 +638,19 @@ class Exporter extends AbstractExporter
 
             $mergedFields[$code] = count($paths) > 1 ? $paths : $paths[0];
         }
+    }
+
+    protected function damAssets(array $ids): Collection
+    {
+        $repository = $this->assetRepository ??= class_exists(self::DAM_ASSET_REPOSITORY)
+            ? app(self::DAM_ASSET_REPOSITORY)
+            : null;
+
+        if (! $repository) {
+            return new Collection;
+        }
+
+        return $repository->findWhereIn('id', $ids)->keyBy('id');
     }
 
     private function mapAttributesToBagisto(array &$mergedFields): void
@@ -885,7 +888,7 @@ class Exporter extends AbstractExporter
                 continue;
             }
             switch ($attribute->type) {
-                case Asset::ASSET_ATTRIBUTE_TYPE:
+                case self::DAM_ASSET_ATTRIBUTE_TYPE:
                     if ($withMedia && $attributeValue !== '' && $attributeValue !== null) {
                         if (is_array($attributeValue)) {
                             $mergedFields[$attributeCode] = implode(',', array_map(fn ($path) => $this->makeDamPublicUrl((string) $path), $attributeValue));
@@ -1020,7 +1023,11 @@ class Exporter extends AbstractExporter
             return $this->resolveMediaUrl($filePath);
         }
 
-        return route('bagisto.asset.fetch', ['path' => $filePath]);
+        return URL::temporarySignedRoute(
+            'bagisto.asset.fetch',
+            now()->addMinutes($this->temporaryUrlTtl()),
+            ['path' => $filePath]
+        );
     }
 
     protected function getCategoryFormatData(array $item, &$mergedFields): void

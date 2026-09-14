@@ -17,8 +17,6 @@ use Webkul\Bagisto\Repositories\BagistoDataMapping;
 use Webkul\Bagisto\Repositories\CredentialRepository;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Core\Repositories\ChannelRepository;
-use Webkul\DAM\Models\Asset;
-use Webkul\DAM\Repositories\AssetRepository;
 use Webkul\DataTransfer\Helpers\Sources\Export\ProductSource;
 use Webkul\DataTransfer\Jobs\Export\File\FlatItemBuffer;
 use Webkul\DataTransfer\Repositories\JobTrackBatchRepository;
@@ -37,7 +35,7 @@ class ExcludedMediaTest extends TestCase
         parent::setUp();
 
         $this->attributeRepository = Mockery::mock(AttributeRepository::class);
-        $this->assetRepository = Mockery::mock(AssetRepository::class);
+        $this->assetRepository = Mockery::mock();
 
         $this->exporter = new Exporter(
             Mockery::mock(JobTrackBatchRepository::class),
@@ -51,8 +49,11 @@ class ExcludedMediaTest extends TestCase
             Mockery::mock(ChannelRepository::class),
             Mockery::mock(CredentialRepository::class),
             Mockery::mock(ProductSource::class),
-            $this->assetRepository,
         );
+
+        $property = new \ReflectionProperty($this->exporter, 'assetRepository');
+        $property->setAccessible(true);
+        $property->setValue($this->exporter, $this->assetRepository);
     }
 
     protected function tearDown(): void
@@ -65,7 +66,7 @@ class ExcludedMediaTest extends TestCase
     {
         $this->attributeRepository->shouldReceive('where')->with('code', 'gallery')->andReturnSelf();
         $this->attributeRepository->shouldReceive('first')->andReturn(
-            (object) ['type' => Asset::ASSET_ATTRIBUTE_TYPE]
+            (object) ['type' => 'asset']
         );
 
         $this->assetRepository->shouldReceive('findWhereIn')->andReturn(

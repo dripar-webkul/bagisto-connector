@@ -7,7 +7,7 @@ use Webkul\Bagisto\Http\Controllers\Mappings\AttributeController;
 use Webkul\Bagisto\Http\Controllers\Mappings\CategoryFieldController;
 use Webkul\Bagisto\Http\Controllers\OptionController;
 
-Route::prefix('bagisto')->withoutMiddleware(['admin'])->group(function () {
+Route::prefix('bagisto')->withoutMiddleware(['admin'])->middleware('signed')->group(function () {
     Route::get('asset/{path}', [FileController::class, 'fetchAsset'])
         ->where('path', '.*')
         ->name('bagisto.asset.fetch');
