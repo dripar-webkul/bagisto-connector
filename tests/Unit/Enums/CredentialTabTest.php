@@ -1,38 +1,50 @@
 <?php
 
+namespace Webkul\Bagisto\Tests\Unit\Enums;
+
 use Tests\TestCase;
 use Webkul\Bagisto\Enums\CredentialTab;
 
-uses(TestCase::class);
-
-it('lists every tab once, in order', function () {
-    expect(array_column(CredentialTab::items(1), 'key'))
-        ->toBe(['general', 'attribute_mapping', 'category_mapping']);
-});
-
-it('points each tab at its own page for the credential', function () {
-    $urls = array_column(CredentialTab::items(7), 'url', 'key');
-
-    expect($urls['general'])->toEndWith('/credentials/edit/7')
-        ->and($urls['attribute_mapping'])->toEndWith('/credentials/7/attribute-mapping')
-        ->and($urls['category_mapping'])->toEndWith('/credentials/7/category-mapping');
-});
-
-it('gives every tab a translatable label', function () {
-    foreach (CredentialTab::items(1) as $tab) {
-        expect($tab['label'])->toStartWith('bagisto::app.bagisto.credentials.tabs.');
+class CredentialTabTest extends TestCase
+{
+    public function test_it_lists_every_tab_once_in_order()
+    {
+        $this->assertSame(
+            ['general', 'attribute_mapping', 'category_mapping'],
+            array_column(CredentialTab::items(1), 'key')
+        );
     }
-});
-it('sends history to the credential page rather than the current tab', function () {
-    expect(CredentialTab::historyUrl(7))->toEndWith('/credentials/edit/7?history=1');
-});
 
-it('uses one history url no matter which tab asked for it', function () {
-    $fromAnyTab = array_map(fn () => CredentialTab::historyUrl(7), CredentialTab::cases());
+    public function test_it_points_each_tab_at_its_own_page_for_the_credential()
+    {
+        $urls = array_column(CredentialTab::items(7), 'url', 'key');
 
-    expect(array_unique($fromAnyTab))->toHaveCount(1);
-});
+        $this->assertStringEndsWith('/credentials/edit/7', $urls['general']);
+        $this->assertStringEndsWith('/credentials/7/attribute-mapping', $urls['attribute_mapping']);
+        $this->assertStringEndsWith('/credentials/7/category-mapping', $urls['category_mapping']);
+    }
 
-it('keeps one credential history apart from another', function () {
-    expect(CredentialTab::historyUrl(7))->not->toBe(CredentialTab::historyUrl(8));
-});
+    public function test_it_gives_every_tab_a_translatable_label()
+    {
+        foreach (CredentialTab::items(1) as $tab) {
+            $this->assertStringStartsWith('bagisto::app.bagisto.credentials.tabs.', $tab['label']);
+        }
+    }
+
+    public function test_it_sends_history_to_the_credential_page_rather_than_the_current_tab()
+    {
+        $this->assertStringEndsWith('/credentials/edit/7?history=1', CredentialTab::historyUrl(7));
+    }
+
+    public function test_it_uses_one_history_url_no_matter_which_tab_asked_for_it()
+    {
+        $fromAnyTab = array_map(fn () => CredentialTab::historyUrl(7), CredentialTab::cases());
+
+        $this->assertCount(1, array_unique($fromAnyTab));
+    }
+
+    public function test_it_keeps_one_credential_history_apart_from_another()
+    {
+        $this->assertNotSame(CredentialTab::historyUrl(7), CredentialTab::historyUrl(8));
+    }
+}

@@ -1,5 +1,8 @@
 <?php
 
+namespace Webkul\Bagisto\Tests\Unit\Helpers\Exporters\Attribute;
+
+use Mockery;
 use Tests\TestCase;
 use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Bagisto\Helpers\Exporters\Attribute\Exporter;
@@ -9,47 +12,56 @@ use Webkul\Bagisto\Repositories\CredentialRepository;
 use Webkul\DataTransfer\Jobs\Export\File\FlatItemBuffer;
 use Webkul\DataTransfer\Repositories\JobTrackBatchRepository;
 
-uses(TestCase::class);
-
-function attributeExporterFlatten(array $mappedValue): array
+class MappedCodesTest extends TestCase
 {
-    $exporter = new Exporter(
-        Mockery::mock(JobTrackBatchRepository::class),
-        Mockery::mock(FlatItemBuffer::class),
-        Mockery::mock(BagistoDataMapping::class),
-        Mockery::mock(AttributeRepository::class),
-        Mockery::mock(AttributeMappingRepository::class),
-        Mockery::mock(CredentialRepository::class),
-    );
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
+    }
 
-    $method = new ReflectionMethod($exporter, 'flattenMappedCodes');
-    $method->setAccessible(true);
+    private function flatten(array $mappedValue): array
+    {
+        $exporter = new Exporter(
+            Mockery::mock(JobTrackBatchRepository::class),
+            Mockery::mock(FlatItemBuffer::class),
+            Mockery::mock(BagistoDataMapping::class),
+            Mockery::mock(AttributeRepository::class),
+            Mockery::mock(AttributeMappingRepository::class),
+            Mockery::mock(CredentialRepository::class),
+        );
 
-    return $method->invoke($exporter, $mappedValue);
+        $method = new \ReflectionMethod($exporter, 'flattenMappedCodes');
+        $method->setAccessible(true);
+
+        return $method->invoke($exporter, $mappedValue);
+    }
+
+    public function test_it_flattens_a_mapping_that_holds_several_codes_for_one_bagisto_field()
+    {
+        $this->assertSame(['sku', 'image', 'product_gallery', 'name'], $this->flatten([
+            'sku'    => 'sku',
+            'images' => ['image', 'product_gallery'],
+            'name'   => 'name',
+        ]));
+    }
+
+    public function test_it_reads_a_single_code_mapping_unchanged()
+    {
+        $this->assertSame(['sku'], $this->flatten(['sku' => 'sku']));
+    }
+
+    public function test_it_drops_unmapped_fields()
+    {
+        $this->assertSame(['sku'], $this->flatten([
+            'sku'   => 'sku',
+            'brand' => null,
+            'cost'  => '',
+        ]));
+    }
+
+    public function test_it_returns_nothing_for_an_empty_mapping()
+    {
+        $this->assertSame([], $this->flatten([]));
+    }
 }
-
-afterEach(fn () => Mockery::close());
-
-it('flattens a mapping that holds several codes for one bagisto field', function () {
-    expect(attributeExporterFlatten([
-        'sku'    => 'sku',
-        'images' => ['image', 'product_gallery'],
-        'name'   => 'name',
-    ]))->toBe(['sku', 'image', 'product_gallery', 'name']);
-});
-
-it('reads a single code mapping unchanged', function () {
-    expect(attributeExporterFlatten(['sku' => 'sku']))->toBe(['sku']);
-});
-
-it('drops unmapped fields', function () {
-    expect(attributeExporterFlatten([
-        'sku'   => 'sku',
-        'brand' => null,
-        'cost'  => '',
-    ]))->toBe(['sku']);
-});
-
-it('returns nothing for an empty mapping', function () {
-    expect(attributeExporterFlatten([]))->toBe([]);
-});
