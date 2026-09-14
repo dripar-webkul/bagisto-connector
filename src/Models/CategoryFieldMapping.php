@@ -3,6 +3,7 @@
 namespace Webkul\Bagisto\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Webkul\Bagisto\Contracts\CategoryFieldMapping as CategoryFieldMappingContract;
 use Webkul\Bagisto\Presenters\JsonDataPresenter;
 use Webkul\HistoryControl\Contracts\HistoryAuditable as HistoryContract;
@@ -13,11 +14,12 @@ class CategoryFieldMapping extends Model implements CategoryFieldMappingContract
 {
     use HistoryTrait;
 
-    protected $historyTags = ['bagitsto_category_field_mapping'];
+    protected $historyTags = ['bagitsto_credentials'];
 
     protected $table = 'wk_bagisto_category_field_config_mapping';
 
     protected $fillable = [
+        'credential_id',
         'section',
         'mapped_value',
         'fixed_value',
@@ -27,6 +29,16 @@ class CategoryFieldMapping extends Model implements CategoryFieldMappingContract
         'mapped_value' => 'json',
         'fixed_value'  => 'json',
     ];
+
+    public function credential(): BelongsTo
+    {
+        return $this->belongsTo(Credential::class, 'credential_id');
+    }
+
+    public function getPrimaryModelIdForHistory(): int
+    {
+        return (int) $this->credential_id;
+    }
 
     public static function getPresenters(): array
     {

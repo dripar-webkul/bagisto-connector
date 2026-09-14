@@ -15,8 +15,8 @@ Route::prefix('bagisto')->withoutMiddleware(['admin'])->group(function () {
 
 Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], function () {
     Route::prefix('bagisto')->group(function () {
-        Route::controller(CredentialController::class)->group(function () {
-            Route::prefix('credentials')->group(function () {
+        Route::prefix('credentials')->group(function () {
+            Route::controller(CredentialController::class)->group(function () {
                 Route::get('', 'index')->name('admin.bagisto.credentials.index');
 
                 Route::post('create', 'store')->name('admin.bagisto.credentials.store');
@@ -27,21 +27,17 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
 
                 Route::delete('{id}', 'destroy')->name('admin.bagisto.credentials.destroy');
             });
-        });
 
-        Route::controller(AttributeController::class)->group(function () {
-            Route::prefix('attributes-mapping')->group(function () {
-                Route::get('/{id}', 'index')->name('admin.bagisto.mappings.attributes.index');
-                Route::post('storeOrUpdate', 'storeOrUpdate')->name('admin.bagisto.mappings.attributes.store');
-                Route::post('add-attributes', 'addAdditionalAttributes')->name('admin.bagisto.attributes.add');
-                Route::post('remove-attributes', 'removeAdditionalAttributes')->name('admin.bagisto.attributes.remove');
+            Route::controller(AttributeController::class)->prefix('{credentialId}/attribute-mapping')->group(function () {
+                Route::get('', 'index')->name('admin.bagisto.credentials.attribute_mapping');
+                Route::post('', 'storeOrUpdate')->name('admin.bagisto.credentials.attribute_mapping.store');
+                Route::post('add-attributes', 'addAdditionalAttributes')->name('admin.bagisto.credentials.attribute_mapping.add');
+                Route::post('remove-attributes', 'removeAdditionalAttributes')->name('admin.bagisto.credentials.attribute_mapping.remove');
             });
-        });
 
-        Route::controller(CategoryFieldController::class)->group(function () {
-            Route::prefix('category-fields-mapping')->group(function () {
-                Route::get('/{id}', 'index')->name('admin.bagisto.mappings.category_fields.index');
-                Route::post('storeOrUpdate', 'storeOrUpdate')->name('admin.bagisto.mappings.category_fields.store');
+            Route::controller(CategoryFieldController::class)->prefix('{credentialId}/category-mapping')->group(function () {
+                Route::get('', 'index')->name('admin.bagisto.credentials.category_mapping');
+                Route::post('', 'storeOrUpdate')->name('admin.bagisto.credentials.category_mapping.store');
             });
         });
 

@@ -22,10 +22,11 @@ trait ExportSummary
         $this->exportBatchRepository->update([
             'state'   => $state,
             'summary' => [
-                'processed' => $processed < 0 ? 0 : $processed,
-                'created'   => $this->getCreatedItemsCount(),
-                'updated'   => $this->getUpdatedItemsCount(),
-                'skipped'   => $this->getSkippedtemsCount(),
+                'processed'       => $processed < 0 ? 0 : $processed,
+                'created'         => $this->getCreatedItemsCount(),
+                'updated'         => $this->getUpdatedItemsCount(),
+                'skipped'         => $this->getSkippedtemsCount(),
+                'skipped_reasons' => method_exists($this, 'getSkippedItems') ? $this->getSkippedItems() : [],
             ],
         ], $id);
     }

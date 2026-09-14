@@ -1,4 +1,9 @@
-<x-admin::layouts.with-history>
+<x-admin::layouts.with-history
+    :active-tab="\Webkul\Bagisto\Enums\CredentialTab::GENERAL->value"
+    :tab-items="\Webkul\Bagisto\Enums\CredentialTab::items($credential->id)"
+    :history-id="$credential->id"
+    :history-url="\Webkul\Bagisto\Enums\CredentialTab::historyUrl($credential->id)"
+>
     <x-slot:entityName>
         bagitsto_credentials
     </x-slot>
@@ -27,11 +32,8 @@
             </div>
         </div>
 
-        <!-- body content -->
         <div class="flex gap-2.5 mt-3.5 max-xl:flex-wrap">
-            <!-- Left Section -->
             <div class="flex flex-col gap-2 w-[360px] max-w-full max-sm:w-full">
-                <!-- Currencies and Locale -->
                 <x-admin::accordion>
                     <x-slot:header>
                         <div class="flex items-center justify-between">
@@ -42,7 +44,6 @@
                     </x-slot>
 
                     <x-slot:content>
-                        <!-- Shop URl -->
                         <x-admin::form.control-group>
                             <x-admin::form.control-group.label class="required">
                                 @lang('bagisto::app.bagisto.credentials.edit.shop_url')
@@ -63,7 +64,6 @@
                             <x-admin::form.control-group.error control-name="shop_url" />
                         </x-admin::form.control-group>
 
-                        <!-- Email Address -->
                         <x-admin::form.control-group>
                             <x-admin::form.control-group.label class="required">
                                 @lang('bagisto::app.bagisto.credentials.edit.email')
@@ -82,7 +82,6 @@
                             <x-admin::form.control-group.error control-name="email" />
                         </x-admin::form.control-group>
 
-                        <!-- Password -->
                         <x-admin::form.control-group>
                             <x-admin::form.control-group.label class="required">
                                 @lang('bagisto::app.bagisto.credentials.edit.password')
@@ -92,7 +91,7 @@
                                 type="password"
                                 id="password"
                                 name="password"
-                                :value="old('password') ?? $credential->password"
+                                :value="old('password') ?? $credential::MASKED_PASSWORD"
                                 rules="required"
                                 :label="trans('bagisto::app.bagisto.credentials.edit.password')"
                                 :placeholder="trans('bagisto::app.bagisto.credentials.edit.password')"
@@ -103,7 +102,6 @@
                     </x-slot>
                 </x-admin::accordion>
 
-                <!-- Currencies and Locale -->
                 <x-admin::accordion>
                     <x-slot:header>
                         <div class="flex items-center justify-between">
@@ -114,7 +112,6 @@
                     </x-slot>
 
                     <x-slot:content>
-                        <!-- Email Address -->
                         <x-admin::form.control-group>
                             <x-admin::form.control-group.label class="required">
                                 @lang('bagisto::app.bagisto.credentials.edit.category-field-filterable')
@@ -158,7 +155,6 @@
                 </x-admin::accordion>
             </div>
 
-            <!-- Right Section -->
             <div class="flex flex-col gap-2 flex-1 max-xl:flex-auto">
 
                 <div class="p-4 bg-white dark:bg-cherry-900 rounded box-shadow">

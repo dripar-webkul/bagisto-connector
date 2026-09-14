@@ -25,8 +25,9 @@ class BagistoServiceProvider extends ServiceProvider
         });
 
         foreach ([
-            'unopim.admin.settings.data_transfer.exports.create.card.scope.after' => 'bagisto::exports.filters',
-            'unopim.admin.settings.data_transfer.exports.edit.card.general.after' => 'bagisto::exports.filters-edit',
+            'unopim.admin.settings.data_transfer.exports.create.card.accordion.filters.befor' => 'bagisto::exports.filters',
+            'unopim.admin.settings.data_transfer.exports.edit.card.accordion.filters.befor'   => 'bagisto::exports.filters-edit',
+            'unopim.admin.settings.data_transfer.tracker.job.state.completed.before'          => 'bagisto::exports.skipped-items',
         ] as $exportFilterHook => $template) {
             Event::listen($exportFilterHook, function ($viewRenderEventManager) use ($template) {
                 $viewRenderEventManager->addTemplate($template);
@@ -68,6 +69,8 @@ class BagistoServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(dirname(__DIR__).'/Config/bagisto-attributes.php', 'bagisto-attributes');
 
         $this->mergeConfigFrom(dirname(__DIR__).'/Config/bagisto-category-fields.php', 'bagisto-category-fields');
+
+        $this->mergeConfigFrom(dirname(__DIR__).'/Config/bagisto-media.php', 'bagisto-media');
 
         $this->mergeConfigFrom(dirname(__DIR__).'/Config/exporters.php', 'exporters');
 

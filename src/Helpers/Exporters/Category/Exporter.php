@@ -5,6 +5,7 @@ namespace Webkul\Bagisto\Helpers\Exporters\Category;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Bagisto\Enums\Export\CacheType;
+use Webkul\Bagisto\Enums\Export\MappingSection;
 use Webkul\Bagisto\Enums\Services\MethodType;
 use Webkul\Bagisto\Repositories\BagistoDataMapping;
 use Webkul\Bagisto\Repositories\CategoryFieldMappingRepository;
@@ -78,9 +79,12 @@ class Exporter extends BaseExporter
 
     public function initializeMappingFields(): void
     {
-        $this->mappingFields = Cache::get(CacheType::CATEGORY_FIELD_MAPPING->value, []);
+        $cacheKey = CacheType::CATEGORY_FIELD_MAPPING->forCredential($this->credential['id'] ?? null);
+
+        $this->mappingFields = Cache::get($cacheKey, []);
+
         if (empty($this->mappingFields)) {
-            $mapping = $this->categoryFieldMappingRepository->findByField('section', 'standard_field')->first();
+            $mapping = $this->categoryFieldMappingRepository->forCredential($this->credential['id'] ?? null, MappingSection::STANDARD_FIELD);
 
             if (! $mapping) {
                 $mapping = (object) [
@@ -90,16 +94,21 @@ class Exporter extends BaseExporter
             }
 
             $this->mappingFields = [
-                'standard_field' => $mapping,
+                MappingSection::STANDARD_FIELD->value => $mapping,
             ];
 
-            Cache::put(CacheType::CATEGORY_FIELD_MAPPING->value, $this->mappingFields, config('session.lifetime'));
+            Cache::put($cacheKey, $this->mappingFields, config('session.lifetime'));
         }
     }
 
     public function initializeJobFilters(): void
     {
-        $this->jobFilters = Cache::get(CacheType::CATEGORY_JOB_FILTERS->value, []);
+        $jobFilterCacheKey = CacheType::CATEGORY_JOB_FILTERS->forJob(
+            $this->credential['id'] ?? null,
+            $this->export->jobInstance->id ?? null
+        );
+
+        $this->jobFilters = Cache::get($jobFilterCacheKey, []);
         if (empty($this->jobFilters)) {
             $filters = $this->getFilters();
 
@@ -142,7 +151,7 @@ class Exporter extends BaseExporter
                 'locales' => $exportBagistoLocales,
             ];
 
-            Cache::put(CacheType::CATEGORY_JOB_FILTERS->value, $this->jobFilters, config('session.lifetime'));
+            Cache::put($jobFilterCacheKey, $this->jobFilters, config('session.lifetime'));
         }
     }
 

@@ -438,12 +438,40 @@ class ExporterTest extends TestCase
         $this->assertNull($this->associationsFormat(null));
     }
 
+    /**
+     * @param  array<string, array<string, string>>  $found
+     */
     private function expectSkuLookup(array $queried, array $found): void
     {
+        $rows = [];
+
+        foreach ($found as $sku => $common) {
+            $rows[] = new class(is_int($sku) ? $common : $sku, is_int($sku) ? [] : $common)
+            {
+                public function __construct(public string $sku, private array $common) {}
+
+                public function toArray(): array
+                {
+                    return ['sku' => $this->sku, 'values' => ['common' => $this->common]];
+                }
+            };
+        }
+
         $this->productRepository->shouldReceive('whereIn')
             ->once()
             ->with('sku', $queried)
-            ->andReturn(Mockery::mock(['pluck' => collect($found)]));
+            ->andReturn(Mockery::mock(['get' => collect($rows)]));
+    }
+
+    public function test_associations_are_rewritten_to_the_mapped_bagisto_sku()
+    {
+        $this->setProperty($this->exporter, 'mappingAttributes', [
+            'standard_attribute' => (object) ['mapped_value' => ['sku' => 'product_number'], 'fixed_value' => []],
+        ]);
+
+        $this->expectSkuLookup(['shirt-red'], ['shirt-red' => ['product_number' => 'PN-RED']]);
+
+        $this->assertSame('PN-RED', $this->associationsFormat('shirt-red'));
     }
 
     private function associationsFormat(?string $upSells): ?string

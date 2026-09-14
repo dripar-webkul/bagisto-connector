@@ -50,8 +50,6 @@ class ApiServiceTest extends TestCase
 
     public function test_to_request_rethrows_connection_exception_instead_of_crashing_on_null()
     {
-        // A network failure (timeout, DNS, refused) must surface as a real exception
-        // the job can handle — not be swallowed to null and crash on ->failed().
         Http::fake(function () {
             throw new ConnectionException('Connection timed out');
         });

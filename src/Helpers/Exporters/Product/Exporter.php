@@ -8,10 +8,14 @@ use Illuminate\Support\Facades\Storage;
 use Webkul\Attribute\Repositories\AttributeOptionRepository;
 use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Attribute\Rules\AttributeTypes;
+use Webkul\Bagisto\Enums\Export\BagistoImageFormat;
 use Webkul\Bagisto\Enums\Export\CacheType;
+use Webkul\Bagisto\Enums\Export\DamFileType;
 use Webkul\Bagisto\Enums\Export\JobFilter;
+use Webkul\Bagisto\Enums\Export\MappingSection;
 use Webkul\Bagisto\Enums\Export\ProductFilter as BagistoProductFilter;
 use Webkul\Bagisto\Enums\Export\ProductType;
+use Webkul\Bagisto\Enums\Export\SkipReason;
 use Webkul\Bagisto\Enums\Services\MethodType;
 use Webkul\Bagisto\Repositories\AttributeMappingRepository;
 use Webkul\Bagisto\Repositories\BagistoDataMapping;
@@ -20,6 +24,7 @@ use Webkul\Bagisto\Traits\ApiRequest as ApiRequestTrait;
 use Webkul\Bagisto\Traits\Credential as CredentialTrait;
 use Webkul\Bagisto\Traits\ExportSummary as ExportSummaryTrait;
 use Webkul\Bagisto\Traits\Mapping as MappingTrait;
+use Webkul\Bagisto\Traits\SkippedItems as SkippedItemsTrait;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Category\Validator\FieldValidator;
 use Webkul\Core\Repositories\ChannelRepository;
@@ -42,12 +47,15 @@ class Exporter extends AbstractExporter
     use CredentialTrait;
     use ExportSummaryTrait;
     use MappingTrait;
+    use SkippedItemsTrait;
 
     protected const ENTITY_TYPE = 'bulk_product';
 
     protected const MEASUREMENT_ATTRIBUTE_TYPE = 'measurement';
 
     protected const NON_INHERITABLE_FIELDS = ['sku', 'url_key'];
+
+    protected const UNOPIM_SKU_FIELD = 'sku';
 
     protected const CURSOR_COLUMNS = ['id', 'sku', 'type', 'parent_id'];
 
@@ -96,21 +104,32 @@ class Exporter extends AbstractExporter
     public function initializeMappingAttributes(): void
     {
 
-        Cache::forget(CacheType::ATTRIBUTE_MAPPING->value);
-        $this->mappingAttributes = Cache::get(CacheType::ATTRIBUTE_MAPPING->value, []);
+        $cacheKey = CacheType::ATTRIBUTE_MAPPING->forCredential($this->credential['id'] ?? null);
+
+        Cache::forget($cacheKey);
+
+        $this->mappingAttributes = Cache::get($cacheKey, []);
+
         if (empty($this->mappingAttributes)) {
+            $credentialId = $this->credential['id'] ?? null;
+
             $this->mappingAttributes = [
-                'standard_attribute' => $this->attributeMappingRepository->findByField('section', 'standard_attribute')->first(),
-                'image_attribute'    => $this->attributeMappingRepository->findByField('section', 'image_attribute')->first(),
+                MappingSection::STANDARD_ATTRIBUTE->value => $this->attributeMappingRepository->forCredential($credentialId, MappingSection::STANDARD_ATTRIBUTE),
+                MappingSection::IMAGE_ATTRIBUTE->value    => $this->attributeMappingRepository->forCredential($credentialId, MappingSection::IMAGE_ATTRIBUTE),
             ];
 
-            Cache::put(CacheType::ATTRIBUTE_MAPPING->value, $this->mappingAttributes, config('session.lifetime'));
+            Cache::put($cacheKey, $this->mappingAttributes, config('session.lifetime'));
         }
     }
 
     public function initializeJobFilters(): void
     {
-        $this->jobFilters = Cache::get(CacheType::PRODUCT_JOB_FILTERS->value, []);
+        $jobFilterCacheKey = CacheType::PRODUCT_JOB_FILTERS->forJob(
+            $this->credential['id'] ?? null,
+            $this->export->jobInstance->id ?? null
+        );
+
+        $this->jobFilters = Cache::get($jobFilterCacheKey, []);
 
         if (empty($this->jobFilters)) {
             $filters = $this->getFilters();
@@ -145,7 +164,7 @@ class Exporter extends AbstractExporter
                 JobFilter::LOCALES->value           => $exportBagistoLocales,
             ];
 
-            Cache::put(CacheType::PRODUCT_JOB_FILTERS->value, $this->jobFilters, config('session.lifetime'));
+            Cache::put($jobFilterCacheKey, $this->jobFilters, config('session.lifetime'));
         }
     }
 
@@ -264,11 +283,11 @@ class Exporter extends AbstractExporter
             $skusAttempted = array_values(array_unique(array_column($items, 'sku')));
 
             if (! empty($this->lastApiErrors)) {
-                $this->skippedItemsCount += count($skusAttempted);
+                $errors = $this->flattenApiErrors($this->lastApiErrors);
 
-                $this->jobLogger?->warning(
-                    'Bulk product batch skipped ['.implode(', ', $skusAttempted).']: '.json_encode($this->lastApiErrors)
-                );
+                foreach ($skusAttempted as $sku) {
+                    $this->recordSkipped($sku, SkipReason::REQUEST_FAILED, $errors);
+                }
 
                 return;
             }
@@ -280,36 +299,47 @@ class Exporter extends AbstractExporter
             $rejectedSkus = array_values(array_diff($skusAttempted, $queuedSkus));
 
             if (! empty($rejectedSkus)) {
-                $this->skippedItemsCount += count($rejectedSkus);
+                $errors = $this->flattenApiErrors($response['errors'] ?? []);
 
-                $this->jobLogger?->warning(
-                    'Bagisto rejected ['.implode(', ', $rejectedSkus).']: '.json_encode($response['errors'] ?? [])
-                );
+                foreach ($rejectedSkus as $sku) {
+                    $this->recordSkipped($sku, SkipReason::REJECTED_BY_BAGISTO, $errors);
+                }
             }
 
             if (empty($queuedSkus)) {
                 return;
             }
 
-            $products = $this->productRepository->whereIn('sku', $queuedSkus)->get(['id', 'sku']);
-
-            foreach ($products as $product) {
-                if ($this->getMapping($this->credential['id'], $product->id, null, null, null, self::ENTITY_TYPE)) {
+            foreach ($this->productIdsByBagistoSku($items, $queuedSkus) as $productId) {
+                if ($this->getMapping($this->credential['id'], $productId, null, null, null, self::ENTITY_TYPE)) {
                     $this->updatedItemsCount++;
                 } else {
                     $this->createdItemsCount++;
-                    $this->setMapping($this->credential['id'], $product->id, 0, $batchId, null, self::ENTITY_TYPE);
+                    $this->setMapping($this->credential['id'], $productId, 0, $batchId, null, self::ENTITY_TYPE);
                 }
             }
         } catch (\Exception $e) {
-            $skusAttempted = array_values(array_unique(array_column($items, 'sku')));
-
-            $this->skippedItemsCount += count($skusAttempted);
-
-            $this->jobLogger?->warning(
-                'Bulk product batch failed ['.implode(', ', $skusAttempted).']: '.$e->getMessage()
-            );
+            foreach (array_values(array_unique(array_column($items, 'sku'))) as $sku) {
+                $this->recordSkipped($sku, SkipReason::REQUEST_FAILED, [$e->getMessage()]);
+            }
         }
+    }
+
+    /**
+     * @param  array<mixed>  $errors
+     * @return array<int, string>
+     */
+    protected function flattenApiErrors(array $errors): array
+    {
+        $flat = [];
+
+        array_walk_recursive($errors, function ($value) use (&$flat): void {
+            if (is_scalar($value) && (string) $value !== '') {
+                $flat[] = (string) $value;
+            }
+        });
+
+        return array_values(array_unique($flat));
     }
 
     private function rejectIncompleteItems(array $items): array
@@ -326,10 +356,7 @@ class Exporter extends AbstractExporter
                 return true;
             }
 
-            $this->skippedItemsCount++;
-            $this->jobLogger?->warning(
-                'Product '.($item['sku'] ?? '(no sku)').' not exported: missing required Bagisto field(s) '.implode(', ', $missing).'.'
-            );
+            $this->recordSkipped($item['sku'] ?? '(no sku)', SkipReason::MISSING_REQUIRED_FIELDS, $missing);
 
             return false;
         }));
@@ -358,8 +385,7 @@ class Exporter extends AbstractExporter
                 if ($rowData['type'] === ProductType::VARIANT_GROUP->value) {
                     $this->jobLogger?->info("Product {$rowData['sku']}: variant group flattened into its variants.");
                 } else {
-                    $this->skippedItemsCount++;
-                    $this->jobLogger?->warning("Product {$rowData['sku']} not exported: product type '{$rowData['type']}' has no Bagisto equivalent.");
+                    $this->recordSkipped($rowData['sku'], SkipReason::UNSUPPORTED_TYPE, [$rowData['type']]);
                 }
 
                 continue;
@@ -379,8 +405,7 @@ class Exporter extends AbstractExporter
             }
 
             if ($builtForRow === 0) {
-                $this->skippedItemsCount++;
-                $this->jobLogger?->warning("Product {$rowData['sku']} not exported: no Bagisto channel/locale mapping matched the selected channel and locale filters.");
+                $this->recordSkipped($rowData['sku'], SkipReason::NO_SCOPE_MATCH);
             }
         }
         usort($products, function ($a, $b) {
@@ -483,9 +508,11 @@ class Exporter extends AbstractExporter
 
         $mergedFields = array_merge($commonFields, $localeSpecificFields, $channelSpecificFields, $channelLocaleSpecificFields);
 
-        $this->resolveDamAssetPaths($mergedFields);
+        $identifier = $item['sku'] ?? '(no sku)';
 
-        $this->handleAttributeType($mergedFields, $withMedia, $channel);
+        $this->resolveDamAssetPaths($mergedFields, $identifier);
+
+        $this->handleAttributeType($mergedFields, $withMedia, $channel, $identifier);
 
         return $mergedFields;
     }
@@ -560,7 +587,7 @@ class Exporter extends AbstractExporter
         );
     }
 
-    private function resolveDamAssetPaths(array &$mergedFields): void
+    private function resolveDamAssetPaths(array &$mergedFields, string $identifier = '(no sku)'): void
     {
         foreach ($mergedFields as $code => $value) {
             if (empty($value)) {
@@ -583,7 +610,35 @@ class Exporter extends AbstractExporter
                 continue;
             }
 
-            $paths = $this->assetRepository->findWhereIn('id', $ids)->pluck('path')->filter()->values()->all();
+            $assets = $this->assetRepository->findWhereIn('id', $ids)->keyBy('id');
+
+            $paths = [];
+
+            foreach ($ids as $id) {
+                $asset = $assets->get($id);
+
+                if (! $asset) {
+                    $this->recordExcludedMedia($identifier, SkipReason::MEDIA_NOT_FOUND, ['#'.$id]);
+
+                    continue;
+                }
+
+                if (! DamFileType::isImage($asset->file_type)) {
+                    $this->recordExcludedMedia($identifier, SkipReason::UNSUPPORTED_MEDIA_TYPE, [$asset->file_name ?? $asset->path]);
+
+                    continue;
+                }
+
+                if (! BagistoImageFormat::accepts($asset->path)) {
+                    $this->recordExcludedMedia($identifier, SkipReason::UNSUPPORTED_IMAGE_FORMAT, [$asset->file_name ?? $asset->path]);
+
+                    continue;
+                }
+
+                if ($asset->path) {
+                    $paths[] = $asset->path;
+                }
+            }
 
             if (empty($paths)) {
                 unset($mergedFields[$code]);
@@ -674,10 +729,50 @@ class Exporter extends AbstractExporter
     {
         return [
             'id'                    => $item['id'],
-            'sku'                   => $item['sku'],
+            'sku'                   => $this->bagistoSkuFor($item),
             'type'                  => $item['type'],
             'attribute_family_code' => $item['attribute_family']['code'],
         ];
+    }
+
+    protected function bagistoSkuFor(array $item): string
+    {
+        $code = $this->mappedSkuAttributeCode();
+
+        if ($code === self::UNOPIM_SKU_FIELD) {
+            return (string) ($item[self::UNOPIM_SKU_FIELD] ?? '');
+        }
+
+        $mapped = $this->getCommonFields($item)[$code] ?? null;
+
+        return $mapped === null || $mapped === ''
+            ? (string) ($item[self::UNOPIM_SKU_FIELD] ?? '')
+            : (string) $mapped;
+    }
+
+    protected function mappedSkuAttributeCode(): string
+    {
+        $mapped = $this->mappingAttributes['standard_attribute']->mapped_value[self::UNOPIM_SKU_FIELD] ?? null;
+
+        return is_string($mapped) && $mapped !== '' ? $mapped : self::UNOPIM_SKU_FIELD;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    protected function productIdsByBagistoSku(array $items, array $skus): array
+    {
+        $idsBySku = array_column($items, 'id', 'sku');
+
+        $resolved = [];
+
+        foreach ($skus as $sku) {
+            if (isset($idsBySku[$sku])) {
+                $resolved[$sku] = $idsBySku[$sku];
+            }
+        }
+
+        return $resolved;
     }
 
     protected function createConfigurableProductDataFormat(array $item): array
@@ -693,7 +788,7 @@ class Exporter extends AbstractExporter
     {
         $formatData = $this->createSimpleProductDataFormat($item);
 
-        $formatData['parent_sku'] = $item['parent']['sku'];
+        $formatData['parent_sku'] = $this->bagistoSkuFor($item['parent']);
 
         return $formatData;
     }
@@ -763,7 +858,7 @@ class Exporter extends AbstractExporter
             );
 
             if (($child['type'] ?? null) !== ProductType::VARIANT_GROUP->value) {
-                $leaves[] = ['sku' => $child['sku'] ?? '(no sku)', 'axes' => $axes];
+                $leaves[] = ['sku' => $this->bagistoSkuFor($child) ?: '(no sku)', 'axes' => $axes];
 
                 continue;
             }
@@ -782,7 +877,7 @@ class Exporter extends AbstractExporter
         return $leaves;
     }
 
-    protected function handleAttributeType(array &$mergedFields, bool $withMedia, string $channel): void
+    protected function handleAttributeType(array &$mergedFields, bool $withMedia, string $channel, string $identifier = '(no sku)'): void
     {
         foreach ($mergedFields as $attributeCode => $attributeValue) {
             $attribute = $this->attributeRepository->where('code', $attributeCode)->first();
@@ -805,7 +900,10 @@ class Exporter extends AbstractExporter
                     if ($withMedia) {
                         $paths = is_array($attributeValue) ? $attributeValue : preg_split('/[\s,]+/', (string) $attributeValue);
                         $paths = array_values(array_filter(
-                            array_map(fn ($path) => $this->getExistingFilePath((string) $path), (array) $paths),
+                            array_map(
+                                fn ($path) => $this->resolveMediaForExport((string) $path, $identifier),
+                                (array) $paths
+                            ),
                             'strlen'
                         ));
 
@@ -823,13 +921,10 @@ class Exporter extends AbstractExporter
                     if ($withMedia) {
                         $path = is_array($attributeValue) ? ($attributeValue[0] ?? null) : $attributeValue;
 
-                        if ($path) {
-                            $resolved = $this->getExistingFilePath((string) $path);
-                            if ($resolved) {
-                                $mergedFields[$attributeCode] = $resolved;
-                            } else {
-                                unset($mergedFields[$attributeCode]);
-                            }
+                        $resolved = $path ? $this->resolveMediaForExport((string) $path, $identifier) : null;
+
+                        if ($resolved) {
+                            $mergedFields[$attributeCode] = $resolved;
                         } else {
                             unset($mergedFields[$attributeCode]);
                         }
@@ -879,20 +974,44 @@ class Exporter extends AbstractExporter
 
         foreach ($multiTypeMap as $bagistoCode => $types) {
             $combined = [];
-            foreach ($mergedFields as $code => $val) {
+
+            foreach ($this->sourceCodesInMappedOrder($bagistoCode, $mergedFields) as $code) {
+                $val = $mergedFields[$code];
+
                 if ($val === null || $val === '' || $val === []) {
                     continue;
                 }
+
                 $attr = $this->attributeRepository->where('code', $code)->first();
+
                 if ($attr && in_array($attr->type, $types, true)) {
                     $combined[] = is_array($val) ? implode(',', $val) : $val;
                     unset($mergedFields[$code]);
                 }
             }
+
             if ($combined !== []) {
                 $mergedFields[$bagistoCode] = implode(',', $combined);
             }
         }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function sourceCodesInMappedOrder(string $bagistoCode, array $mergedFields): array
+    {
+        $mapped = (array) (
+            $this->mappingAttributes['image_attribute']->mapped_value[$bagistoCode]
+            ?? $this->mappingAttributes['standard_attribute']->mapped_value[$bagistoCode]
+            ?? []
+        );
+
+        $codes = array_keys($mergedFields);
+
+        $ordered = array_values(array_intersect($mapped, $codes));
+
+        return array_merge($ordered, array_values(array_diff($codes, $ordered)));
     }
 
     protected function makeDamPublicUrl(string $filePath): string
@@ -954,14 +1073,44 @@ class Exporter extends AbstractExporter
         $unresolved = array_values(array_diff($skus, array_keys($this->knownSkus)));
 
         if ($unresolved !== []) {
-            $found = array_flip($this->productRepository->whereIn('sku', $unresolved)->pluck('sku')->all());
+            $isDefaultMapping = $this->mappedSkuAttributeCode() === self::UNOPIM_SKU_FIELD;
+
+            $columns = $isDefaultMapping ? ['id', 'sku'] : ['id', 'sku', 'values'];
+
+            $found = [];
+
+            foreach ($this->productRepository->whereIn('sku', $unresolved)->get($columns) as $product) {
+                $found[$product->sku] = $isDefaultMapping
+                    ? $product->sku
+                    : $this->bagistoSkuFor($product->toArray());
+            }
 
             foreach ($unresolved as $sku) {
-                $this->knownSkus[$sku] = isset($found[$sku]);
+                $this->knownSkus[$sku] = $found[$sku] ?? null;
             }
         }
 
-        return array_values(array_filter($skus, fn (string $sku): bool => $this->knownSkus[$sku]));
+        return array_values(array_filter(array_map(
+            fn (string $sku): ?string => $this->knownSkus[$sku],
+            $skus
+        )));
+    }
+
+    protected function resolveMediaForExport(string $mediaPath, string $identifier): ?string
+    {
+        if (! BagistoImageFormat::accepts($mediaPath)) {
+            $this->recordExcludedMedia($identifier, SkipReason::UNSUPPORTED_IMAGE_FORMAT, [basename($mediaPath)]);
+
+            return null;
+        }
+
+        $resolved = $this->getExistingFilePath($mediaPath);
+
+        if (! $resolved) {
+            $this->recordExcludedMedia($identifier, SkipReason::MEDIA_NOT_FOUND, [basename($mediaPath)]);
+        }
+
+        return $resolved;
     }
 
     protected function getExistingFilePath(string $mediaPath): ?string
@@ -980,27 +1129,36 @@ class Exporter extends AbstractExporter
             return null;
         }
 
-        $encodedPath = implode('/', array_map('rawurlencode', explode('/', $mediaPath)));
+        return Storage::url($this->encodeMediaPath($mediaPath));
+    }
 
-        return Storage::url($encodedPath);
+    protected function temporaryUrlTtl(): int
+    {
+        $ttl = (int) config('bagisto-media.temporary_url_ttl', 60);
+
+        return $ttl > 0 ? $ttl : 60;
     }
 
     protected function resolveMediaUrl(string $mediaPath): string
     {
-        $disk = Storage::disk('s3');
         $visibility = config('filesystems.disks.s3.visibility') ?? 'public';
 
         if ($visibility === 'private') {
-            return $disk->temporaryUrl($mediaPath, now()->addMinutes(5));
+            return Storage::disk('s3')->temporaryUrl($mediaPath, now()->addMinutes($this->temporaryUrlTtl()));
         }
 
         $bucketUrl = config('filesystems.disks.s3.url');
 
         if (! empty($bucketUrl)) {
-            return rtrim($bucketUrl, '/').'/'.ltrim($mediaPath, '/');
+            return rtrim($bucketUrl, '/').'/'.$this->encodeMediaPath($mediaPath);
         }
 
-        return $disk->url(ltrim($mediaPath, '/'));
+        return Storage::disk('s3')->url(ltrim($mediaPath, '/'));
+    }
+
+    protected function encodeMediaPath(string $mediaPath): string
+    {
+        return implode('/', array_map('rawurlencode', explode('/', ltrim($mediaPath, '/'))));
     }
 
     protected function createSlug(string $name): string

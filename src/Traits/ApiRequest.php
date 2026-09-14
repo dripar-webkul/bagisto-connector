@@ -19,7 +19,10 @@ trait ApiRequest
 
     public function buildHttpRequest(): ApiService
     {
-        $this->httpClient = Cache::get(CacheType::BAGISTO_API_HTTP->value);
+        $cacheKey = CacheType::BAGISTO_API_HTTP->forCredential($this->credential['id'] ?? null);
+
+        $this->httpClient = Cache::get($cacheKey);
+
         if (! $this->httpClient) {
             $httpClientFactory = new HttpClientFactory;
             $this->httpClient = $httpClientFactory->withBaseUri($this->credential['shop_url'])
@@ -27,7 +30,7 @@ trait ApiRequest
                 ->withPassword($this->credential['password'])
                 ->make();
 
-            Cache::put(CacheType::BAGISTO_API_HTTP->value, $this->httpClient, config('session.lifetime'));
+            Cache::put($cacheKey, $this->httpClient, config('session.lifetime'));
         }
 
         return $this->httpClient;

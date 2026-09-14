@@ -19,4 +19,14 @@ enum CacheType: string
     case CATEGORY_JOB_FILTERS = 'category_job_filters';
 
     case ADDITIONAL_INFO = 'additionalInfo';
+
+    public function forCredential(int|string|null $credentialId): string
+    {
+        return $this->value.':'.($credentialId ?? 'none');
+    }
+
+    public function forJob(int|string|null $credentialId, int|string|null $jobInstanceId): string
+    {
+        return $this->forCredential($credentialId).':'.($jobInstanceId ?? 'none');
+    }
 }

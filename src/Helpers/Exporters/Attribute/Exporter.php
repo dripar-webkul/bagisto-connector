@@ -5,6 +5,7 @@ namespace Webkul\Bagisto\Helpers\Exporters\Attribute;
 use Illuminate\Support\Facades\Cache;
 use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Bagisto\Enums\Export\CacheType;
+use Webkul\Bagisto\Enums\Export\MappingSection;
 use Webkul\Bagisto\Enums\Services\MethodType;
 use Webkul\Bagisto\Repositories\AttributeMappingRepository;
 use Webkul\Bagisto\Repositories\BagistoDataMapping;
@@ -53,7 +54,7 @@ class Exporter extends AbstractExporter
     {
         $this->initializeCredential($this->getFilters());
 
-        $this->additionalInfoValue = Cache::get(CacheType::ADDITIONAL_INFO->value, []);
+        $this->additionalInfoValue = Cache::get(CacheType::ADDITIONAL_INFO->forCredential($this->credential['id'] ?? null), []);
     }
 
     public function checkRequiredCondition(): bool
@@ -84,6 +85,25 @@ class Exporter extends AbstractExporter
         return true;
     }
 
+    /**
+     * @param  array<string, string|array<int, string>>  $mappedValue
+     * @return array<int, string>
+     */
+    protected function flattenMappedCodes(array $mappedValue): array
+    {
+        $codes = [];
+
+        foreach ($mappedValue as $value) {
+            foreach ((array) $value as $code) {
+                if (is_string($code) && $code !== '') {
+                    $codes[] = $code;
+                }
+            }
+        }
+
+        return $codes;
+    }
+
     protected function getResults(): \Iterator
     {
         $this->initialize();
@@ -94,15 +114,27 @@ class Exporter extends AbstractExporter
 
         $filters = $this->getFilters();
         $attributeCodes = $filters['code'] ?? null;
-        $mappedAttributeValue = [];
-        $mappedAttributeValue = $this->attributeMappingRepository->findByField('section', 'standard_attribute')->first();
+        $credentialId = $this->credential['id'] ?? null;
+
+        $mapping = $this->attributeMappingRepository->forCredential($credentialId, MappingSection::STANDARD_ATTRIBUTE);
+
         $mappedAttributes = [];
-        if ($mappedAttributeValue) {
-            $additionalInfo = $mappedAttributeValue?->additional_info ?? [];
-            ! empty($additionalInfo['configurable_attribute']) ? $additionalInfoValue = explode(',', $additionalInfo['configurable_attribute']) : $additionalInfoValue = [];
-            $mappedAttributes = array_unique(array_values($mappedAttributeValue?->mapped_value));
-            $mappedAttributes = array_unique(array_merge($mappedAttributes, $additionalInfoValue));
-            Cache::put(CacheType::ADDITIONAL_INFO->value, $additionalInfoValue, config('session.lifetime'));
+
+        if ($mapping) {
+            $configurable = $mapping->additional_info['configurable_attribute'] ?? null;
+
+            $configurableAttributes = empty($configurable) ? [] : explode(',', $configurable);
+
+            $mappedAttributes = array_values(array_unique(array_merge(
+                $this->flattenMappedCodes($mapping->mapped_value ?? []),
+                $configurableAttributes
+            )));
+
+            Cache::put(
+                CacheType::ADDITIONAL_INFO->forCredential($credentialId),
+                $configurableAttributes,
+                config('session.lifetime')
+            );
         }
 
         if ($attributeCodes) {

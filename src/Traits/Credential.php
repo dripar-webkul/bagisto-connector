@@ -11,7 +11,10 @@ trait Credential
 
     protected function initializeCredential($filters): void
     {
-        $this->credential = Cache::get(CacheType::CREDENTIAL->value, []);
+        $cacheKey = CacheType::CREDENTIAL->forCredential($filters['credentials'] ?? null);
+
+        $this->credential = Cache::get($cacheKey, []);
+
         if (empty($this->credential)) {
             $activeCredential = $this->credentialRepository->find($filters['credentials']);
             if ($activeCredential) {
@@ -25,7 +28,7 @@ trait Credential
                 ];
             }
 
-            Cache::put(CacheType::CREDENTIAL->value, $this->credential, config('session.lifetime'));
+            Cache::put($cacheKey, $this->credential, config('session.lifetime'));
         }
     }
 

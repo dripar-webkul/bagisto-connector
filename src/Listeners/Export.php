@@ -5,6 +5,7 @@ namespace Webkul\Bagisto\Listeners;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Webkul\Bagisto\Enums\Export\CacheType;
+use Webkul\Bagisto\Enums\Export\SkipScope;
 use Webkul\DataTransfer\Repositories\JobTrackBatchRepository;
 use Webkul\DataTransfer\Repositories\JobTrackRepository;
 
@@ -24,11 +25,27 @@ class Export
             'bagisto_attribute_families',
         ];
 
-        if (in_array($export->entity_type, $types)) {
-            Cache::forget(CacheType::CREDENTIAL->value);
-            Cache::forget(CacheType::PRODUCT_JOB_FILTERS->value);
-            Cache::forget(CacheType::CATEGORY_JOB_FILTERS->value);
-            Cache::forget(CacheType::ADDITIONAL_INFO->value);
+        if (! in_array($export->entity_type, $types)) {
+            return;
+        }
+
+        $credentialId = data_get($export, 'filters.credentials');
+
+        foreach ([
+            CacheType::CREDENTIAL,
+            CacheType::ADDITIONAL_INFO,
+            CacheType::ATTRIBUTE_MAPPING,
+            CacheType::CATEGORY_FIELD_MAPPING,
+            CacheType::BAGISTO_API_HTTP,
+        ] as $cacheType) {
+            Cache::forget($cacheType->forCredential($credentialId));
+        }
+
+        foreach ([
+            CacheType::PRODUCT_JOB_FILTERS,
+            CacheType::CATEGORY_JOB_FILTERS,
+        ] as $cacheType) {
+            Cache::forget($cacheType->forJob($credentialId, data_get($export, 'id')));
         }
     }
 
@@ -58,6 +75,8 @@ class Export
             ->groupBy('job_track_id')
             ->first()?->toArray();
 
+        $skipped = $this->collectSkippedItems($export->id);
+
         $this->jobTrackRepository->update([
             'summary' => $summary ?: [
                 'processed' => 0,
@@ -65,6 +84,29 @@ class Export
                 'updated'   => 0,
                 'skipped'   => 0,
             ],
+            'errors'       => $skipped,
+            'errors_count' => count(array_filter(
+                $skipped,
+                fn ($entry) => SkipScope::of($entry['scope'] ?? null)->countsAsError()
+            )),
         ], $export->id);
+    }
+
+    /**
+     * @return array<int, array{identifier: string, reason: string, details: array<int, string>}>
+     */
+    protected function collectSkippedItems(int $jobTrackId): array
+    {
+        $skipped = [];
+
+        foreach ($this->jobTrackBatchRepository->findWhere(['job_track_id' => $jobTrackId]) as $batch) {
+            foreach ($batch->summary['skipped_reasons'] ?? [] as $entry) {
+                if (! in_array($entry, $skipped, true)) {
+                    $skipped[] = $entry;
+                }
+            }
+        }
+
+        return $skipped;
     }
 }
