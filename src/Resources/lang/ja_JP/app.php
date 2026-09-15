@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagistoフィルター',
@@ -26,6 +25,14 @@ return [
             'type'               => '製品タイプ',
             'channel'            => 'チャネル',
             'locale'             => 'ロケール',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'コードでフィルター',
             'sku'                => 'SKUでフィルター',
             'all'                => 'すべて',
@@ -33,28 +40,24 @@ return [
             'false'              => '無効（偽）',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => '認証情報',
                 'attribute-mapping' => '属性マッピング',
-                'category-mapping'  => 'カテゴリマッピング',
+                'category-mapping'  => 'カテゴリフィールドマッピング',
             ],
-
             'index' => [
                 'title'      => '認証情報',
                 'invalid'    => '無効な認証情報',
                 'create-btn' => '認証情報を作成',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'ショップURL',
                     'email'    => 'メールアドレス',
                     'edit'     => '編集',
                     'delete'   => '削除',
                 ],
-
                 'create' => [
                     'title'    => '認証情報を作成',
                     'shop_url' => 'ショップURL',
@@ -62,12 +65,10 @@ return [
                     'password' => 'パスワード',
                     'save-btn' => '保存',
                 ],
-
                 'create-success' => '認証情報が正常に作成されました。',
                 'update-success' => '認証情報が正常に更新されました。',
                 'delete-success' => '認証情報が正常に削除されました。',
             ],
-
             'edit' => [
                 'title'                     => '認証情報を編集',
                 'shop_url'                  => 'ショップURL',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'UnoPimチャネル',
                 'unopim-locale'             => 'UnoPimロケール',
                 'credential'                => '認証情報',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Bagistoサーバーは現在ダウンしています。認証情報を更新するか、サーバーを再起動してください。',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'カテゴリフィールドマッピングが正常に保存されました',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count 件の商品がエクスポートされませんでした',
                 'skipped-description'      => 'これらの商品は UnoPim に残っています。以下の原因を解消してから再度エクスポートを実行してください — ダウンロードログに詳細がすべて記録されています。',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'データ：',
                     'flash-message'     => '有効な属性コードとタイプを指定してください。',
                 ],
-
                 'additional-attributes' => [
                     'title'          => '追加属性マッピング',
                     'description'    => '追加の属性を追加してマッピングするには、Bagisto属性コードを入力してください。',
                     'attribute-code' => 'Bagisto 属性コード',
                     'attribute-type' => '属性タイプ',
+                    'added'          => '追加の属性マッピングを追加しました。',
+                    'duplicate'      => 'その属性コードはすでにマッピングされています。',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => '構成可能な属性マッピング',
                     'description' => '追加の属性を追加してマッピングするには、Bagisto属性コードを入力してください。',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'カテゴリフィールドマッピング',
                     'save'                   => '保存',

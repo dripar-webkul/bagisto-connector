@@ -61,9 +61,6 @@ return new class extends Migration
         }
     }
 
-    /**
-     * @param  array<int, int>  $credentialIds
-     */
     private function guardAgainstOrphanedRows(string $table, array $credentialIds): void
     {
         if ($credentialIds !== [] || DB::table($table)->doesntExist()) {

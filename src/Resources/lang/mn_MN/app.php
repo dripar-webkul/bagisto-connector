@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto шүүлтүүрүүд',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Бүтээгдэхүүний төрөл',
             'channel'            => 'Суваг',
             'locale'             => 'Хэл орон нутгийн тохиргоо',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Кодоор шүүх',
             'sku'                => 'SKU-аар шүүх',
             'all'                => 'Бүгд',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Идэвхгүй болгосон (Худал)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Нэвтрэх мэдээлэл',
                 'attribute-mapping' => 'Атрибутын тохируулга',
-                'category-mapping'  => 'Ангиллын тохируулга',
+                'category-mapping'  => 'Ангиллын талбарын харгалзаа',
             ],
-
             'index' => [
                 'title'      => 'Итгэмжлэлүүд',
                 'invalid'    => 'Хүчингүй итгэмжлэл',
                 'create-btn' => 'Итгэмжлэл үүсгэх',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'Дэлгүүрийн URL',
                     'email'    => 'Имэйл хаяг',
                     'edit'     => 'Засах',
                     'delete'   => 'Устгах',
                 ],
-
                 'create' => [
                     'title'    => 'Итгэмжлэл үүсгэх',
                     'shop_url' => 'Дэлгүүрийн URL',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Нууц үг',
                     'save-btn' => 'Хадгалах',
                 ],
-
                 'create-success' => 'Итгэмжлэл амжилттай үүслээ.',
                 'update-success' => 'Итгэмжлэл амжилттай шинэчлэгдлээ.',
                 'delete-success' => 'Итгэмжлэл амжилттай устгагдлаа.',
             ],
-
             'edit' => [
                 'title'                     => 'Итгэмжлэл засах',
                 'shop_url'                  => 'Дэлгүүрийн URL',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'UnoPim суваг',
                 'unopim-locale'             => 'UnoPim хэл орон нутгийн тохиргоо',
                 'credential'                => 'Итгэмжлэл',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Bagisto сервер одоогоор ажиллахгүй байна, нэвтрэх мэдээллийг шинэчилж эсвэл серверийг дахин эхлүүлнэ үү.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'Ангиллын талбарын харгалзааг амжилттай хадгаллаа',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count бүтээгдэхүүн экспортлогдсонгүй',
                 'skipped-description'      => 'Эдгээр бүтээгдэхүүн UnoPim дотор үлдсэн. Доор заасан шалтгааныг засаад экспортыг дахин ажиллуулна уу — татаж авах бүртгэлд бүх дэлгэрэнгүй мэдээлэл байна.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'өгөгдөл:',
                     'flash-message'     => 'Хүчинтэй шинж чанарын код болон төрлийг оруулна уу.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Нэмэлт шинж чанарын харгалзаанууд',
                     'description'    => 'Нэмэлт шинж чанар нэмж, харгалзуулахын тулд Bagisto шинж чанарын кодыг бичнэ үү.',
                     'attribute-code' => 'Bagisto атрибутын код',
                     'attribute-type' => 'Атрибутын төрөл',
+                    'added'          => 'Нэмэлт атрибутын тохируулга нэмэгдлээ.',
+                    'duplicate'      => 'Энэ атрибутын код аль хэдийн тохируулагдсан байна.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Тохируулах боломжтой шинж чанарын харгалзаанууд',
                     'description' => 'Нэмэлт шинж чанар нэмж, харгалзуулахын тулд Bagisto шинж чанарын кодыг бичнэ үү.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Ангиллын талбарын харгалзаанууд',
                     'save'                   => 'Хадгалах',

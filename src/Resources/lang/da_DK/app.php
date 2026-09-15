@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto-filtre',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Produkttype',
             'channel'            => 'Kanal',
             'locale'             => 'Kildelokalitet',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Filtrer efter kode',
             'sku'                => 'Filtrer efter SKU',
             'all'                => 'Alle',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Deaktiveret (Falsk)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Legitimationsoplysninger',
                 'attribute-mapping' => 'Attributtilknytning',
-                'category-mapping'  => 'Kategoritilknytning',
+                'category-mapping'  => 'Mapning af kategorifelter',
             ],
-
             'index' => [
                 'title'      => 'Legitimationsoplysninger',
                 'invalid'    => 'Ugyldige legitimationsoplysninger',
                 'create-btn' => 'Opret legitimationsoplysninger',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'Butiks-URL',
                     'email'    => 'E-mailadresse',
                     'edit'     => 'Rediger',
                     'delete'   => 'Slet',
                 ],
-
                 'create' => [
                     'title'    => 'Opret legitimationsoplysninger',
                     'shop_url' => 'Butiks-URL',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Adgangskode',
                     'save-btn' => 'Gem',
                 ],
-
                 'create-success' => 'Legitimationsoplysninger blev oprettet.',
                 'update-success' => 'Legitimationsoplysninger blev opdateret.',
                 'delete-success' => 'Legitimationsoplysninger blev slettet.',
             ],
-
             'edit' => [
                 'title'                     => 'Rediger legitimationsoplysninger',
                 'shop_url'                  => 'Butiks-URL',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'UnoPim-kanal',
                 'unopim-locale'             => 'UnoPim-kildelokalitet',
                 'credential'                => 'Legitimationsoplysning',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Bagisto-serveren er nede nu; opdater venligst legitimationsoplysningerne, eller genstart serveren.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'Mapningen af kategorifelter er blevet gemt',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count produkt(er) blev ikke eksporteret',
                 'skipped-description'      => 'Disse produkter blev i UnoPim. Ret årsagen nedenfor, og kør eksporten igen — downloadloggen indeholder alle detaljer.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'data:',
                     'flash-message'     => 'Angiv en gyldig attributkode og -type.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Yderligere attributmapninger',
                     'description'    => 'Skriv Bagisto-attributkoden for at tilføje en yderligere attribut og mappe den.',
                     'attribute-code' => 'Bagisto-attributkode',
                     'attribute-type' => 'Attributtype',
+                    'added'          => 'Ekstra attributtilknytning tilføjet.',
+                    'duplicate'      => 'Den attributkode er allerede tilknyttet.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Konfigurerbare attributmapninger',
                     'description' => 'Skriv Bagisto-attributkoden for at tilføje en yderligere attribut og mappe den.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Mapninger af kategorifelter',
                     'save'                   => 'Gem',

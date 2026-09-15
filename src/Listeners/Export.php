@@ -85,9 +85,6 @@ class Export
         ], $export->id);
     }
 
-    /**
-     * @return array<int, array{identifier: string, reason: string, details: array<int, string>}>
-     */
     protected function collectSkippedItems(int $jobTrackId): array
     {
         $skipped = [];

@@ -58,14 +58,32 @@ class ProductExportFilterTest extends TestCase
         $this->assertSame([false], $query->getBindings());
     }
 
-    public function test_to_core_scope_renames_the_bagisto_channel_and_locale_filters()
+    public function test_to_core_scope_reads_the_filter_names_saved_before_the_rename()
+    {
+        $this->assertSame(
+            ['channels' => ['default'], 'locales' => ['en_US']],
+            $this->toCoreScope(['channel' => ['default'], 'locale' => ['en_US']])
+        );
+    }
+
+    public function test_to_core_scope_reads_the_current_filter_names()
+    {
+        $this->assertSame(
+            ['channels' => ['default', 'b2b'], 'locales' => ['en_US']],
+            $this->toCoreScope(['channels' => ['default', 'b2b'], 'locales' => 'en_US'])
+        );
+    }
+
+    public function test_to_core_scope_is_empty_when_nothing_was_selected()
+    {
+        $this->assertSame(['channels' => [], 'locales' => []], $this->toCoreScope([]));
+    }
+
+    private function toCoreScope(array $filters): array
     {
         $method = new \ReflectionMethod($this->filter, 'toCoreScope');
         $method->setAccessible(true);
 
-        $this->assertSame(
-            ['channels' => ['default'], 'locales' => ['en_US']],
-            $method->invoke($this->filter, ['channel' => ['default'], 'locale' => ['en_US']])
-        );
+        return $method->invoke($this->filter, $filters);
     }
 }

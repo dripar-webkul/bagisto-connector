@@ -10,6 +10,7 @@ use Webkul\Bagisto\Enums\Services\MethodType;
 use Webkul\Bagisto\Repositories\AttributeMappingRepository;
 use Webkul\Bagisto\Repositories\BagistoDataMapping;
 use Webkul\Bagisto\Repositories\CredentialRepository;
+use Webkul\Bagisto\Support\ScopeFilters;
 use Webkul\Bagisto\Traits\ApiRequest as ApiRequestTrait;
 use Webkul\Bagisto\Traits\Credential as CredentialTrait;
 use Webkul\Bagisto\Traits\ExportSummary as ExportSummaryTrait;
@@ -60,7 +61,7 @@ class Exporter extends AbstractExporter
     public function checkRequiredCondition(): bool
     {
         if (empty($this->credential)) {
-            $this->jobLogger->warning('Credential not found!');
+            $this->jobLogger->warning(trans('bagisto::app.bagisto.export.errors.credential-not-found'));
 
             return true;
         }
@@ -85,10 +86,6 @@ class Exporter extends AbstractExporter
         return true;
     }
 
-    /**
-     * @param  array<string, string|array<int, string>>  $mappedValue
-     * @return array<int, string>
-     */
     protected function flattenMappedCodes(array $mappedValue): array
     {
         $codes = [];
@@ -252,26 +249,48 @@ class Exporter extends AbstractExporter
     public function prepareAttributes(JobTrackBatchContract $batch, mixed $filePath): array
     {
         $attributes = [];
-        $filters = $this->getFilters();
-        $bagistoLocales = $this->getMappedLocales();
-        $bagistoChannel = $this->findMappedChannel($filters['channel']);
 
-        if (! $bagistoChannel || empty($bagistoLocales[$bagistoChannel])) {
+        $locales = $this->exportableLocales($this->getFilters());
+
+        if ($locales === []) {
             $this->skippedItemsCount += count($batch->data);
 
-            $this->jobLogger?->warning(
-                count($batch->data).' attributes not exported: no Bagisto channel/locale mapping for "'
-                .$filters['channel'].'". Open the credential and save the channel and locale mapping.'
-            );
+            $this->jobLogger?->warning(trans('bagisto::app.bagisto.export.errors.no-attribute-locale-mapping', [
+                'count' => count($batch->data),
+            ]));
 
             return $attributes;
         }
 
         foreach ($batch->data as $rowData) {
-            $attributes[] = $this->getCommonFields($rowData, $bagistoLocales[$bagistoChannel]);
+            $attributes[] = $this->getCommonFields($rowData, $locales);
         }
 
         return $attributes;
+    }
+
+    protected function exportableLocales(array $filters): array
+    {
+        $filterChannels = ScopeFilters::channelCodes($filters);
+        $filterLocales = ScopeFilters::localeCodes($filters);
+
+        $localeMap = $this->getMappedLocales();
+
+        $locales = [];
+
+        foreach ($this->getMappedChannels() as $bagistoChannel => $unopimChannel) {
+            if ($filterChannels !== [] && ! in_array($unopimChannel, $filterChannels, true)) {
+                continue;
+            }
+
+            foreach ($localeMap[$bagistoChannel] ?? [] as $bagistoLocale => $unopimLocale) {
+                if ($filterLocales === [] || in_array($unopimLocale, $filterLocales, true)) {
+                    $locales[$bagistoLocale] = $unopimLocale;
+                }
+            }
+        }
+
+        return $locales;
     }
 
     protected function getCommonFields($item, $locale): array

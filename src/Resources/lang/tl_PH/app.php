@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Mga Filter ng Bagisto',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Uri ng Produkto',
             'channel'            => 'Channel',
             'locale'             => 'Wikang Pinagmulan',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'I-filter ayon sa Code',
             'sku'                => 'I-filter ayon sa SKU',
             'all'                => 'Lahat',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Naka-disable (Hindi Totoo)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Kredensyal',
                 'attribute-mapping' => 'Pagmamapa ng attribute',
-                'category-mapping'  => 'Pagmamapa ng kategorya',
+                'category-mapping'  => 'Pagmamapa ng mga Field ng Kategorya',
             ],
-
             'index' => [
                 'title'      => 'Mga Kredensyal',
                 'invalid'    => 'Hindi Wastong Kredensyal',
                 'create-btn' => 'Gumawa ng Kredensyal',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'URL ng Tindahan',
                     'email'    => 'Email Address',
                     'edit'     => 'I-edit',
                     'delete'   => 'Tanggalin',
                 ],
-
                 'create' => [
                     'title'    => 'Gumawa ng Kredensyal',
                     'shop_url' => 'URL ng Tindahan',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Password',
                     'save-btn' => 'I-save',
                 ],
-
                 'create-success' => 'Matagumpay na nagawa ang kredensyal.',
                 'update-success' => 'Matagumpay na na-update ang kredensyal.',
                 'delete-success' => 'Matagumpay na natanggal ang kredensyal.',
             ],
-
             'edit' => [
                 'title'                     => 'I-edit ang Kredensyal',
                 'shop_url'                  => 'URL ng Tindahan',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'Channel ng UnoPim',
                 'unopim-locale'             => 'Wikang Pinagmulan ng UnoPim',
                 'credential'                => 'Kredensyal',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Down ang Bagisto server ngayon; pakibago ang kredensyal o i-restart ang server.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'Matagumpay na na-save ang pagmamapa ng mga field ng kategorya',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count (na) produkto ang hindi na-export',
                 'skipped-description'      => 'Nanatili sa UnoPim ang mga produktong ito. Ayusin ang dahilan sa ibaba at patakbuhin muli ang export — nasa download log ang buong detalye.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'data:',
                     'flash-message'     => 'Mangyaring magbigay ng wastong code at uri ng katangian.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Mga Karagdagang Pagmamapa ng Katangian',
                     'description'    => 'Isulat ang code ng katangian ng Bagisto upang magdagdag ng karagdagang katangian at i-map ito.',
                     'attribute-code' => 'Bagisto attribute code',
                     'attribute-type' => 'Uri ng attribute',
+                    'added'          => 'Naidagdag ang karagdagang pagmamapa ng attribute.',
+                    'duplicate'      => 'Naka-map na ang attribute code na iyon.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Mga Pagmamapa ng Nako-configure na Katangian',
                     'description' => 'Isulat ang code ng katangian ng Bagisto upang magdagdag ng karagdagang katangian at i-map ito.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Mga Pagmamapa ng mga Field ng Kategorya',
                     'save'                   => 'I-save',

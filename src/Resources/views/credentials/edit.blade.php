@@ -117,33 +117,12 @@
                                 @lang('bagisto::app.bagisto.credentials.edit.category-field-filterable')
                             </x-admin::form.control-group.label>
 
-                            @php
-                                $additionalInfo = $credential->additional_info ? $credential->additional_info[0]['filterableAttribtes'] : '';
-                                $values = null;
-
-                                if ($additionalInfo) {
-                                    $attributeIds = explode(',', $additionalInfo);
-                                    $values = json_encode($attributeIds);
-                                }
-
-                                $options = [];
-
-                                foreach ($storefilterableAttribtes as $attribute) {
-                                    $options[] = [
-                                        'id'    => (string) $attribute['id'],
-                                        'label' => $attribute['name'] ?? $attribute['code'],
-                                    ];
-                                }
-
-                                $optionsInJson = json_encode($options);
-                            @endphp
-
                             <x-admin::form.control-group.control
                                 type="multiselect"
                                 track-by="id"
                                 label-by="label"
-                                :options="$optionsInJson"
-                                :value="$values"
+                                :options="$filterableAttributeOptions"
+                                :value="$filterableAttributeValue"
                                 id="filterableAttribtes"
                                 name="filterableAttribtes"
                                 rules="required"
@@ -166,7 +145,7 @@
                         :channels='@json($unoPimChannels)'
                     />
                 </div>
-            </div>           
+            </div>
         </div>
     </x-admin::form>
 
@@ -213,7 +192,7 @@
                                     v-bind:name="'channel['+ storeChannel['id']+ ']'"
                                     v-bind:value="storeMappings[storeChannel['id']] ? storeMappings[storeChannel['id']]['channel'][storeChannel['code']] : ''"
                                     v-bind:options="channels"
-                                    placeholder="UnoPim Channel"
+                                    :placeholder="trans('bagisto::app.bagisto.credentials.edit.select-unopim-channel')"
                                     v-on:input="handleChannelChange($event, storeChannel['id'])"
                                     track-by="code"
                                     label-by="name"
@@ -249,7 +228,7 @@
                                         v-bind:name="'locale['+ storeLocale['code']+ ']'"
                                         v-bind:options="unoPimLocales[storeChannel['id']]"
                                         v-bind:value="storeMappings[storeChannel['id']] && storeMappings[storeChannel['id']]['locales'] ? storeMappings[storeChannel['id']]['locales'][storeLocale['code']] : ''"
-                                        placeholder="UnoPim locale"
+                                        :placeholder="trans('bagisto::app.bagisto.credentials.edit.select-unopim-locale')"
                                         v-on:input="handleLocaleChange($event, storeChannel['id'], storeLocale['code'])"
                                         track-by="code"
                                         label-by="name"
@@ -312,7 +291,6 @@
                             if (value) {
                                 let selectedValue = JSON.parse(value);
                                 this.storeMappings[channelId]['locales'] = {...this.storeMappings[channelId]['locales'], [locale]: selectedValue.code};
-
                             } else {
                                 delete this.storeMappings[channelId]['locales'][locale];
                             }

@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Filtre Bagisto',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Tip produs',
             'channel'            => 'Canal',
             'locale'             => 'Setări regionale',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Filtrează după cod',
             'sku'                => 'Filtrează după SKU',
             'all'                => 'Toate',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Dezactivat (Fals)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Credențiale',
                 'attribute-mapping' => 'Mapare atribute',
-                'category-mapping'  => 'Mapare categorii',
+                'category-mapping'  => 'Corelare câmpuri categorie',
             ],
-
             'index' => [
                 'title'      => 'Credențiale',
                 'invalid'    => 'Credențiale nevalide',
                 'create-btn' => 'Creează credențiale',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'URL magazin',
                     'email'    => 'Adresă de e-mail',
                     'edit'     => 'Editează',
                     'delete'   => 'Șterge',
                 ],
-
                 'create' => [
                     'title'    => 'Creează credențiale',
                     'shop_url' => 'URL magazin',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Parolă',
                     'save-btn' => 'Salvează',
                 ],
-
                 'create-success' => 'Credențialele au fost create cu succes.',
                 'update-success' => 'Credențialele au fost actualizate cu succes.',
                 'delete-success' => 'Credențialele au fost șterse cu succes.',
             ],
-
             'edit' => [
                 'title'                     => 'Editează credențiale',
                 'shop_url'                  => 'URL magazin',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'Canal UnoPim',
                 'unopim-locale'             => 'Setări regionale UnoPim',
                 'credential'                => 'Credențial',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Serverul Bagisto este momentan indisponibil; actualizați acreditările sau reporniți serverul.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'Corelarea câmpurilor de categorie a fost salvată cu succes',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count produs(e) nu au fost exportate',
                 'skipped-description'      => 'Aceste produse au rămas în UnoPim. Remediați cauza de mai jos și rulați exportul din nou — jurnalul de descărcare conține toate detaliile.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'date:',
                     'flash-message'     => 'Furnizați un cod și un tip de atribut valide.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Corelări de atribute suplimentare',
                     'description'    => 'Scrieți codul de atribut Bagisto pentru a adăuga un atribut suplimentar și a-l corela.',
                     'attribute-code' => 'Cod atribut Bagisto',
                     'attribute-type' => 'Tip atribut',
+                    'added'          => 'Maparea suplimentară a atributului a fost adăugată.',
+                    'duplicate'      => 'Acest cod de atribut este deja mapat.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Corelări de atribute configurabile',
                     'description' => 'Scrieți codul de atribut Bagisto pentru a adăuga un atribut suplimentar și a-l corela.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Corelări de câmpuri de categorie',
                     'save'                   => 'Salvează',

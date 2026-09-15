@@ -21,6 +21,7 @@ use Webkul\Bagisto\Enums\Services\MethodType;
 use Webkul\Bagisto\Repositories\AttributeMappingRepository;
 use Webkul\Bagisto\Repositories\BagistoDataMapping;
 use Webkul\Bagisto\Repositories\CredentialRepository;
+use Webkul\Bagisto\Support\ScopeFilters;
 use Webkul\Bagisto\Traits\ApiRequest as ApiRequestTrait;
 use Webkul\Bagisto\Traits\Credential as CredentialTrait;
 use Webkul\Bagisto\Traits\ExportSummary as ExportSummaryTrait;
@@ -33,7 +34,6 @@ use Webkul\DataTransfer\Contracts\JobTrackBatch as JobTrackBatchContract;
 use Webkul\DataTransfer\Enums\ProductFilter;
 use Webkul\DataTransfer\Helpers\Export;
 use Webkul\DataTransfer\Helpers\Exporters\Product\Exporter as AbstractExporter;
-use Webkul\DataTransfer\Helpers\Formatters\ScopeFilterValue;
 use Webkul\DataTransfer\Helpers\Sources\Export\ProductSource;
 use Webkul\DataTransfer\Jobs\Export\File\FlatItemBuffer as FileExportFileBuffer;
 use Webkul\DataTransfer\Repositories\JobTrackBatchRepository;
@@ -71,6 +71,8 @@ class Exporter extends AbstractExporter
     protected bool $exportsFile = false;
 
     protected array $mappingAttributes = [];
+
+    private ?array $requiredSourceCodeCache = null;
 
     protected array $credential = [];
 
@@ -127,8 +129,10 @@ class Exporter extends AbstractExporter
     {
         $filters = $this->getFilters();
 
-        $filtersChannels = ScopeFilterValue::toCodes($filters[BagistoProductFilter::CHANNEL->value] ?? null);
-        $filtersLocales = ScopeFilterValue::toCodes($filters[BagistoProductFilter::LOCALE->value] ?? null);
+        $filtersChannels = ScopeFilters::channelCodes($filters);
+        $filtersLocales = ScopeFilters::localeCodes($filters);
+
+        $this->applyAttributeScope(ScopeFilters::attributeCodes($filters));
 
         $bagistoChannels = $this->getMappedChannels();
         $bagistoLocales = $this->getMappedLocales();
@@ -315,10 +319,6 @@ class Exporter extends AbstractExporter
         }
     }
 
-    /**
-     * @param  array<mixed>  $errors
-     * @return array<int, string>
-     */
     protected function flattenApiErrors(array $errors): array
     {
         $flat = [];
@@ -373,7 +373,9 @@ class Exporter extends AbstractExporter
 
             if (! $this->isExportableType($rowData)) {
                 if ($rowData['type'] === ProductType::VARIANT_GROUP->value) {
-                    $this->jobLogger?->info("Product {$rowData['sku']}: variant group flattened into its variants.");
+                    $this->jobLogger?->info(trans('bagisto::app.bagisto.export.errors.variant-group-flattened', [
+                        'identifier' => $rowData['sku'],
+                    ]));
                 } else {
                     $this->recordSkipped($rowData['sku'], SkipReason::UNSUPPORTED_TYPE, [$rowData['type']]);
                 }
@@ -498,6 +500,8 @@ class Exporter extends AbstractExporter
 
         $mergedFields = array_merge($commonFields, $localeSpecificFields, $channelSpecificFields, $channelLocaleSpecificFields);
 
+        $this->scopeToSelectedAttributes($mergedFields);
+
         $identifier = $item['sku'] ?? '(no sku)';
 
         $this->resolveDamAssetPaths($mergedFields, $identifier);
@@ -505,6 +509,40 @@ class Exporter extends AbstractExporter
         $this->handleAttributeType($mergedFields, $withMedia, $channel, $identifier);
 
         return $mergedFields;
+    }
+
+    private function scopeToSelectedAttributes(array &$mergedFields): void
+    {
+        $required = $this->requiredSourceCodes();
+
+        foreach (array_keys($mergedFields) as $code) {
+            if (in_array((string) $code, $required, true) || $this->isAttributeValueExported((string) $code)) {
+                continue;
+            }
+
+            unset($mergedFields[$code]);
+        }
+    }
+
+    private function requiredSourceCodes(): array
+    {
+        if ($this->requiredSourceCodeCache !== null) {
+            return $this->requiredSourceCodeCache;
+        }
+
+        $codes = [self::UNOPIM_SKU_FIELD];
+
+        foreach ($this->getRequiredBagistoFields() as $bagistoCode) {
+            $codes[] = $bagistoCode;
+
+            foreach (['standard_attribute', 'image_attribute'] as $section) {
+                foreach ((array) ($this->mappingAttributes[$section]->mapped_value[$bagistoCode] ?? []) as $sourceCode) {
+                    $codes[] = (string) $sourceCode;
+                }
+            }
+        }
+
+        return $this->requiredSourceCodeCache = array_values(array_unique(array_filter($codes)));
     }
 
     private function applyFixedValues(array &$mergedFields, $parent): void
@@ -760,9 +798,6 @@ class Exporter extends AbstractExporter
         return is_string($mapped) && $mapped !== '' ? $mapped : self::UNOPIM_SKU_FIELD;
     }
 
-    /**
-     * @return array<string, int>
-     */
     protected function productIdsByBagistoSku(array $items, array $skus): array
     {
         $idsBySku = array_column($items, 'id', 'sku');
@@ -999,9 +1034,6 @@ class Exporter extends AbstractExporter
         }
     }
 
-    /**
-     * @return array<int, string>
-     */
     private function sourceCodesInMappedOrder(string $bagistoCode, array $mergedFields): array
     {
         $mapped = (array) (

@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto filtri',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Vrsta proizvoda',
             'channel'            => 'Kanal',
             'locale'             => 'Izvorna lokalizacija',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Filtriraj prema kodu',
             'sku'                => 'Filtriraj prema SKU',
             'all'                => 'Sve',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Onemogućeno (Neistina)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Vjerodajnice',
                 'attribute-mapping' => 'Mapiranje atributa',
-                'category-mapping'  => 'Mapiranje kategorija',
+                'category-mapping'  => 'Mapiranje polja kategorije',
             ],
-
             'index' => [
                 'title'      => 'Vjerodajnice',
                 'invalid'    => 'Nevažeća vjerodajnica',
                 'create-btn' => 'Izradi vjerodajnicu',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'URL trgovine',
                     'email'    => 'Adresa e-pošte',
                     'edit'     => 'Uredi',
                     'delete'   => 'Izbriši',
                 ],
-
                 'create' => [
                     'title'    => 'Izradi vjerodajnicu',
                     'shop_url' => 'URL trgovine',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Lozinka',
                     'save-btn' => 'Spremi',
                 ],
-
                 'create-success' => 'Vjerodajnica je uspješno izrađena.',
                 'update-success' => 'Vjerodajnica je uspješno ažurirana.',
                 'delete-success' => 'Vjerodajnica je uspješno izbrisana.',
             ],
-
             'edit' => [
                 'title'                     => 'Uredi vjerodajnicu',
                 'shop_url'                  => 'URL trgovine',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'UnoPim kanal',
                 'unopim-locale'             => 'UnoPim izvorna lokalizacija',
                 'credential'                => 'Vjerodajnica',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Bagisto poslužitelj trenutno ne radi, ažurirajte vjerodajnice ili ponovno pokrenite poslužitelj.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'Mapiranje polja kategorije uspješno je spremljeno',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count proizvod(a) nije izvezeno',
                 'skipped-description'      => 'Ovi su proizvodi ostali u UnoPimu. Otklonite uzrok naveden u nastavku i ponovno pokrenite izvoz — zapisnik preuzimanja sadrži sve pojedinosti.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'podaci:',
                     'flash-message'     => 'Unesite valjan kod i vrstu atributa.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Mapiranja dodatnih atributa',
                     'description'    => 'Upišite Bagisto kod atributa kako biste dodali dodatni atribut i mapirali ga.',
                     'attribute-code' => 'Bagisto kod atributa',
                     'attribute-type' => 'Vrsta atributa',
+                    'added'          => 'Dodano dodatno mapiranje atributa.',
+                    'duplicate'      => 'Taj kod atributa već je mapiran.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Mapiranja konfigurabilnih atributa',
                     'description' => 'Upišite Bagisto kod atributa kako biste dodali dodatni atribut i mapirali ga.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Mapiranja polja kategorije',
                     'save'                   => 'Spremi',

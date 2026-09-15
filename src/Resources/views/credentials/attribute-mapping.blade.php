@@ -188,22 +188,6 @@
                                 @lang('bagisto::app.bagisto.export.mapping.additional-attributes.attribute-type')
                             </x-admin::form.control-group.label>
 
-                        @php
-                            $supportedTypes = ['text', 'textarea', 'price', 'boolean', 'select', 'multiselect', 'datetime', 'date', 'image', 'gallery', 'file', 'checkbox'];
-
-                            $attributeTypes = [];
-
-                            foreach($supportedTypes as $type) {
-                                $attributeTypes[] = [
-                                    'id'    => $type,
-                                    'label' => trans('admin::app.catalog.attributes.create.'. $type)
-                                ];
-                            }
-
-                            $attributeTypesJson = json_encode($attributeTypes);
-
-                        @endphp
-
                         <x-admin::form.control-group.control
                             type="select"
                             id="type"
@@ -214,7 +198,7 @@
                             @input="handleTypeChange"
                             :label="trans('admin::app.catalog.attributes.create.type')"
                             :placeholder="trans('bagisto::app.bagisto.export.mapping.additional-attributes.attribute-type')"
-                            :options="$attributeTypesJson"
+                            :options="$attributeTypeOptions"
                             track-by="id"
                             label-by="label"
                         >
@@ -265,7 +249,7 @@
 
                         <x-admin::form.control-group.error control-name="configurable_attribute"/>
                     </x-admin::form.control-group>
-                    
+
                     <div class="flex gap-2.5 self-end">
                         <button
                             type="button"
@@ -325,7 +309,10 @@
                         this.dispatchTouch('configurable_attribute');
                     },
                     dispatchTouch(name) {
-                        const form = this.$el.closest('form');
+                        const root = this.$el instanceof Element ? this.$el : null;
+
+                        const form = root?.closest('form')
+                            ?? document.getElementById('bagisto-attribute-mapping-form');
 
                         if (form) {
                             form.dispatchEvent(new CustomEvent('unsaved-changes:touch', {
@@ -432,7 +419,7 @@
                         mappedAdditionalAttributes: @json($additionalAttributes)
                     };
                 },
-                
+
                 mounted() {
                     if (!window.translations) {
                         window.translations = {};

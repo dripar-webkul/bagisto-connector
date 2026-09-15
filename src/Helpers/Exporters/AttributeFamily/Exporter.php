@@ -61,7 +61,7 @@ class Exporter extends AbstractExporter
     public function checkRequiredCondition(): bool
     {
         if (empty($this->credential)) {
-            $this->jobLogger->warning('Credential not found!');
+            $this->jobLogger->warning(trans('bagisto::app.bagisto.export.errors.credential-not-found'));
 
             return true;
         }

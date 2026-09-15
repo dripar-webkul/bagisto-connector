@@ -133,10 +133,10 @@
                         try {
                             if (value) {
                                 let selectedValue = JSON.parse(value);
-                                this.mappedCategoryFields[fieldCode] = selectedValue.code;  
+                                this.mappedCategoryFields[fieldCode] = selectedValue.code;
                             } else {
                                 delete this.mappedCategoryFields[fieldCode];
-                            } 
+                            }
                         } catch (e) {console.error(e)}
                     },
 

@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto 篩選條件',
@@ -26,6 +25,14 @@ return [
             'type'               => '產品類型',
             'channel'            => '頻道',
             'locale'             => '來源語區',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => '依代碼篩選',
             'sku'                => '依 SKU 篩選',
             'all'                => '全部',
@@ -33,28 +40,24 @@ return [
             'false'              => '已停用（假）',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => '憑證',
                 'attribute-mapping' => '屬性對應',
-                'category-mapping'  => '分類對應',
+                'category-mapping'  => '分類欄位對應',
             ],
-
             'index' => [
                 'title'      => '憑證',
                 'invalid'    => '無效的憑證',
                 'create-btn' => '建立憑證',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => '商店網址',
                     'email'    => '電子郵件地址',
                     'edit'     => '編輯',
                     'delete'   => '刪除',
                 ],
-
                 'create' => [
                     'title'    => '建立憑證',
                     'shop_url' => '商店網址',
@@ -62,12 +65,10 @@ return [
                     'password' => '密碼',
                     'save-btn' => '儲存',
                 ],
-
                 'create-success' => '憑證已成功建立。',
                 'update-success' => '憑證已成功更新。',
                 'delete-success' => '憑證已成功刪除。',
             ],
-
             'edit' => [
                 'title'                     => '編輯憑證',
                 'shop_url'                  => '商店網址',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'UnoPim 頻道',
                 'unopim-locale'             => 'UnoPim 語區',
                 'credential'                => '憑證',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Bagisto 伺服器目前無法使用，請更新憑證或重新啟動伺服器。',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => '分類欄位對應已成功儲存',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => '有 :count 項商品未匯出',
                 'skipped-description'      => '這些商品仍留在 UnoPim 中。請修正下方列出的原因後重新執行匯出 — 下載記錄中包含完整詳情。',
@@ -204,19 +216,18 @@ return [
                     'data'              => '資料：',
                     'flash-message'     => '請提供有效的屬性代碼與類型。',
                 ],
-
                 'additional-attributes' => [
                     'title'          => '附加屬性對應',
                     'description'    => '請輸入 Bagisto 屬性代碼以新增附加屬性並進行對應。',
                     'attribute-code' => 'Bagisto 屬性代碼',
                     'attribute-type' => '屬性類型',
+                    'added'          => '已新增附加屬性對應。',
+                    'duplicate'      => '該屬性代碼已對應。',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => '可配置屬性對應',
                     'description' => '請輸入 Bagisto 屬性代碼以新增附加屬性並進行對應。',
                 ],
-
                 'category-fields' => [
                     'title'                  => '分類欄位對應',
                     'save'                   => '儲存',

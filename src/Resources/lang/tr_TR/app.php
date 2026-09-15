@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto Filtreleri',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Ürün Türü',
             'channel'            => 'Kanal',
             'locale'             => 'Yerel Ayar',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Koda Göre Filtrele',
             'sku'                => 'SKU\'ya Göre Filtrele',
             'all'                => 'Tümü',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Devre Dışı (Yanlış)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Kimlik bilgileri',
                 'attribute-mapping' => 'Öznitelik eşleme',
-                'category-mapping'  => 'Kategori eşleme',
+                'category-mapping'  => 'Kategori Alanları Eşleştirme',
             ],
-
             'index' => [
                 'title'      => 'Kimlik Bilgileri',
                 'invalid'    => 'Geçersiz Kimlik Bilgisi',
                 'create-btn' => 'Kimlik Bilgisi Oluştur',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'Mağaza URL\'si',
                     'email'    => 'E-posta Adresi',
                     'edit'     => 'Düzenle',
                     'delete'   => 'Sil',
                 ],
-
                 'create' => [
                     'title'    => 'Kimlik Bilgisi Oluştur',
                     'shop_url' => 'Mağaza URL\'si',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Şifre',
                     'save-btn' => 'Kaydet',
                 ],
-
                 'create-success' => 'Kimlik bilgisi başarıyla oluşturuldu.',
                 'update-success' => 'Kimlik bilgisi başarıyla güncellendi.',
                 'delete-success' => 'Kimlik bilgisi başarıyla silindi.',
             ],
-
             'edit' => [
                 'title'                     => 'Kimlik Bilgisini Düzenle',
                 'shop_url'                  => 'Mağaza URL\'si',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'UnoPim Kanalı',
                 'unopim-locale'             => 'UnoPim Yerel Ayarı',
                 'credential'                => 'Kimlik Bilgisi',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Bagisto sunucusu şu anda çalışmıyor; lütfen kimlik bilgilerini güncelleyin veya sunucuyu yeniden başlatın.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'Kategori Alanları eşleştirmesi başarıyla kaydedildi',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count ürün dışa aktarılmadı',
                 'skipped-description'      => 'Bu ürünler UnoPim içinde kaldı. Aşağıdaki nedeni giderip dışa aktarmayı yeniden çalıştırın — indirme günlüğünde tüm ayrıntılar var.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'veri:',
                     'flash-message'     => 'Lütfen geçerli bir özellik kodu ve türü belirtin.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Ek Özellik Eşleştirmeleri',
                     'description'    => 'Ek bir özellik eklemek ve eşleştirmek için Bagisto özellik kodunu yazın.',
                     'attribute-code' => 'Bagisto öznitelik kodu',
                     'attribute-type' => 'Öznitelik türü',
+                    'added'          => 'Ek öznitelik eşlemesi eklendi.',
+                    'duplicate'      => 'Bu öznitelik kodu zaten eşlenmiş.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Yapılandırılabilir Özellik Eşleştirmeleri',
                     'description' => 'Ek bir özellik eklemek ve eşleştirmek için Bagisto özellik kodunu yazın.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Kategori Alanları Eşleştirmeleri',
                     'save'                   => 'Kaydet',

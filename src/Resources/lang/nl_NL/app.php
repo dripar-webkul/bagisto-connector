@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto-filters',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Producttype',
             'channel'            => 'Kanaal',
             'locale'             => 'Taal',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Filteren op code',
             'sku'                => 'Filteren op SKU',
             'all'                => 'Alle',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Uitgeschakeld (Onwaar)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Inloggegevens',
                 'attribute-mapping' => 'Attribuuttoewijzing',
-                'category-mapping'  => 'Categorietoewijzing',
+                'category-mapping'  => 'Categorievelden koppelen',
             ],
-
             'index' => [
                 'title'      => 'API-gegevens',
                 'invalid'    => 'Ongeldige gegevens',
                 'create-btn' => 'Gegevens aanmaken',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'Winkel-URL',
                     'email'    => 'E-mailadres',
                     'edit'     => 'Bewerken',
                     'delete'   => 'Verwijderen',
                 ],
-
                 'create' => [
                     'title'    => 'Gegevens aanmaken',
                     'shop_url' => 'Winkel-URL',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Wachtwoord',
                     'save-btn' => 'Opslaan',
                 ],
-
                 'create-success' => 'Gegevens zijn succesvol aangemaakt.',
                 'update-success' => 'Gegevens zijn succesvol bijgewerkt.',
                 'delete-success' => 'Gegevens zijn succesvol verwijderd.',
             ],
-
             'edit' => [
                 'title'                     => 'Gegevens bewerken',
                 'shop_url'                  => 'Winkel-URL',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'UnoPim-kanaal',
                 'unopim-locale'             => 'UnoPim-taal',
                 'credential'                => 'Gegevens',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'De Bagisto-server is momenteel niet bereikbaar; werk de inloggegevens bij of herstart de server.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'De koppeling van categorievelden is succesvol opgeslagen',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count product(en) zijn niet geëxporteerd',
                 'skipped-description'      => 'Deze producten zijn in UnoPim gebleven. Los de onderstaande oorzaak op en voer de export opnieuw uit — het downloadlogboek bevat alle details.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'gegevens:',
                     'flash-message'     => 'Geef een geldige attribuutcode en -type op.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Aanvullende attribuutkoppelingen',
                     'description'    => 'Schrijf de Bagisto-attribuutcode om een extra attribuut toe te voegen en te koppelen.',
                     'attribute-code' => 'Bagisto-attribuutcode',
                     'attribute-type' => 'Attribuuttype',
+                    'added'          => 'Extra attribuuttoewijzing toegevoegd.',
+                    'duplicate'      => 'Die attribuutcode is al toegewezen.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Configureerbare attribuutkoppelingen',
                     'description' => 'Schrijf de Bagisto-attribuutcode om een extra attribuut toe te voegen en te koppelen.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Categorieveldkoppelingen',
                     'save'                   => 'Opslaan',

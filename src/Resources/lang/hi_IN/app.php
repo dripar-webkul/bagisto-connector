@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto फ़िल्टर',
@@ -26,6 +25,14 @@ return [
             'type'               => 'उत्पाद प्रकार',
             'channel'            => 'चैनल',
             'locale'             => 'स्थान',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'कोड द्वारा फ़िल्टर करें',
             'sku'                => 'SKU द्वारा फ़िल्टर करें',
             'all'                => 'सभी',
@@ -33,28 +40,24 @@ return [
             'false'              => 'अक्षम (असत्य)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'क्रेडेंशियल',
                 'attribute-mapping' => 'एट्रिब्यूट मैपिंग',
-                'category-mapping'  => 'श्रेणी मैपिंग',
+                'category-mapping'  => 'श्रेणी फ़ील्ड मैपिंग',
             ],
-
             'index' => [
                 'title'      => 'साख',
                 'invalid'    => 'अमान्य साख',
                 'create-btn' => 'साख बनाएँ',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'आईडी',
                     'shop-url' => 'शॉप यूआरएल',
                     'email'    => 'ईमेल पता',
                     'edit'     => 'संपादित करें',
                     'delete'   => 'हटाएं',
                 ],
-
                 'create' => [
                     'title'    => 'साख बनाएँ',
                     'shop_url' => 'शॉप यूआरएल',
@@ -62,12 +65,10 @@ return [
                     'password' => 'पासवर्ड',
                     'save-btn' => 'सहेजें',
                 ],
-
                 'create-success' => 'साख सफलतापूर्वक बनाई गई।',
                 'update-success' => 'साख सफलतापूर्वक अपडेट की गई।',
                 'delete-success' => 'साख सफलतापूर्वक हटाई गई।',
             ],
-
             'edit' => [
                 'title'                     => 'साख संपादित करें',
                 'shop_url'                  => 'शॉप यूआरएल',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'UnoPim चैनल',
                 'unopim-locale'             => 'UnoPim स्थान',
                 'credential'                => 'साख',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Bagisto सर्वर अभी डाउन है, कृपया क्रेडेंशियल अपडेट करें या सर्वर को रीस्टार्ट करें।',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'श्रेणी फ़ील्ड मैपिंग सफलतापूर्वक सहेजी गई है',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count उत्पाद निर्यात नहीं हुए',
                 'skipped-description'      => 'ये उत्पाद UnoPim में ही रह गए। नीचे बताया गया कारण ठीक करें और निर्यात फिर से चलाएँ — डाउनलोड लॉग में पूरा विवरण मौजूद है।',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'डेटा:',
                     'flash-message'     => 'कृपया एक मान्य गुण कोड और प्रकार प्रदान करें।',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'अतिरिक्त गुण मैपिंग्स',
                     'description'    => 'अतिरिक्त गुण जोड़ने और उसे मैप करने के लिए Bagisto गुण कोड लिखें।',
                     'attribute-code' => 'Bagisto एट्रिब्यूट कोड',
                     'attribute-type' => 'एट्रिब्यूट प्रकार',
+                    'added'          => 'अतिरिक्त एट्रिब्यूट मैपिंग जोड़ी गई।',
+                    'duplicate'      => 'वह एट्रिब्यूट कोड पहले से मैप किया हुआ है।',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'कॉन्फ़िगर करने योग्य गुण मैपिंग्स',
                     'description' => 'अतिरिक्त गुण जोड़ने और उसे मैप करने के लिए Bagisto गुण कोड लिखें।',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'श्रेणी फ़ील्ड मैपिंग्स',
                     'save'                   => 'सहेजें',

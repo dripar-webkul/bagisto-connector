@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Filtres de Bagisto',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Tipus de producte',
             'channel'            => 'Canal',
             'locale'             => 'Configuració regional',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Filtra per codi',
             'sku'                => 'Filtra per SKU',
             'all'                => 'Totes',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Deshabilitat (Fals)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Credencials',
                 'attribute-mapping' => 'Mapatge d\'atributs',
-                'category-mapping'  => 'Mapatge de categories',
+                'category-mapping'  => 'Mapatge de camps de categoria',
             ],
-
             'index' => [
                 'title'      => 'Credencials',
                 'invalid'    => 'Credencial no vàlida',
                 'create-btn' => 'Crea credencial',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'URL de la botiga',
                     'email'    => 'Adreça electrònica',
                     'edit'     => 'Edita',
                     'delete'   => 'Elimina',
                 ],
-
                 'create' => [
                     'title'    => 'Crea credencial',
                     'shop_url' => 'URL de la botiga',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Contrasenya',
                     'save-btn' => 'Desa',
                 ],
-
                 'create-success' => 'Credencial creada correctament.',
                 'update-success' => 'Credencial actualitzada correctament.',
                 'delete-success' => 'Credencial eliminada correctament.',
             ],
-
             'edit' => [
                 'title'                     => 'Edita credencial',
                 'shop_url'                  => 'URL de la botiga',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'Canal d\'UnoPim',
                 'unopim-locale'             => 'Configuració regional d\'UnoPim',
                 'credential'                => 'Credencial',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'El servidor Bagisto està caigut ara; si us plau, actualitzeu les credencials o reinicieu el servidor.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'El mapatge de camps de categoria s\'ha desat correctament',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count producte(s) no s\'han exportat',
                 'skipped-description'      => 'Aquests productes s\'han quedat a UnoPim. Corregiu la causa indicada a sota i torneu a executar l\'exportació — el registre de baixada té tot el detall.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'dades:',
                     'flash-message'     => 'Proporcioneu un codi i un tipus d\'atribut vàlids.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Mapatges d\'atributs addicionals',
                     'description'    => 'Escriviu el codi d\'atribut de Bagisto per afegir un atribut addicional i mapar-lo.',
                     'attribute-code' => 'Codi d\'atribut de Bagisto',
                     'attribute-type' => 'Tipus d\'atribut',
+                    'added'          => 'Mapatge d\'atribut addicional afegit.',
+                    'duplicate'      => 'Aquest codi d\'atribut ja està assignat.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Mapatges d\'atributs configurables',
                     'description' => 'Escriviu el codi d\'atribut de Bagisto per afegir un atribut addicional i mapar-lo.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Mapatges de camps de categoria',
                     'save'                   => 'Desa',

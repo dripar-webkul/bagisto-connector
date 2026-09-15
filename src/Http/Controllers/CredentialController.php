@@ -2,6 +2,7 @@
 
 namespace Webkul\Bagisto\Http\Controllers;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -129,7 +130,37 @@ class CredentialController extends Controller
             ];
         }
 
-        return view('bagisto::credentials.edit', compact('unoPimChannels', 'storeChannels', 'storefilterableAttribtes', 'credential'));
+        $filterableAttributeOptions = $this->filterableAttributeOptions($storefilterableAttribtes);
+
+        $filterableAttributeValue = $this->filterableAttributeValue($credential);
+
+        return view('bagisto::credentials.edit', compact(
+            'unoPimChannels',
+            'storeChannels',
+            'storefilterableAttribtes',
+            'filterableAttributeOptions',
+            'filterableAttributeValue',
+            'credential'
+        ));
+    }
+
+    protected function filterableAttributeOptions(array $storeFilterableAttributes): string
+    {
+        return (string) json_encode(array_map(fn (array $attribute): array => [
+            'id'    => (string) $attribute['id'],
+            'label' => $attribute['name'] ?? $attribute['code'],
+        ], $storeFilterableAttributes));
+    }
+
+    protected function filterableAttributeValue(Model $credential): ?string
+    {
+        $saved = $credential->additional_info[0][CredentialPresenter::FILTERABLE_ATTRIBUTES_KEY] ?? null;
+
+        if (empty($saved)) {
+            return null;
+        }
+
+        return (string) json_encode(explode(',', (string) $saved));
     }
 
     public function update(CredentialUpdateRequest $request, $id): JsonResponse
@@ -170,9 +201,6 @@ class CredentialController extends Controller
         ]);
     }
 
-    /**
-     * @return array{0: ?string, 1: string}
-     */
     protected function resolvePassword(?string $submitted, Credential $credential): array
     {
         if ($submitted === Credential::MASKED_PASSWORD) {
@@ -182,9 +210,6 @@ class CredentialController extends Controller
         return [$submitted, $this->encryptValue((string) $submitted)];
     }
 
-    /**
-     * @return array<string, string>
-     */
     protected function fetchFilterableAttributeLabels(ApiService $httpClient, string $ids): array
     {
         $selected = array_filter(array_map('trim', explode(',', $ids)), 'strlen');

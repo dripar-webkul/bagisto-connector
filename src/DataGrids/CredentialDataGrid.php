@@ -38,6 +38,8 @@ class CredentialDataGrid extends DataGrid
             'searchable' => true,
             'filterable' => true,
             'sortable'   => true,
+            'closure'    => fn ($row) => '<span class="block max-w-[260px] truncate align-middle" title="'
+                .e($row->shop_url).'">'.e($row->shop_url).'</span>',
         ]);
 
         $this->addColumn([

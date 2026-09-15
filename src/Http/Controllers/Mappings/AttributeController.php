@@ -18,6 +18,21 @@ use Webkul\Bagisto\Repositories\CredentialRepository;
 
 class AttributeController extends Controller
 {
+    protected const SUPPORTED_ATTRIBUTE_TYPES = [
+        'text',
+        'textarea',
+        'price',
+        'boolean',
+        'select',
+        'multiselect',
+        'datetime',
+        'date',
+        'image',
+        'gallery',
+        'file',
+        'checkbox',
+    ];
+
     public function __construct(
         protected AttributeRepository $attributeRepository,
         protected AttributeFamilyRepository $attributeFamilyRepository,
@@ -41,6 +56,8 @@ class AttributeController extends Controller
         $configurableAttributesDb = $standardAttributes->additional_info ?? [];
         $configurableSelectedAttributes = explode(',', ! empty($configurableAttributesDb['configurable_attribute']) ? $configurableAttributesDb['configurable_attribute'] : null);
 
+        $attributeTypeOptions = $this->attributeTypeOptions();
+
         return view('bagisto::credentials.attribute-mapping', compact(
             'credential',
             'bagistoAttributes',
@@ -48,8 +65,17 @@ class AttributeController extends Controller
             'standardAttributes',
             'additionalAttributes',
             'configurableAttributes',
-            'configurableSelectedAttributes'
+            'configurableSelectedAttributes',
+            'attributeTypeOptions'
         ));
+    }
+
+    protected function attributeTypeOptions(): string
+    {
+        return (string) json_encode(array_map(fn (string $type): array => [
+            'id'    => $type,
+            'label' => trans('admin::app.catalog.attributes.create.'.$type),
+        ], self::SUPPORTED_ATTRIBUTE_TYPES));
     }
 
     public function storeOrUpdate(StandardAttributeRequest $request, int $credentialId): JsonResponse
@@ -117,7 +143,7 @@ class AttributeController extends Controller
 
         if (in_array($data['code'], array_column(config('bagisto-attributes'), 'code'))) {
             return new JsonResponse([
-                'message' => trans('bagisto::app.bagisto.export.mapping.attributes.duplicate'),
+                'message' => trans('bagisto::app.bagisto.export.mapping.additional-attributes.duplicate'),
             ], 400);
         }
 
@@ -127,7 +153,7 @@ class AttributeController extends Controller
 
         if (in_array($data['code'], array_column($additional, 'code'), true)) {
             return new JsonResponse([
-                'message' => trans('bagisto::app.bagisto.export.mapping.attributes.duplicate'),
+                'message' => trans('bagisto::app.bagisto.export.mapping.additional-attributes.duplicate'),
             ], 400);
         }
 
@@ -146,7 +172,7 @@ class AttributeController extends Controller
         Cache::forget(CacheType::ATTRIBUTE_MAPPING->forCredential($credential->id));
 
         return new JsonResponse([
-            'message' => trans('bagisto::app.bagisto.export.mapping.attributes.added'),
+            'message' => trans('bagisto::app.bagisto.export.mapping.additional-attributes.added'),
         ]);
     }
 

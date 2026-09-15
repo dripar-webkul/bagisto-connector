@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto 필터',
@@ -26,6 +25,14 @@ return [
             'type'               => '제품 유형',
             'channel'            => '채널',
             'locale'             => '로케일',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => '코드로 필터링',
             'sku'                => 'SKU로 필터링',
             'all'                => '전체',
@@ -33,28 +40,24 @@ return [
             'false'              => '비활성화됨 (거짓)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => '자격 증명',
                 'attribute-mapping' => '속성 매핑',
-                'category-mapping'  => '카테고리 매핑',
+                'category-mapping'  => '카테고리 필드 매핑',
             ],
-
             'index' => [
                 'title'      => '자격 증명',
                 'invalid'    => '잘못된 자격 증명',
                 'create-btn' => '자격 증명 생성',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => '상점 URL',
                     'email'    => '이메일 주소',
                     'edit'     => '편집',
                     'delete'   => '삭제',
                 ],
-
                 'create' => [
                     'title'    => '자격 증명 생성',
                     'shop_url' => '상점 URL',
@@ -62,12 +65,10 @@ return [
                     'password' => '비밀번호',
                     'save-btn' => '저장',
                 ],
-
                 'create-success' => '자격 증명이 성공적으로 생성되었습니다.',
                 'update-success' => '자격 증명이 성공적으로 업데이트되었습니다.',
                 'delete-success' => '자격 증명이 성공적으로 삭제되었습니다.',
             ],
-
             'edit' => [
                 'title'                     => '자격 증명 편집',
                 'shop_url'                  => '상점 URL',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'UnoPim 채널',
                 'unopim-locale'             => 'UnoPim 로케일',
                 'credential'                => '자격 증명',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Bagisto 서버가 현재 중단되었습니다. 자격 증명을 업데이트하거나 서버를 재시작하세요.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => '카테고리 필드 매핑이 성공적으로 저장되었습니다',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count개 상품이 내보내지지 않았습니다',
                 'skipped-description'      => '이 상품들은 UnoPim에 그대로 남아 있습니다. 아래 원인을 해결한 뒤 내보내기를 다시 실행하세요 — 다운로드 로그에 전체 내용이 기록되어 있습니다.',
@@ -204,19 +216,18 @@ return [
                     'data'              => '데이터:',
                     'flash-message'     => '유효한 속성 코드와 유형을 입력해 주세요.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => '추가 속성 매핑',
                     'description'    => '추가 속성을 추가하고 매핑하려면 Bagisto 속성 코드를 입력하세요.',
                     'attribute-code' => 'Bagisto 속성 코드',
                     'attribute-type' => '속성 유형',
+                    'added'          => '추가 속성 매핑을 추가했습니다.',
+                    'duplicate'      => '해당 속성 코드는 이미 매핑되어 있습니다.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => '구성 가능한 속성 매핑',
                     'description' => '추가 속성을 추가하고 매핑하려면 Bagisto 속성 코드를 입력하세요.',
                 ],
-
                 'category-fields' => [
                     'title'                  => '카테고리 필드 매핑',
                     'save'                   => '저장',

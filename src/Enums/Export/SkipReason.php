@@ -20,9 +20,6 @@ enum SkipReason: string
 
     case MEDIA_NOT_FOUND = 'media_not_found';
 
-    /**
-     * @param  array<int, string>  $details
-     */
     public function describe(string $identifier, array $details = []): string
     {
         $list = implode(', ', $details);

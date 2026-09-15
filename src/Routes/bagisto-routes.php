@@ -56,6 +56,5 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
 
             Route::get('get-attributes', 'fetchAttribute')->name('admin.bagisto.attributes.fetch');
         });
-
     });
 });

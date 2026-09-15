@@ -32,9 +32,6 @@ class MappingSeeder
         );
     }
 
-    /**
-     * @return array{mapped_value: array<string, string|array<int, string>>, fixed_value: array<string, string>}
-     */
     public function attributeDefaults(): array
     {
         return $this->defaultsFor(
@@ -43,9 +40,6 @@ class MappingSeeder
         );
     }
 
-    /**
-     * @return array{mapped_value: array<string, string|array<int, string>>, fixed_value: array<string, string>}
-     */
     public function categoryFieldDefaults(): array
     {
         return $this->defaultsFor(
@@ -54,11 +48,6 @@ class MappingSeeder
         );
     }
 
-    /**
-     * @param  array<int, array<string, mixed>>  $bagistoFields
-     * @param  iterable<object>  $unoPimFields
-     * @return array{mapped_value: array<string, string|array<int, string>>, fixed_value: array<string, string>}
-     */
     protected function defaultsFor(array $bagistoFields, iterable $unoPimFields): array
     {
         $byCode = [];
@@ -96,9 +85,6 @@ class MappingSeeder
         ];
     }
 
-    /**
-     * @param  array<string, mixed>  $bagistoField
-     */
     protected function isCompatible(array $bagistoField, object $candidate): bool
     {
         $allowedTypes = array_map('trim', explode(',', (string) ($bagistoField['type'] ?? '')));

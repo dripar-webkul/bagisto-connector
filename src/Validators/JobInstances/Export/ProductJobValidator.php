@@ -32,6 +32,11 @@ class ProductJobValidator extends JobValidator
     public function getAttributeNames(array $options): array
     {
         return [
+            $this->field(BagistoProductFilter::CREDENTIALS)       => trans('bagisto::app.exporters.bagisto.credentials'),
+            $this->field(BagistoProductFilter::CHANNEL)           => trans('bagisto::app.exporters.bagisto.channels'),
+            $this->field(BagistoProductFilter::LOCALE)            => trans('bagisto::app.exporters.bagisto.locales'),
+            $this->field(BagistoProductFilter::ATTRIBUTE_CODES)   => trans('bagisto::app.exporters.bagisto.attributes'),
+            $this->field(BagistoProductFilter::TYPE)              => trans('bagisto::app.exporters.bagisto.type'),
             $this->field(BagistoProductFilter::WITH_MEDIA)        => trans('bagisto::app.exporters.bagisto.with_media'),
             $this->field(BagistoProductFilter::WITH_ASSOCIATIONS) => trans('data_transfer::app.exporters.fields.with-associations'),
             $this->field(ProductFilter::SKU)                      => trans('bagisto::app.exporters.bagisto.sku'),

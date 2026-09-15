@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Фильтры Bagisto',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Тип товара',
             'channel'            => 'Канал',
             'locale'             => 'Локализация',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Фильтр по коду',
             'sku'                => 'Фильтр по SKU',
             'all'                => 'Все',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Отключено (Ложь)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Учётные данные',
                 'attribute-mapping' => 'Сопоставление атрибутов',
-                'category-mapping'  => 'Сопоставление категорий',
+                'category-mapping'  => 'Сопоставление полей категории',
             ],
-
             'index' => [
                 'title'      => 'Реквизиты для входа',
                 'invalid'    => 'Недействительные реквизиты',
                 'create-btn' => 'Создать реквизиты',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'URL магазина',
                     'email'    => 'Адрес электронной почты',
                     'edit'     => 'Редактировать',
                     'delete'   => 'Удалить',
                 ],
-
                 'create' => [
                     'title'    => 'Создать реквизиты',
                     'shop_url' => 'URL магазина',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Пароль',
                     'save-btn' => 'Сохранить',
                 ],
-
                 'create-success' => 'Реквизиты успешно созданы.',
                 'update-success' => 'Реквизиты успешно обновлены.',
                 'delete-success' => 'Реквизиты успешно удалены.',
             ],
-
             'edit' => [
                 'title'                     => 'Редактировать реквизиты',
                 'shop_url'                  => 'URL магазина',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'Канал UnoPim',
                 'unopim-locale'             => 'Локализация UnoPim',
                 'credential'                => 'Реквизиты',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Сервер Bagisto в данный момент недоступен. Пожалуйста, обновите учетные данные или перезапустите сервер.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'Сопоставление полей категории успешно сохранено',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => 'Не экспортировано товаров: :count',
                 'skipped-description'      => 'Эти товары остались в UnoPim. Устраните причину, указанную ниже, и запустите экспорт заново — в журнале загрузки есть все подробности.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'данные:',
                     'flash-message'     => 'Укажите действительный код и тип атрибута.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Сопоставления дополнительных атрибутов',
                     'description'    => 'Введите код атрибута Bagisto, чтобы добавить дополнительный атрибут и сопоставить его.',
                     'attribute-code' => 'Код атрибута Bagisto',
                     'attribute-type' => 'Тип атрибута',
+                    'added'          => 'Дополнительное сопоставление атрибута добавлено.',
+                    'duplicate'      => 'Этот код атрибута уже сопоставлен.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Сопоставления конфигурируемых атрибутов',
                     'description' => 'Введите код атрибута Bagisto, чтобы добавить дополнительный атрибут и сопоставить его.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Сопоставления полей категории',
                     'save'                   => 'Сохранить',

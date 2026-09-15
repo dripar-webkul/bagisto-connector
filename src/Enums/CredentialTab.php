@@ -38,9 +38,6 @@ enum CredentialTab: string
         return route(self::GENERAL->routeName(), ['id' => $credentialId, 'history' => 1]);
     }
 
-    /**
-     * @return array<int, array{key: string, url: string, label: string}>
-     */
     public static function items(int|string $credentialId): array
     {
         return array_map(fn (self $tab): array => [

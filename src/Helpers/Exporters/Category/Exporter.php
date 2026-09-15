@@ -2,6 +2,7 @@
 
 namespace Webkul\Bagisto\Helpers\Exporters\Category;
 
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Webkul\Bagisto\Enums\Export\CacheType;
@@ -10,6 +11,7 @@ use Webkul\Bagisto\Enums\Services\MethodType;
 use Webkul\Bagisto\Repositories\BagistoDataMapping;
 use Webkul\Bagisto\Repositories\CategoryFieldMappingRepository;
 use Webkul\Bagisto\Repositories\CredentialRepository;
+use Webkul\Bagisto\Support\ScopeFilters;
 use Webkul\Bagisto\Traits\ApiRequest as ApiRequestTrait;
 use Webkul\Bagisto\Traits\Credential as CredentialTrait;
 use Webkul\Bagisto\Traits\ExportSummary as ExportSummaryTrait;
@@ -30,6 +32,8 @@ class Exporter extends BaseExporter
     use MappingTrait;
 
     public const ENTITY_TYPE = 'category';
+
+    protected const MAX_ANCESTOR_DEPTH = 20;
 
     protected bool $exportsFile = false;
 
@@ -105,36 +109,25 @@ class Exporter extends BaseExporter
     {
         $filters = $this->getFilters();
 
-        $filtersLocales = [];
-        $exportBagistoChannel = [];
-        $exportBagistoLocales = [];
-
-        if (! empty($filters['locale'])) {
-            $filtersLocales = explode(',', $filters['locale']);
-        }
+        $filtersChannels = ScopeFilters::channelCodes($filters);
+        $filtersLocales = ScopeFilters::localeCodes($filters);
 
         $bagistoLocales = $this->getMappedLocales();
         $bagistoChannels = $this->getMappedChannels();
 
-        if (empty($filters['channel'])) {
-            foreach ($bagistoChannels as $bChannel => $uChannel) {
-                $exportBagistoChannel[$uChannel] = $bChannel;
-                $mappedLocales = $bagistoLocales[$bChannel] ?? [];
-                foreach ($mappedLocales as $bagistoLocaleCode => $unopimLocaleCode) {
-                    if (empty($filtersLocales) || in_array($unopimLocaleCode, $filtersLocales)) {
-                        $exportBagistoLocales[$bagistoLocaleCode] = $unopimLocaleCode;
-                    }
-                }
+        $exportBagistoChannel = [];
+        $exportBagistoLocales = [];
+
+        foreach ($bagistoChannels as $bagistoChannel => $unopimChannel) {
+            if ($filtersChannels !== [] && ! in_array($unopimChannel, $filtersChannels, true)) {
+                continue;
             }
-        } else {
-            $bagistoChannel = array_search($filters['channel'], $bagistoChannels);
-            if ($bagistoChannel !== false && $bagistoChannel !== null) {
-                $exportBagistoChannel[$filters['channel']] = $bagistoChannel;
-                $mappedLocales = $bagistoLocales[$bagistoChannel] ?? [];
-                foreach ($mappedLocales as $bagistoLocaleCode => $unopimLocaleCode) {
-                    if (empty($filtersLocales) || in_array($unopimLocaleCode, $filtersLocales)) {
-                        $exportBagistoLocales[$bagistoLocaleCode] = $unopimLocaleCode;
-                    }
+
+            $exportBagistoChannel[$unopimChannel] = $bagistoChannel;
+
+            foreach ($bagistoLocales[$bagistoChannel] ?? [] as $bagistoLocaleCode => $unopimLocaleCode) {
+                if ($filtersLocales === [] || in_array($unopimLocaleCode, $filtersLocales, true)) {
+                    $exportBagistoLocales[$bagistoLocaleCode] = $unopimLocaleCode;
                 }
             }
         }
@@ -161,12 +154,66 @@ class Exporter extends BaseExporter
     protected function getResults(): ?\Iterator
     {
         $filters = $this->getFilters();
-        if (! empty($filters['code'])) {
 
-            return $this->source->whereIn('code', $this->parseIdentifiers($filters['code']))->orderBy('parent_id')->with('parent_category')->get()?->getIterator();
+        $selectedCodes = array_values(array_unique(array_merge(
+            empty($filters['code']) ? [] : $this->parseIdentifiers($filters['code']),
+            ScopeFilters::categoryCodes($filters),
+        )));
+
+        if ($selectedCodes === []) {
+            return $this->source->orderBy('parent_id')->with('parent_category')->all()?->getIterator();
         }
 
-        return $this->source->orderBy('parent_id')->with('parent_category')->all()?->getIterator();
+        $exportedCodes = $this->withAncestorCodes($selectedCodes);
+
+        return $this->source
+            ->whereIn('code', $exportedCodes)
+            ->orderBy('parent_id')
+            ->with('parent_category')
+            ->get()
+            ?->getIterator();
+    }
+
+    protected function withAncestorCodes(array $codes): array
+    {
+        $model = $this->source->getModel();
+
+        $model = $model instanceof EloquentBuilder ? $model->getModel() : $model;
+
+        $query = fn (): EloquentBuilder => $model->newQuery();
+
+        $resolved = array_flip($codes);
+        $ancestors = [];
+
+        $parentIds = $query()->whereIn('code', $codes)->pluck('parent_id')->filter()->unique()->all();
+
+        for ($depth = 0; $depth < self::MAX_ANCESTOR_DEPTH && $parentIds !== []; $depth++) {
+            $parents = $query()->whereIn('id', $parentIds)->get(['id', 'code', 'parent_id']);
+
+            $parentIds = [];
+
+            foreach ($parents as $parent) {
+                if (isset($resolved[$parent->code])) {
+                    continue;
+                }
+
+                $resolved[$parent->code] = true;
+                $ancestors[] = $parent->code;
+
+                if ($parent->parent_id) {
+                    $parentIds[] = $parent->parent_id;
+                }
+            }
+        }
+
+        if ($ancestors !== []) {
+            $this->jobLogger?->info(trans('bagisto::app.bagisto.export.errors.category-ancestors-added', [
+                'count'      => count($ancestors),
+                'categories' => implode(', ', $ancestors),
+            ]));
+        }
+
+        return array_keys($resolved);
     }
 
     public function write($items, $batchId): void
@@ -341,10 +388,9 @@ class Exporter extends BaseExporter
         if ($locales === []) {
             $this->skippedItemsCount += count($batch->data);
 
-            $this->jobLogger?->warning(
-                count($batch->data).' categories not exported: no usable locale mapping. '
-                .'Open the credential and re-save the channel and locale mapping.'
-            );
+            $this->jobLogger?->warning(trans('bagisto::app.bagisto.export.errors.no-locale-mapping', [
+                'count' => count($batch->data),
+            ]));
 
             return [];
         }
@@ -371,11 +417,10 @@ class Exporter extends BaseExporter
                 continue;
             }
 
-            $this->jobLogger?->warning(
-                'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale "'
-                .(is_string($bagistoLocale) ? $bagistoLocale : gettype($bagistoLocale)).'", got '
-                .gettype($unopimLocale).' ('.json_encode($unopimLocale).').'
-            );
+            $this->jobLogger?->warning(trans('bagisto::app.bagisto.export.errors.invalid-locale-mapping', [
+                'locale' => is_string($bagistoLocale) ? $bagistoLocale : gettype($bagistoLocale),
+                'given'  => gettype($unopimLocale).' ('.json_encode($unopimLocale).')',
+            ]));
         }
 
         return $locales;

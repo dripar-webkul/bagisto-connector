@@ -3,11 +3,10 @@
 namespace Webkul\Bagisto\Helpers\Exporters\Product;
 
 use Illuminate\Database\Eloquent\Builder;
-use Webkul\Bagisto\Enums\Export\ProductFilter as BagistoProductFilter;
 use Webkul\Bagisto\Enums\Export\ProductStatus;
+use Webkul\Bagisto\Support\ScopeFilters;
 use Webkul\DataTransfer\Enums\ProductExportScope;
 use Webkul\DataTransfer\Enums\ProductFilter;
-use Webkul\DataTransfer\Helpers\Formatters\ScopeFilterValue;
 use Webkul\DataTransfer\Helpers\Sources\Export\Filters\ProductExportFilter as BaseProductExportFilter;
 
 class ProductExportFilter extends BaseProductExportFilter
@@ -26,7 +25,7 @@ class ProductExportFilter extends BaseProductExportFilter
 
     protected function applyType(Builder $query, array $filters): void
     {
-        $types = ScopeFilterValue::toCodes($filters[BagistoProductFilter::TYPE->value] ?? null);
+        $types = ScopeFilters::typeCodes($filters);
 
         if ($types === []) {
             return;
@@ -48,8 +47,8 @@ class ProductExportFilter extends BaseProductExportFilter
     protected function toCoreScope(array $filters): array
     {
         return [
-            ProductExportScope::CHANNELS->value => $filters[BagistoProductFilter::CHANNEL->value] ?? null,
-            ProductExportScope::LOCALES->value  => $filters[BagistoProductFilter::LOCALE->value] ?? null,
+            ProductExportScope::CHANNELS->value => ScopeFilters::channelCodes($filters),
+            ProductExportScope::LOCALES->value  => ScopeFilters::localeCodes($filters),
         ];
     }
 }

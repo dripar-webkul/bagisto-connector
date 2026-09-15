@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto-suodattimet',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Tuotetyyppi',
             'channel'            => 'Kanava',
             'locale'             => 'Lähdealue',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Suodata koodin mukaan',
             'sku'                => 'Suodata SKU:n mukaan',
             'all'                => 'Kaikki',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Ei käytössä (Epätosi)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Tunnistetiedot',
                 'attribute-mapping' => 'Attribuuttien määritys',
-                'category-mapping'  => 'Kategorioiden määritys',
+                'category-mapping'  => 'Kategoriakenttien yhdistäminen',
             ],
-
             'index' => [
                 'title'      => 'Tunnistetiedot',
                 'invalid'    => 'Virheelliset tunnistetiedot',
                 'create-btn' => 'Luo tunnistetiedot',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'Kaupan URL',
                     'email'    => 'Sähköpostiosoite',
                     'edit'     => 'Muokkaa',
                     'delete'   => 'Poista',
                 ],
-
                 'create' => [
                     'title'    => 'Luo tunnistetiedot',
                     'shop_url' => 'Kaupan URL',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Salasana',
                     'save-btn' => 'Tallenna',
                 ],
-
                 'create-success' => 'Tunnistetiedot luotiin onnistuneesti.',
                 'update-success' => 'Tunnistetiedot päivitettiin onnistuneesti.',
                 'delete-success' => 'Tunnistetiedot poistettiin onnistuneesti.',
             ],
-
             'edit' => [
                 'title'                     => 'Muokkaa tunnistetietoja',
                 'shop_url'                  => 'Kaupan URL',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'UnoPim-kanava',
                 'unopim-locale'             => 'UnoPim-lähdealue',
                 'credential'                => 'Tunnistetieto',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Bagisto-palvelin on tällä hetkellä alhaalla; päivitä tunnistetiedot tai käynnistä palvelin uudelleen.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'Kategoriakenttien yhdistäminen tallennettiin onnistuneesti',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count tuotetta ei viety',
                 'skipped-description'      => 'Nämä tuotteet jäivät UnoPimiin. Korjaa alla mainittu syy ja suorita vienti uudelleen — latausloki sisältää kaikki tiedot.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'data:',
                     'flash-message'     => 'Anna kelvollinen attribuuttikoodi ja -tyyppi.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Lisäattribuuttien yhdistämiset',
                     'description'    => 'Kirjoita Bagisto-attribuuttikoodi lisätäksesi lisäattribuutin ja yhdistääksesi sen.',
                     'attribute-code' => 'Bagiston attribuuttikoodi',
                     'attribute-type' => 'Attribuutin tyyppi',
+                    'added'          => 'Lisäattribuutin määritys lisätty.',
+                    'duplicate'      => 'Kyseinen attribuuttikoodi on jo määritetty.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Konfiguroitavien attribuuttien yhdistämiset',
                     'description' => 'Kirjoita Bagisto-attribuuttikoodi lisätäksesi lisäattribuutin ja yhdistääksesi sen.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Kategoriakenttien yhdistämiset',
                     'save'                   => 'Tallenna',

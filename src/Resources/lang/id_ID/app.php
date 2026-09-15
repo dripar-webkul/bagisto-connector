@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Filter Bagisto',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Tipe Produk',
             'channel'            => 'Saluran',
             'locale'             => 'Bahasa Sumber',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Filter Berdasarkan Kode',
             'sku'                => 'Filter Berdasarkan SKU',
             'all'                => 'Semua',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Dinonaktifkan (Salah)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Kredensial',
                 'attribute-mapping' => 'Pemetaan atribut',
-                'category-mapping'  => 'Pemetaan kategori',
+                'category-mapping'  => 'Pemetaan Bidang Kategori',
             ],
-
             'index' => [
                 'title'      => 'Kredensial',
                 'invalid'    => 'Kredensial Tidak Valid',
                 'create-btn' => 'Buat Kredensial',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'URL Toko',
                     'email'    => 'Alamat Email',
                     'edit'     => 'Edit',
                     'delete'   => 'Hapus',
                 ],
-
                 'create' => [
                     'title'    => 'Buat Kredensial',
                     'shop_url' => 'URL Toko',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Kata Sandi',
                     'save-btn' => 'Simpan',
                 ],
-
                 'create-success' => 'Kredensial berhasil dibuat.',
                 'update-success' => 'Kredensial berhasil diperbarui.',
                 'delete-success' => 'Kredensial berhasil dihapus.',
             ],
-
             'edit' => [
                 'title'                     => 'Edit Kredensial',
                 'shop_url'                  => 'URL Toko',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'Saluran UnoPim',
                 'unopim-locale'             => 'Bahasa Sumber UnoPim',
                 'credential'                => 'Kredensial',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Server Bagisto sedang down sekarang, silakan perbarui kredensial atau restart server.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'Pemetaan bidang kategori berhasil disimpan',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count produk tidak diekspor',
                 'skipped-description'      => 'Produk-produk ini tetap berada di UnoPim. Perbaiki penyebab di bawah ini lalu jalankan ekspor lagi — log unduhan memuat detail lengkapnya.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'data:',
                     'flash-message'     => 'Harap berikan kode dan tipe atribut yang valid.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Pemetaan Atribut Tambahan',
                     'description'    => 'Tulis kode atribut Bagisto untuk menambahkan atribut tambahan dan memetakannya.',
                     'attribute-code' => 'Kode atribut Bagisto',
                     'attribute-type' => 'Tipe atribut',
+                    'added'          => 'Pemetaan atribut tambahan ditambahkan.',
+                    'duplicate'      => 'Kode atribut tersebut sudah dipetakan.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Pemetaan Atribut yang Dapat Dikonfigurasi',
                     'description' => 'Tulis kode atribut Bagisto untuk menambahkan atribut tambahan dan memetakannya.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Pemetaan Bidang Kategori',
                     'save'                   => 'Simpan',

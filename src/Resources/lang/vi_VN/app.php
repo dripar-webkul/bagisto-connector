@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bộ lọc Bagisto',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Loại sản phẩm',
             'channel'            => 'Kênh',
             'locale'             => 'Ngôn ngữ',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Lọc theo mã',
             'sku'                => 'Lọc theo SKU',
             'all'                => 'Tất cả',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Đã tắt (Sai)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Thông tin xác thực',
                 'attribute-mapping' => 'Ánh xạ thuộc tính',
-                'category-mapping'  => 'Ánh xạ danh mục',
+                'category-mapping'  => 'Ánh xạ trường danh mục',
             ],
-
             'index' => [
                 'title'      => 'Thông tin xác thực',
                 'invalid'    => 'Thông tin xác thực không hợp lệ',
                 'create-btn' => 'Tạo thông tin xác thực',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'URL cửa hàng',
                     'email'    => 'Địa chỉ email',
                     'edit'     => 'Chỉnh sửa',
                     'delete'   => 'Xóa',
                 ],
-
                 'create' => [
                     'title'    => 'Tạo thông tin xác thực',
                     'shop_url' => 'URL cửa hàng',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Mật khẩu',
                     'save-btn' => 'Lưu',
                 ],
-
                 'create-success' => 'Đã tạo thông tin xác thực thành công.',
                 'update-success' => 'Đã cập nhật thông tin xác thực thành công.',
                 'delete-success' => 'Đã xóa thông tin xác thực thành công.',
             ],
-
             'edit' => [
                 'title'                     => 'Chỉnh sửa thông tin xác thực',
                 'shop_url'                  => 'URL cửa hàng',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'Kênh UnoPim',
                 'unopim-locale'             => 'Ngôn ngữ UnoPim',
                 'credential'                => 'Thông tin xác thực',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Máy chủ Bagisto hiện đang ngừng hoạt động; vui lòng cập nhật thông tin xác thực hoặc khởi động lại máy chủ.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'Ánh xạ trường danh mục đã được lưu thành công',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count sản phẩm chưa được xuất',
                 'skipped-description'      => 'Những sản phẩm này vẫn nằm trong UnoPim. Hãy khắc phục nguyên nhân bên dưới rồi chạy lại quá trình xuất — nhật ký tải xuống có đầy đủ chi tiết.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'dữ liệu:',
                     'flash-message'     => 'Vui lòng cung cấp mã và loại thuộc tính hợp lệ.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Ánh xạ thuộc tính bổ sung',
                     'description'    => 'Nhập mã thuộc tính Bagisto để thêm một thuộc tính bổ sung và ánh xạ nó.',
                     'attribute-code' => 'Mã thuộc tính Bagisto',
                     'attribute-type' => 'Loại thuộc tính',
+                    'added'          => 'Đã thêm ánh xạ thuộc tính bổ sung.',
+                    'duplicate'      => 'Mã thuộc tính đó đã được ánh xạ.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Ánh xạ thuộc tính có thể cấu hình',
                     'description' => 'Nhập mã thuộc tính Bagisto để thêm một thuộc tính bổ sung và ánh xạ nó.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Ánh xạ trường danh mục',
                     'save'                   => 'Lưu',

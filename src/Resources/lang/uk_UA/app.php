@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Фільтри Bagisto',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Тип товару',
             'channel'            => 'Канал',
             'locale'             => 'Локалізація',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Фільтр за кодом',
             'sku'                => 'Фільтр за SKU',
             'all'                => 'Усі',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Вимкнено (Ні)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Облікові дані',
                 'attribute-mapping' => 'Зіставлення атрибутів',
-                'category-mapping'  => 'Зіставлення категорій',
+                'category-mapping'  => 'Зіставлення полів категорії',
             ],
-
             'index' => [
                 'title'      => 'Облікові дані',
                 'invalid'    => 'Недійсні облікові дані',
                 'create-btn' => 'Створити облікові дані',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'URL магазину',
                     'email'    => 'Електронна пошта',
                     'edit'     => 'Редагувати',
                     'delete'   => 'Видалити',
                 ],
-
                 'create' => [
                     'title'    => 'Створити облікові дані',
                     'shop_url' => 'URL магазину',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Пароль',
                     'save-btn' => 'Зберегти',
                 ],
-
                 'create-success' => 'Облікові дані успішно створено.',
                 'update-success' => 'Облікові дані успішно оновлено.',
                 'delete-success' => 'Облікові дані успішно видалено.',
             ],
-
             'edit' => [
                 'title'                     => 'Редагувати облікові дані',
                 'shop_url'                  => 'URL магазину',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'Канал UnoPim',
                 'unopim-locale'             => 'Локалізація UnoPim',
                 'credential'                => 'Облікові дані',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Сервер Bagisto наразі недоступний. Будь ласка, оновіть облікові дані або перезапустіть сервер.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'Зіставлення полів категорії успішно збережено',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => 'Не експортовано товарів: :count',
                 'skipped-description'      => 'Ці товари залишилися в UnoPim. Усуньте причину, зазначену нижче, і запустіть експорт ще раз — у журналі завантаження є всі подробиці.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'дані:',
                     'flash-message'     => 'Вкажіть дійсний код і тип атрибута.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Зіставлення додаткових атрибутів',
                     'description'    => 'Введіть код атрибута Bagisto, щоб додати додатковий атрибут і зіставити його.',
                     'attribute-code' => 'Код атрибута Bagisto',
                     'attribute-type' => 'Тип атрибута',
+                    'added'          => 'Додаткове зіставлення атрибута додано.',
+                    'duplicate'      => 'Цей код атрибута вже зіставлено.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Зіставлення конфігурованих атрибутів',
                     'description' => 'Введіть код атрибута Bagisto, щоб додати додатковий атрибут і зіставити його.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Зіставлення полів категорії',
                     'save'                   => 'Зберегти',

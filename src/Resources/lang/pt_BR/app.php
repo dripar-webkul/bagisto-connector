@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Filtros Bagisto',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Tipo de produto',
             'channel'            => 'Canal',
             'locale'             => 'Localidade',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Filtrar por código',
             'sku'                => 'Filtrar por SKU',
             'all'                => 'Todos',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Desativado (Falso)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Credenciais',
                 'attribute-mapping' => 'Mapeamento de atributos',
-                'category-mapping'  => 'Mapeamento de categorias',
+                'category-mapping'  => 'Mapeamento de campos de categoria',
             ],
-
             'index' => [
                 'title'      => 'Credenciais',
                 'invalid'    => 'Credencial inválida',
                 'create-btn' => 'Criar credencial',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'URL da loja',
                     'email'    => 'Endereço de e-mail',
                     'edit'     => 'Editar',
                     'delete'   => 'Excluir',
                 ],
-
                 'create' => [
                     'title'    => 'Criar credencial',
                     'shop_url' => 'URL da loja',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Senha',
                     'save-btn' => 'Salvar',
                 ],
-
                 'create-success' => 'Credencial criada com sucesso.',
                 'update-success' => 'Credencial atualizada com sucesso.',
                 'delete-success' => 'Credencial excluída com sucesso.',
             ],
-
             'edit' => [
                 'title'                     => 'Editar credencial',
                 'shop_url'                  => 'URL da loja',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'Canal UnoPim',
                 'unopim-locale'             => 'Localidade UnoPim',
                 'credential'                => 'Credencial',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'O servidor Bagisto está fora do ar no momento; atualize as credenciais ou reinicie o servidor.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'O mapeamento de campos de categoria foi salvo com sucesso',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count produto(s) não foram exportados',
                 'skipped-description'      => 'Esses produtos permaneceram no UnoPim. Corrija a causa abaixo e execute a exportação novamente — o log de download tem todos os detalhes.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'dados:',
                     'flash-message'     => 'Forneça um código e um tipo de atributo válidos.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Mapeamentos de atributos adicionais',
                     'description'    => 'Escreva o código de atributo Bagisto para adicionar um atributo adicional e mapeá-lo.',
                     'attribute-code' => 'Código de atributo do Bagisto',
                     'attribute-type' => 'Tipo de atributo',
+                    'added'          => 'Mapeamento de atributo adicional incluído.',
+                    'duplicate'      => 'Esse código de atributo já está mapeado.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Mapeamentos de atributos configuráveis',
                     'description' => 'Escreva o código de atributo Bagisto para adicionar um atributo adicional e mapeá-lo.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Mapeamentos de campos de categoria',
                     'save'                   => 'Salvar',

@@ -435,9 +435,6 @@ class ExporterTest extends TestCase
         $this->assertNull($this->associationsFormat(null));
     }
 
-    /**
-     * @param  array<string, array<string, string>>  $found
-     */
     private function expectSkuLookup(array $queried, array $found): void
     {
         $rows = [];

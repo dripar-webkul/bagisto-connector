@@ -9,26 +9,64 @@ class JsonDataPresenter extends JsonDataPresenters implements HistoryPresenterIn
 {
     public static function representValueForHistory(mixed $oldValues, mixed $newValues, string $fieldName): array
     {
-        $oldArray = is_string($oldValues) ? json_decode($oldValues, true) : [];
-        $newArray = is_string($newValues) ? json_decode($newValues, true) : [];
+        $oldArray = static::flatten($oldValues);
+        $newArray = static::flatten($newValues);
+
+        if ($oldArray === [] && $newArray === []) {
+            return [];
+        }
+
         $normalizedData = [];
-        $arrayCheck = array_filter($oldArray, 'is_array');
 
-        if (count($arrayCheck) > 0) {
-            $oldArray = array_merge(...array_values($oldArray));
-            $newArray = array_merge(...array_values($newArray));
-        }
-
-        if (empty($oldArray) && empty($newArray)) {
-            return $normalizedData;
-        }
-
-        $removed = static::calculateDifference($oldArray, $newArray);
-        $updated = static::calculateDifference($newArray, $oldArray);
-
-        static::normalizeValues($removed, 'old', $normalizedData);
-        static::normalizeValues($updated, 'new', $normalizedData);
+        static::normalizeValues(static::calculateDifference($oldArray, $newArray), 'old', $normalizedData);
+        static::normalizeValues(static::calculateDifference($newArray, $oldArray), 'new', $normalizedData);
 
         return $normalizedData;
+    }
+
+    protected static function flatten(mixed $values): array
+    {
+        $decoded = is_string($values) ? json_decode($values, true) : $values;
+
+        if (! is_array($decoded)) {
+            return [];
+        }
+
+        $flat = [];
+
+        foreach ($decoded as $key => $value) {
+            if (is_array($value) && isset($value['code']) && is_scalar($value['code'])) {
+                $flat[(string) $value['code']] = static::stringify(
+                    array_diff_key($value, ['code' => null])
+                );
+
+                continue;
+            }
+
+            $flat[(string) $key] = static::stringify($value);
+        }
+
+        return $flat;
+    }
+
+    protected static function stringify(mixed $value): string
+    {
+        if ($value === null || $value === []) {
+            return '';
+        }
+
+        if (! is_array($value)) {
+            return is_bool($value) ? ($value ? '1' : '0') : (string) $value;
+        }
+
+        $parts = [];
+
+        foreach ($value as $key => $item) {
+            $text = static::stringify($item);
+
+            $parts[] = is_int($key) ? $text : $key.': '.$text;
+        }
+
+        return implode(', ', array_filter($parts, 'strlen'));
     }
 }

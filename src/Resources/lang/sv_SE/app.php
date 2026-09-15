@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto-filter',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Produkttyp',
             'channel'            => 'Kanal',
             'locale'             => 'Språk',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Filtrera efter kod',
             'sku'                => 'Filtrera efter SKU',
             'all'                => 'Alla',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Inaktiverad (Falskt)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Autentiseringsuppgifter',
                 'attribute-mapping' => 'Attributmappning',
-                'category-mapping'  => 'Kategorimappning',
+                'category-mapping'  => 'Mappning av kategorifält',
             ],
-
             'index' => [
                 'title'      => 'Kredentialer',
                 'invalid'    => 'Ogiltiga kredentialer',
                 'create-btn' => 'Skapa kredentialer',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'Butiks-URL',
                     'email'    => 'E-postadress',
                     'edit'     => 'Redigera',
                     'delete'   => 'Radera',
                 ],
-
                 'create' => [
                     'title'    => 'Skapa kredentialer',
                     'shop_url' => 'Butiks-URL',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Lösenord',
                     'save-btn' => 'Spara',
                 ],
-
                 'create-success' => 'Kredentialer har skapats.',
                 'update-success' => 'Kredentialer har uppdaterats.',
                 'delete-success' => 'Kredentialer har raderats.',
             ],
-
             'edit' => [
                 'title'                     => 'Redigera kredentialer',
                 'shop_url'                  => 'Butiks-URL',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'UnoPim-kanal',
                 'unopim-locale'             => 'UnoPim-språk',
                 'credential'                => 'Kredential',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Bagisto-servern är nere just nu; uppdatera inloggningsuppgifterna eller starta om servern.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'Mappningen av kategorifält har sparats',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count produkt(er) exporterades inte',
                 'skipped-description'      => 'Dessa produkter blev kvar i UnoPim. Åtgärda orsaken nedan och kör exporten igen — nedladdningsloggen innehåller alla detaljer.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'data:',
                     'flash-message'     => 'Ange en giltig attributkod och typ.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Ytterligare attributmappningar',
                     'description'    => 'Skriv Bagisto-attributkoden för att lägga till ett ytterligare attribut och mappa det.',
                     'attribute-code' => 'Bagisto-attributkod',
                     'attribute-type' => 'Attributtyp',
+                    'added'          => 'Ytterligare attributmappning tillagd.',
+                    'duplicate'      => 'Den attributkoden är redan mappad.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Konfigurerbara attributmappningar',
                     'description' => 'Skriv Bagisto-attributkoden för att lägga till ett ytterligare attribut och mappa det.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Mappningar av kategorifält',
                     'save'                   => 'Spara',

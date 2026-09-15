@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto Filters',
@@ -26,6 +25,14 @@ return [
             'type'               => 'Product Type',
             'channel'            => 'Channel',
             'locale'             => 'Locale',
+            'channels'           => 'Channels',
+            'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
+            'locales'            => 'Locales',
+            'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
+            'attributes'         => 'Attributes',
+            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Filter By Code',
             'sku'                => 'Filter By SKU',
             'all'                => 'All',
@@ -33,28 +40,24 @@ return [
             'false'              => 'Disabled (False)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
             'tabs' => [
                 'credential'        => 'Credential',
                 'attribute-mapping' => 'Attribute Mapping',
-                'category-mapping'  => 'Category Mapping',
+                'category-mapping'  => 'Category Fields Mapping',
             ],
-
             'index' => [
                 'title'      => 'Credentials',
                 'invalid'    => 'Invalid Credential',
                 'create-btn' => 'Create Credential',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'Shop URL',
                     'email'    => 'Email Address',
                     'edit'     => 'Edit',
                     'delete'   => 'Delete',
                 ],
-
                 'create' => [
                     'title'    => 'Create Credential',
                     'shop_url' => 'Shop URL',
@@ -62,12 +65,10 @@ return [
                     'password' => 'Password',
                     'save-btn' => 'Save',
                 ],
-
                 'create-success' => 'Credential created successfully.',
                 'update-success' => 'Credential updated successfully.',
                 'delete-success' => 'Credential deleted successfully.',
             ],
-
             'edit' => [
                 'title'                     => 'Edit Credential',
                 'shop_url'                  => 'Shop URL',
@@ -84,6 +85,8 @@ return [
                 'unopim-channel'            => 'UnoPim Channel',
                 'unopim-locale'             => 'UnoPim Locale',
                 'credential'                => 'Credential',
+                'select-unopim-channel'     => 'Select UnoPim Channel',
+                'select-unopim-locale'      => 'Select UnoPim Locale',
                 'server-down'               => 'Bagisto Server is down now, please update the credential or restart the server.',
             ],
         ],
@@ -171,6 +174,15 @@ return [
             'success-message' => 'Category Fields mapping has been saved successfully',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credential not found.',
+                'attribute-not-found'         => 'Attribute not found.',
+                'no-locale-mapping'           => ':count categories were not exported: no usable locale mapping. Open the credential and re-save the channel and locale mapping.',
+                'no-attribute-locale-mapping' => ':count attributes were not exported: the selected channels have no Bagisto locale mapping. Open the credential and save the channel and locale mapping.',
+                'invalid-locale-mapping'      => 'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale ":locale", got :given.',
+                'category-ancestors-added'    => ':count parent categories were added to the export so the selected categories keep their place in the tree: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variant group flattened into its variants.',
+            ],
             'skipped' => [
                 'skipped-heading'          => ':count product(s) were not exported',
                 'skipped-description'      => 'These products stayed in UnoPim. Fix the cause below and run the export again — the download log has the full detail.',
@@ -204,19 +216,18 @@ return [
                     'data'              => 'data:',
                     'flash-message'     => 'Please provide a valid attribute code and type.',
                 ],
-
                 'additional-attributes' => [
                     'title'          => 'Additional Attribute Mappings',
                     'description'    => 'Write the Bagisto attribute code to add an additional attribute and map it.',
                     'attribute-code' => 'Bagisto Attribute Code',
                     'attribute-type' => 'Attribute Type',
+                    'added'          => 'Additional attribute mapping added.',
+                    'duplicate'      => 'That attribute code is already mapped.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Configurable Attribute Mappings',
                     'description' => 'Write the Bagisto attribute code to add an additional attribute and map it.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Category Fields Mappings',
                     'save'                   => 'Save',
