@@ -61,10 +61,9 @@ class MediaOrderTest extends TestCase
 
     private function expectAssetLookup(array $rowsInDatabaseOrder): void
     {
-        $this->attributeRepository->shouldReceive('where')->with('code', 'gallery')->andReturnSelf();
-        $this->attributeRepository->shouldReceive('first')->andReturn(
-            (object) ['type' => 'asset']
-        );
+        $this->attributeRepository->shouldReceive('all')->andReturn(new Collection([
+            (object) ['code' => 'gallery', 'type' => 'asset'],
+        ]));
 
         $this->assetRepository->shouldReceive('findWhereIn')->andReturn(
             new Collection(array_map(
@@ -128,10 +127,9 @@ class MediaOrderTest extends TestCase
 
     public function test_it_leaves_out_assets_that_are_not_images()
     {
-        $this->attributeRepository->shouldReceive('where')->with('code', 'gallery')->andReturnSelf();
-        $this->attributeRepository->shouldReceive('first')->andReturn(
-            (object) ['type' => 'asset']
-        );
+        $this->attributeRepository->shouldReceive('all')->andReturn(new Collection([
+            (object) ['code' => 'gallery', 'type' => 'asset'],
+        ]));
 
         $this->assetRepository->shouldReceive('findWhereIn')->andReturn(new Collection([
             (object) ['id' => 9, 'path' => 'dam/front.jpg', 'file_type' => 'image'],
@@ -147,10 +145,9 @@ class MediaOrderTest extends TestCase
 
     public function test_it_drops_the_field_when_no_asset_is_an_image()
     {
-        $this->attributeRepository->shouldReceive('where')->with('code', 'gallery')->andReturnSelf();
-        $this->attributeRepository->shouldReceive('first')->andReturn(
-            (object) ['type' => 'asset']
-        );
+        $this->attributeRepository->shouldReceive('all')->andReturn(new Collection([
+            (object) ['code' => 'gallery', 'type' => 'asset'],
+        ]));
 
         $this->assetRepository->shouldReceive('findWhereIn')->andReturn(new Collection([
             (object) ['id' => 10, 'path' => 'dam/manual.pdf', 'file_type' => 'document'],
@@ -161,10 +158,9 @@ class MediaOrderTest extends TestCase
 
     public function test_it_leaves_out_image_formats_bagisto_cannot_decode()
     {
-        $this->attributeRepository->shouldReceive('where')->with('code', 'gallery')->andReturnSelf();
-        $this->attributeRepository->shouldReceive('first')->andReturn(
-            (object) ['type' => 'asset']
-        );
+        $this->attributeRepository->shouldReceive('all')->andReturn(new Collection([
+            (object) ['code' => 'gallery', 'type' => 'asset'],
+        ]));
 
         $this->assetRepository->shouldReceive('findWhereIn')->andReturn(new Collection([
             (object) ['id' => 9, 'path' => 'dam/front.jpg', 'file_type' => 'image'],
@@ -219,8 +215,9 @@ class MediaOrderTest extends TestCase
             Storage::put($path, 'binary');
         }
 
-        $this->attributeRepository->shouldReceive('where')->andReturnSelf();
-        $this->attributeRepository->shouldReceive('first')->andReturn((object) ['type' => 'image']);
+        $this->attributeRepository->shouldReceive('all')->andReturn(new Collection(
+            array_map(fn ($code) => (object) ['code' => $code, 'type' => 'image'], array_keys($mergedFields))
+        ));
 
         $method = new \ReflectionMethod($this->exporter, 'handleAttributeType');
         $method->setAccessible(true);

@@ -30,8 +30,6 @@ return [
             'channels-info'      => 'Only the channels mapped on the selected credential. Leave empty to export every mapped channel.',
             'locales'            => 'Locales',
             'locales-info'       => 'Only the locales mapped on the selected credential. Leave empty to export every mapped locale.',
-            'attributes'         => 'Attributes',
-            'attributes-info'    => 'Only these attribute values are sent to Bagisto. SKU is always sent. Leave empty to send every attribute.',
             'categories'         => 'Categories',
             'categories-info'    => 'Only these categories are exported. Their parent categories are exported too, so the tree arrives intact.',
             'code'               => 'Filter By Code',
@@ -226,12 +224,13 @@ return [
                 ],
 
                 'additional-attributes' => [
-                    'title'          => 'Additional Attribute Mappings',
-                    'description'    => 'Write the Bagisto attribute code to add an additional attribute and map it.',
-                    'attribute-code' => 'Bagisto Attribute Code',
-                    'attribute-type' => 'Attribute Type',
-                    'added'          => 'Additional attribute mapping added.',
-                    'duplicate'      => 'That attribute code is already mapped.',
+                    'title'            => 'Additional Attribute Mappings',
+                    'description'      => 'Write the Bagisto attribute code to add an additional attribute and map it.',
+                    'attribute-code'   => 'Bagisto Attribute Code',
+                    'attribute-type'   => 'Attribute Type',
+                    'added'            => 'Additional attribute mapping added.',
+                    'removed'          => 'Additional attribute mapping removed.',
+                    'duplicate'        => 'That attribute code is already mapped.',
                 ],
 
                 'configurable-attributes' => [

@@ -80,6 +80,8 @@ class AttributeController extends Controller
 
     public function storeOrUpdate(StandardAttributeRequest $request, int $credentialId): JsonResponse
     {
+        abort_unless(bouncer()->hasPermission('bagisto.credentials.attribute_mapping'), 403);
+
         try {
             $credential = $this->credentialRepository->findOrFail($credentialId);
 
@@ -134,6 +136,8 @@ class AttributeController extends Controller
 
     public function addAdditionalAttributes(Request $request, int $credentialId): JsonResponse
     {
+        abort_unless(bouncer()->hasPermission('bagisto.credentials.attribute_mapping'), 403);
+
         $credential = $this->credentialRepository->findOrFail($credentialId);
 
         $data = $request->validate([
@@ -176,11 +180,13 @@ class AttributeController extends Controller
         ]);
     }
 
-    public function removeAdditionalAttributes(Request $request, int $credentialId): void
+    public function removeAdditionalAttributes(Request $request, int $credentialId): JsonResponse
     {
+        abort_unless(bouncer()->hasPermission('bagisto.credentials.attribute_mapping'), 403);
+
         $credential = $this->credentialRepository->findOrFail($credentialId);
 
-        $code = $request->code;
+        $code = $request->validate(['code' => 'required|string'])['code'];
 
         $additionalObj = $this->attributeMappingRepository->forCredential($credential->id, MappingSection::ADDITIONAL_ATTRIBUTE);
 
@@ -203,6 +209,10 @@ class AttributeController extends Controller
         }
 
         Cache::forget(CacheType::ATTRIBUTE_MAPPING->forCredential($credential->id));
+
+        return new JsonResponse([
+            'message' => trans('bagisto::app.bagisto.export.mapping.additional-attributes.removed'),
+        ]);
     }
 
     public function translate(array $arrayData): array

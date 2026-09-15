@@ -32,9 +32,9 @@ class ExportFilterComposerTest extends TestCase
     {
         $html = view('bagisto::exports.filters-scope')->render();
 
-        $this->assertStringContainsString('only="channel,locale,attribute_codes"', $html);
+        $this->assertStringContainsString('only="channel,locale"', $html);
         $this->assertStringContainsString(trans('admin::app.settings.data-transfer.exports.create.scope-filters'), $html);
-        $this->assertFieldListSurvivesTheAttributeQuoting($html, ['channel', 'locale', 'attribute_codes']);
+        $this->assertFieldListSurvivesTheAttributeQuoting($html, ['channel', 'locale']);
     }
 
     public function test_the_bagisto_filters_card_renders_on_the_create_page()
@@ -120,7 +120,7 @@ class ExportFilterComposerTest extends TestCase
         $html = $this->renderEditCardFor('bagisto_product');
 
         $this->assertStringContainsString(trans('admin::app.settings.data-transfer.exports.create.scope-filters'), $html);
-        $this->assertStringContainsString('only="channel,locale,attribute_codes"', $html);
+        $this->assertStringContainsString('only="channel,locale"', $html);
     }
 
     public function test_the_edit_card_carries_the_values_the_profile_was_saved_with()

@@ -10,8 +10,6 @@ enum ProductFilter: string
 
     case LOCALE = 'locale';
 
-    case ATTRIBUTE_CODES = 'attribute_codes';
-
     case TYPE = 'type';
 
     case CODE = 'code';
@@ -25,7 +23,6 @@ enum ProductFilter: string
     public const CORE_SCOPE_NAMES = [
         self::CHANNEL->value         => 'channels',
         self::LOCALE->value          => 'locales',
-        self::ATTRIBUTE_CODES->value => 'attributes',
         self::CATEGORY_CODES->value  => 'categories',
     ];
 
@@ -47,7 +44,6 @@ enum ProductFilter: string
         return array_column([
             self::CHANNEL,
             self::LOCALE,
-            self::ATTRIBUTE_CODES,
         ], 'value');
     }
 
@@ -69,6 +65,6 @@ enum ProductFilter: string
 
     public static function reservedCoreNames(): array
     {
-        return array_values(self::CORE_SCOPE_NAMES);
+        return array_merge(array_values(self::CORE_SCOPE_NAMES), ['attributes']);
     }
 }

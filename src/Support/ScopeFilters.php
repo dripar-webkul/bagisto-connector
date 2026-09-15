@@ -17,11 +17,6 @@ class ScopeFilters
         return self::codes($filters, BagistoProductFilter::LOCALE);
     }
 
-    public static function attributeCodes(array $filters): array
-    {
-        return self::codes($filters, BagistoProductFilter::ATTRIBUTE_CODES);
-    }
-
     public static function categoryCodes(array $filters): array
     {
         return self::codes($filters, BagistoProductFilter::CATEGORY_CODES);

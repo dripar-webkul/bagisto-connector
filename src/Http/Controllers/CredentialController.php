@@ -165,6 +165,8 @@ class CredentialController extends Controller
 
     public function update(CredentialUpdateRequest $request, $id): JsonResponse
     {
+        abort_unless(bouncer()->hasPermission('bagisto.credentials.edit'), 403);
+
         $credential = $this->credentialRepository->findOrFail($id);
 
         [$password, $encryptedPassword] = $this->resolvePassword($request->password, $credential);

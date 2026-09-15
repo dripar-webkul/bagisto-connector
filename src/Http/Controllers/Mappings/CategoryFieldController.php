@@ -36,6 +36,8 @@ class CategoryFieldController extends Controller
 
     public function storeOrUpdate(StandardFieldRequest $request, int $credentialId): JsonResponse
     {
+        abort_unless(bouncer()->hasPermission('bagisto.credentials.category_mapping'), 403);
+
         try {
             $credential = $this->credentialRepository->findOrFail($credentialId);
 

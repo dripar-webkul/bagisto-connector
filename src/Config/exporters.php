@@ -130,17 +130,6 @@ return [
                 $channelFilter,
                 $localeFilter,
                 [
-                    'name'       => BagistoProductFilter::ATTRIBUTE_CODES->value,
-                    'title'      => 'bagisto::app.exporters.bagisto.attributes',
-                    'info'       => 'bagisto::app.exporters.bagisto.attributes-info',
-                    'required'   => false,
-                    'type'       => 'multiselect',
-                    'full_width' => true,
-                    'async'      => true,
-                    'track_by'   => 'code',
-                    'label_by'   => 'label',
-                    'list_route' => 'admin.settings.data_transfer.exports.filters.attributes',
-                ], [
                     'name'       => ProductFilter::ATTRIBUTE_FAMILIES->value,
                     'title'      => 'data_transfer::app.exporters.products.filters.attribute-families',
                     'required'   => false,

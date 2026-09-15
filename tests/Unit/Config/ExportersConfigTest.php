@@ -66,7 +66,7 @@ class ExportersConfigTest extends TestCase
     public function test_the_cards_between_them_cover_every_connector_filter()
     {
         $this->assertSame(['credentials', 'type'], ProductFilter::credentialFields());
-        $this->assertSame(['channel', 'locale', 'attribute_codes'], ProductFilter::scopeFields());
+        $this->assertSame(['channel', 'locale'], ProductFilter::scopeFields());
         $this->assertSame(['code', 'category_codes'], ProductFilter::filterFields());
 
         $this->assertSame(

@@ -64,10 +64,9 @@ class ExcludedMediaTest extends TestCase
 
     private function damAssets(array $rows): void
     {
-        $this->attributeRepository->shouldReceive('where')->with('code', 'gallery')->andReturnSelf();
-        $this->attributeRepository->shouldReceive('first')->andReturn(
-            (object) ['type' => 'asset']
-        );
+        $this->attributeRepository->shouldReceive('all')->andReturn(new Collection([
+            (object) ['code' => 'gallery', 'type' => 'asset'],
+        ]));
 
         $this->assetRepository->shouldReceive('findWhereIn')->andReturn(
             new Collection(array_map(fn ($row) => (object) $row, $rows))
@@ -143,10 +142,9 @@ class ExcludedMediaTest extends TestCase
         Storage::fake('local');
         config(['filesystems.default' => 'local']);
 
-        $this->attributeRepository->shouldReceive('where')->andReturnSelf();
-        $this->attributeRepository->shouldReceive('first')->andReturn(
-            (object) ['type' => AttributeTypes::GALLERY_ATTRIBUTE_TYPE]
-        );
+        $this->attributeRepository->shouldReceive('all')->andReturn(new Collection([
+            (object) ['code' => 'gallery', 'type' => AttributeTypes::GALLERY_ATTRIBUTE_TYPE],
+        ]));
 
         $fields = ['gallery' => 'product/1/gone.jpg'];
 

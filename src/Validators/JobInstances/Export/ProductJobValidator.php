@@ -5,6 +5,7 @@ namespace Webkul\Bagisto\Validators\JobInstances\Export;
 use BackedEnum;
 use Webkul\Bagisto\Enums\Export\ProductFilter as BagistoProductFilter;
 use Webkul\Bagisto\Enums\Export\ProductStatus;
+use Webkul\Bagisto\Enums\Export\ProductType;
 use Webkul\DataTransfer\Enums\CompletenessCondition;
 use Webkul\DataTransfer\Enums\ProductFilter;
 use Webkul\DataTransfer\Enums\TimeCondition;
@@ -17,6 +18,11 @@ class ProductJobValidator extends JobValidator
     public function getRules(array $options): array
     {
         return [
+            $this->field(BagistoProductFilter::CREDENTIALS)       => 'required',
+            $this->field(BagistoProductFilter::CHANNEL)           => 'nullable',
+            $this->field(BagistoProductFilter::LOCALE)            => 'nullable',
+            $this->field(BagistoProductFilter::TYPE)              => 'nullable',
+            $this->field(BagistoProductFilter::TYPE).'.*'         => $this->oneOf(ProductType::values()),
             $this->field(BagistoProductFilter::WITH_MEDIA)        => self::BOOLEAN_RULE,
             $this->field(BagistoProductFilter::WITH_ASSOCIATIONS) => self::BOOLEAN_RULE,
             $this->field(ProductFilter::SKU)                      => 'nullable|string',
@@ -35,7 +41,6 @@ class ProductJobValidator extends JobValidator
             $this->field(BagistoProductFilter::CREDENTIALS)       => trans('bagisto::app.exporters.bagisto.credentials'),
             $this->field(BagistoProductFilter::CHANNEL)           => trans('bagisto::app.exporters.bagisto.channels'),
             $this->field(BagistoProductFilter::LOCALE)            => trans('bagisto::app.exporters.bagisto.locales'),
-            $this->field(BagistoProductFilter::ATTRIBUTE_CODES)   => trans('bagisto::app.exporters.bagisto.attributes'),
             $this->field(BagistoProductFilter::TYPE)              => trans('bagisto::app.exporters.bagisto.type'),
             $this->field(BagistoProductFilter::WITH_MEDIA)        => trans('bagisto::app.exporters.bagisto.with_media'),
             $this->field(BagistoProductFilter::WITH_ASSOCIATIONS) => trans('data_transfer::app.exporters.fields.with-associations'),

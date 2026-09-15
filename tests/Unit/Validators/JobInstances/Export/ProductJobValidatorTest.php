@@ -65,8 +65,29 @@ class ProductJobValidatorTest extends TestCase
         ]);
     }
 
+    public function test_it_requires_a_credential()
+    {
+        $this->expectException(ValidationException::class);
+
+        $this->validator->validate(['filters' => ['status' => 'all']]);
+    }
+
+    public function test_it_accepts_the_bagisto_product_types()
+    {
+        $this->validate(['type' => ['simple', 'configurable', 'variant_group']]);
+
+        $this->expectNotToPerformAssertions();
+    }
+
+    public function test_it_rejects_a_product_type_bagisto_does_not_have()
+    {
+        $this->expectException(ValidationException::class);
+
+        $this->validate(['type' => ['bundle']]);
+    }
+
     private function validate(array $filters): void
     {
-        $this->validator->validate(['filters' => $filters]);
+        $this->validator->validate(['filters' => array_merge(['credentials' => '1'], $filters)]);
     }
 }

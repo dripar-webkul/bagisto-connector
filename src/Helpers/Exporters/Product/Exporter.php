@@ -72,7 +72,11 @@ class Exporter extends AbstractExporter
 
     protected array $mappingAttributes = [];
 
-    private ?array $requiredSourceCodeCache = null;
+    private ?array $attributesByCode = null;
+
+    private array $channelsByCode = [];
+
+    private array $categoriesByCode = [];
 
     protected array $credential = [];
 
@@ -131,8 +135,6 @@ class Exporter extends AbstractExporter
 
         $filtersChannels = ScopeFilters::channelCodes($filters);
         $filtersLocales = ScopeFilters::localeCodes($filters);
-
-        $this->applyAttributeScope(ScopeFilters::attributeCodes($filters));
 
         $bagistoChannels = $this->getMappedChannels();
         $bagistoLocales = $this->getMappedLocales();
@@ -500,8 +502,6 @@ class Exporter extends AbstractExporter
 
         $mergedFields = array_merge($commonFields, $localeSpecificFields, $channelSpecificFields, $channelLocaleSpecificFields);
 
-        $this->scopeToSelectedAttributes($mergedFields);
-
         $identifier = $item['sku'] ?? '(no sku)';
 
         $this->resolveDamAssetPaths($mergedFields, $identifier);
@@ -511,38 +511,37 @@ class Exporter extends AbstractExporter
         return $mergedFields;
     }
 
-    private function scopeToSelectedAttributes(array &$mergedFields): void
+    private function attributeByCode(string $code): ?object
     {
-        $required = $this->requiredSourceCodes();
+        if ($this->attributesByCode === null) {
+            $this->attributesByCode = [];
 
-        foreach (array_keys($mergedFields) as $code) {
-            if (in_array((string) $code, $required, true) || $this->isAttributeValueExported((string) $code)) {
-                continue;
+            foreach ($this->attributeRepository->all() as $attribute) {
+                $this->attributesByCode[$attribute->code] = $attribute;
             }
-
-            unset($mergedFields[$code]);
         }
+
+        return $this->attributesByCode[$code] ?? null;
     }
 
-    private function requiredSourceCodes(): array
+    private function channelByCode(string $code): ?array
     {
-        if ($this->requiredSourceCodeCache !== null) {
-            return $this->requiredSourceCodeCache;
+        if (! array_key_exists($code, $this->channelsByCode)) {
+            $channel = $this->channelRepository->where('code', $code)->with(['locales', 'currencies'])->first();
+
+            $this->channelsByCode[$code] = $channel?->toArray();
         }
 
-        $codes = [self::UNOPIM_SKU_FIELD];
+        return $this->channelsByCode[$code];
+    }
 
-        foreach ($this->getRequiredBagistoFields() as $bagistoCode) {
-            $codes[] = $bagistoCode;
-
-            foreach (['standard_attribute', 'image_attribute'] as $section) {
-                foreach ((array) ($this->mappingAttributes[$section]->mapped_value[$bagistoCode] ?? []) as $sourceCode) {
-                    $codes[] = (string) $sourceCode;
-                }
-            }
+    private function categoryByCode(string $code): ?object
+    {
+        if (! array_key_exists($code, $this->categoriesByCode)) {
+            $this->categoriesByCode[$code] = $this->categoryRepository->where('code', $code)->first();
         }
 
-        return $this->requiredSourceCodeCache = array_values(array_unique(array_filter($codes)));
+        return $this->categoriesByCode[$code];
     }
 
     private function applyFixedValues(array &$mergedFields, $parent): void
@@ -622,7 +621,7 @@ class Exporter extends AbstractExporter
                 continue;
             }
 
-            $attribute = $this->attributeRepository->where('code', $code)->first();
+            $attribute = $this->attributeByCode((string) $code);
 
             if (! $attribute) {
                 continue;
@@ -734,7 +733,7 @@ class Exporter extends AbstractExporter
             }
 
             if (is_string((string) $unpoimAttribute) && trim((string) $unpoimAttribute) !== '') {
-                $attributeExists = (bool) $this->attributeRepository->where('code', $unpoimAttribute)->first();
+                $attributeExists = (bool) $this->attributeByCode((string) $unpoimAttribute);
 
                 if (! $attributeExists) {
                     $mapAttributeValues[$bagistoAttribute] = $bagistoAttribute === 'inventories'
@@ -918,7 +917,7 @@ class Exporter extends AbstractExporter
     protected function handleAttributeType(array &$mergedFields, bool $withMedia, string $channel, string $identifier = '(no sku)'): void
     {
         foreach ($mergedFields as $attributeCode => $attributeValue) {
-            $attribute = $this->attributeRepository->where('code', $attributeCode)->first();
+            $attribute = $this->attributeByCode((string) $attributeCode);
             if (! $attribute) {
                 continue;
             }
@@ -972,8 +971,9 @@ class Exporter extends AbstractExporter
                     break;
 
                 case AttributeTypes::PRICE_ATTRIBUTE_TYPE:
-                    $channelData = $this->channelRepository->where('code', $channel)->with(['locales', 'currencies'])->first()->toArray();
-                    foreach ($channelData['currencies'] as $currency) {
+                    $channelData = $this->channelByCode($channel);
+
+                    foreach ($channelData['currencies'] ?? [] as $currency) {
                         if (! empty($attributeValue[$currency['code']])) {
                             $mergedFields[$attributeCode] = is_array($attributeValue) ? $attributeValue[$currency['code']] : $attributeValue;
                         }
@@ -1020,7 +1020,7 @@ class Exporter extends AbstractExporter
                     continue;
                 }
 
-                $attr = $this->attributeRepository->where('code', $code)->first();
+                $attr = $this->attributeByCode((string) $code);
 
                 if ($attr && in_array($attr->type, $types, true)) {
                     $combined[] = is_array($val) ? implode(',', $val) : $val;
@@ -1067,7 +1067,7 @@ class Exporter extends AbstractExporter
         if (! empty($item['values']['categories']) && is_array($item['values']['categories'])) {
             $categoryData = [];
             foreach ($item['values']['categories'] as $code) {
-                $category = $this->categoryRepository->where('code', $code)->first();
+                $category = $this->categoryByCode((string) $code);
                 if (! $category) {
                     continue;
                 }

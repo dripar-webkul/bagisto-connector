@@ -22,9 +22,11 @@ return new class extends Migration
     {
         $credentialIds = DB::table('wk_bagisto_credential')->orderBy('id')->pluck('id')->all();
 
-        foreach (self::TABLES as $table => $indexNames) {
+        foreach (array_keys(self::TABLES) as $table) {
             $this->guardAgainstOrphanedRows($table, $credentialIds);
+        }
 
+        foreach (self::TABLES as $table => $indexNames) {
             $this->keepOneRowPerSection($table);
 
             Schema::table($table, function (Blueprint $blueprint) {
@@ -50,9 +52,11 @@ return new class extends Migration
 
     public function down(): void
     {
-        foreach (self::TABLES as $table => $indexNames) {
-            $this->keepOneRowPerSection($table);
+        foreach (array_keys(self::TABLES) as $table) {
+            $this->guardAgainstLossyRollback($table);
+        }
 
+        foreach (self::TABLES as $table => $indexNames) {
             Schema::table($table, function (Blueprint $blueprint) use ($indexNames) {
                 $blueprint->dropForeign($indexNames['foreign']);
                 $blueprint->dropUnique($indexNames['unique']);
@@ -70,6 +74,27 @@ return new class extends Migration
         throw new RuntimeException(
             "Table [{$table}] holds mappings but no Bagisto credential owns them. "
             .'Create a credential before migrating, or empty the table if the mappings are no longer needed.'
+        );
+    }
+
+    private function guardAgainstLossyRollback(string $table): void
+    {
+        $owner = DB::table($table)->min('credential_id');
+
+        if ($owner === null) {
+            return;
+        }
+
+        $others = DB::table($table)->where('credential_id', '!=', $owner)->distinct()->count('credential_id');
+
+        if ($others === 0) {
+            return;
+        }
+
+        throw new RuntimeException(
+            "Table [{$table}] holds mappings for {$others} credential(s) besides [{$owner}], and the column "
+            .'that tells them apart is about to be dropped. Rolling back would discard them silently. '
+            .'Delete the mappings you do not need, leaving one credential, then roll back again.'
         );
     }
 
