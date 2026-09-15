@@ -134,10 +134,12 @@ class ExportFilterComposerTest extends TestCase
     private function renderEditCardFor(string $entityType, array $filters = []): string
     {
         $export = JobInstances::create([
-            'code'        => 'bagisto_test_'.uniqid(),
-            'entity_type' => $entityType,
-            'type'        => 'export',
-            'filters'     => $filters,
+            'code'                => 'bagisto_test_'.uniqid(),
+            'entity_type'         => $entityType,
+            'type'                => 'export',
+            'action'              => 'fetch',
+            'validation_strategy' => 'skip',
+            'filters'             => $filters,
         ]);
 
         Route::shouldReceive('current')->andReturnNull();
