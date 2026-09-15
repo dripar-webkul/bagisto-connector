@@ -6,6 +6,7 @@ use Webkul\Bagisto\Http\Controllers\FileController;
 use Webkul\Bagisto\Http\Controllers\Mappings\AttributeController;
 use Webkul\Bagisto\Http\Controllers\Mappings\CategoryFieldController;
 use Webkul\Bagisto\Http\Controllers\OptionController;
+use Webkul\Bagisto\Http\Controllers\SkippedItemsController;
 
 Route::prefix('bagisto')->withoutMiddleware(['admin'])->middleware('signed')->group(function () {
     Route::get('asset/{path}', [FileController::class, 'fetchAsset'])
@@ -56,5 +57,9 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
 
             Route::get('get-attributes', 'fetchAttribute')->name('admin.bagisto.attributes.fetch');
         });
+
+        Route::get('job-track/{trackId}/skipped-items', [SkippedItemsController::class, 'show'])
+            ->whereNumber('trackId')
+            ->name('admin.bagisto.job_track.skipped_items');
     });
 });
