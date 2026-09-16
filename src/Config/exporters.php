@@ -16,58 +16,6 @@ use Webkul\DataTransfer\Enums\ProductFilter;
 use Webkul\DataTransfer\Enums\TimeCondition;
 use Webkul\Product\Repositories\ProductRepository;
 
-$credentialFilter = [
-    'name'       => BagistoProductFilter::CREDENTIALS->value,
-    'title'      => 'bagisto::app.exporters.bagisto.credentials',
-    'required'   => true,
-    'validation' => 'required',
-    'type'       => 'select',
-    'async'      => true,
-    'track_by'   => 'id',
-    'label_by'   => OptionController::CREDENTIAL_LABEL,
-    'list_route' => 'bagisto.credential.fetch-all',
-];
-
-$channelFilter = [
-    'name'       => BagistoProductFilter::CHANNEL->value,
-    'title'      => 'bagisto::app.exporters.bagisto.channels',
-    'info'       => 'bagisto::app.exporters.bagisto.channels-info',
-    'required'   => false,
-    'type'       => 'multiselect',
-    'async'      => true,
-    'track_by'   => 'code',
-    'label_by'   => 'label',
-    'list_route' => 'bagisto.channel.fetch-all',
-    'depends_on' => [
-        'field' => BagistoProductFilter::CREDENTIALS->value,
-        'as'    => BagistoProductFilter::CREDENTIALS->value,
-    ],
-];
-
-$localeFilter = [
-    'name'       => BagistoProductFilter::LOCALE->value,
-    'title'      => 'bagisto::app.exporters.bagisto.locales',
-    'info'       => 'bagisto::app.exporters.bagisto.locales-info',
-    'required'   => false,
-    'type'       => 'multiselect',
-    'full_width' => true,
-    'async'      => true,
-    'track_by'   => 'code',
-    'label_by'   => 'label',
-    'list_route' => 'bagisto.locale.fetch-all',
-    'depends_on' => [
-        'field' => BagistoProductFilter::CREDENTIALS->value,
-        'as'    => BagistoProductFilter::CREDENTIALS->value,
-    ],
-];
-
-$codeFilter = [
-    'name'     => BagistoProductFilter::CODE->value,
-    'title'    => 'bagisto::app.exporters.bagisto.code',
-    'required' => false,
-    'type'     => 'tags',
-];
-
 return [
     'bagisto_categories' => [
         'title'    => 'bagisto::app.exporters.bagisto.category',
@@ -75,11 +23,51 @@ return [
         'source'   => CategoryRepository::class,
         'filters'  => [
             'fields' => [
-                $credentialFilter,
-                $channelFilter,
-                $localeFilter,
-                $codeFilter,
                 [
+                    'name'       => BagistoProductFilter::CREDENTIALS->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.credentials',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'select',
+                    'async'      => true,
+                    'track_by'   => 'id',
+                    'label_by'   => OptionController::CREDENTIAL_LABEL,
+                    'list_route' => 'bagisto.credential.fetch-all',
+                ], [
+                    'name'       => BagistoProductFilter::CHANNEL->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.channels',
+                    'info'       => 'bagisto::app.exporters.bagisto.channels-info',
+                    'required'   => false,
+                    'type'       => 'multiselect',
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'label',
+                    'list_route' => 'bagisto.channel.fetch-all',
+                    'depends_on' => [
+                        'field' => BagistoProductFilter::CREDENTIALS->value,
+                        'as'    => BagistoProductFilter::CREDENTIALS->value,
+                    ],
+                ], [
+                    'name'       => BagistoProductFilter::LOCALE->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.locales',
+                    'info'       => 'bagisto::app.exporters.bagisto.locales-info',
+                    'required'   => false,
+                    'type'       => 'multiselect',
+                    'full_width' => true,
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'label',
+                    'list_route' => 'bagisto.locale.fetch-all',
+                    'depends_on' => [
+                        'field' => BagistoProductFilter::CREDENTIALS->value,
+                        'as'    => BagistoProductFilter::CREDENTIALS->value,
+                    ],
+                ], [
+                    'name'     => BagistoProductFilter::CODE->value,
+                    'title'    => 'bagisto::app.exporters.bagisto.code',
+                    'required' => false,
+                    'type'     => 'tags',
+                ], [
                     'name'       => BagistoProductFilter::CATEGORY_CODES->value,
                     'title'      => 'bagisto::app.exporters.bagisto.categories',
                     'info'       => 'bagisto::app.exporters.bagisto.categories-info',
@@ -97,10 +85,51 @@ return [
         'source'   => AttributeRepository::class,
         'filters'  => [
             'fields' => [
-                $credentialFilter,
-                $channelFilter,
-                $localeFilter,
-                $codeFilter,
+                [
+                    'name'       => BagistoProductFilter::CREDENTIALS->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.credentials',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'select',
+                    'async'      => true,
+                    'track_by'   => 'id',
+                    'label_by'   => OptionController::CREDENTIAL_LABEL,
+                    'list_route' => 'bagisto.credential.fetch-all',
+                ], [
+                    'name'       => BagistoProductFilter::CHANNEL->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.channels',
+                    'info'       => 'bagisto::app.exporters.bagisto.channels-info',
+                    'required'   => false,
+                    'type'       => 'multiselect',
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'label',
+                    'list_route' => 'bagisto.channel.fetch-all',
+                    'depends_on' => [
+                        'field' => BagistoProductFilter::CREDENTIALS->value,
+                        'as'    => BagistoProductFilter::CREDENTIALS->value,
+                    ],
+                ], [
+                    'name'       => BagistoProductFilter::LOCALE->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.locales',
+                    'info'       => 'bagisto::app.exporters.bagisto.locales-info',
+                    'required'   => false,
+                    'type'       => 'multiselect',
+                    'full_width' => true,
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'label',
+                    'list_route' => 'bagisto.locale.fetch-all',
+                    'depends_on' => [
+                        'field' => BagistoProductFilter::CREDENTIALS->value,
+                        'as'    => BagistoProductFilter::CREDENTIALS->value,
+                    ],
+                ], [
+                    'name'     => BagistoProductFilter::CODE->value,
+                    'title'    => 'bagisto::app.exporters.bagisto.code',
+                    'required' => false,
+                    'type'     => 'tags',
+                ],
             ],
         ],
     ],
@@ -111,10 +140,51 @@ return [
         'source'   => AttributeFamilyRepository::class,
         'filters'  => [
             'fields' => [
-                $credentialFilter,
-                $channelFilter,
-                $localeFilter,
-                $codeFilter,
+                [
+                    'name'       => BagistoProductFilter::CREDENTIALS->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.credentials',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'select',
+                    'async'      => true,
+                    'track_by'   => 'id',
+                    'label_by'   => OptionController::CREDENTIAL_LABEL,
+                    'list_route' => 'bagisto.credential.fetch-all',
+                ], [
+                    'name'       => BagistoProductFilter::CHANNEL->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.channels',
+                    'info'       => 'bagisto::app.exporters.bagisto.channels-info',
+                    'required'   => false,
+                    'type'       => 'multiselect',
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'label',
+                    'list_route' => 'bagisto.channel.fetch-all',
+                    'depends_on' => [
+                        'field' => BagistoProductFilter::CREDENTIALS->value,
+                        'as'    => BagistoProductFilter::CREDENTIALS->value,
+                    ],
+                ], [
+                    'name'       => BagistoProductFilter::LOCALE->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.locales',
+                    'info'       => 'bagisto::app.exporters.bagisto.locales-info',
+                    'required'   => false,
+                    'type'       => 'multiselect',
+                    'full_width' => true,
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'label',
+                    'list_route' => 'bagisto.locale.fetch-all',
+                    'depends_on' => [
+                        'field' => BagistoProductFilter::CREDENTIALS->value,
+                        'as'    => BagistoProductFilter::CREDENTIALS->value,
+                    ],
+                ], [
+                    'name'     => BagistoProductFilter::CODE->value,
+                    'title'    => 'bagisto::app.exporters.bagisto.code',
+                    'required' => false,
+                    'type'     => 'tags',
+                ],
             ],
         ],
     ],
@@ -126,10 +196,46 @@ return [
         'validator' => ProductJobValidator::class,
         'filters'   => [
             'fields' => [
-                $credentialFilter,
-                $channelFilter,
-                $localeFilter,
                 [
+                    'name'       => BagistoProductFilter::CREDENTIALS->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.credentials',
+                    'required'   => true,
+                    'validation' => 'required',
+                    'type'       => 'select',
+                    'async'      => true,
+                    'track_by'   => 'id',
+                    'label_by'   => OptionController::CREDENTIAL_LABEL,
+                    'list_route' => 'bagisto.credential.fetch-all',
+                ], [
+                    'name'       => BagistoProductFilter::CHANNEL->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.channels',
+                    'info'       => 'bagisto::app.exporters.bagisto.channels-info',
+                    'required'   => false,
+                    'type'       => 'multiselect',
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'label',
+                    'list_route' => 'bagisto.channel.fetch-all',
+                    'depends_on' => [
+                        'field' => BagistoProductFilter::CREDENTIALS->value,
+                        'as'    => BagistoProductFilter::CREDENTIALS->value,
+                    ],
+                ], [
+                    'name'       => BagistoProductFilter::LOCALE->value,
+                    'title'      => 'bagisto::app.exporters.bagisto.locales',
+                    'info'       => 'bagisto::app.exporters.bagisto.locales-info',
+                    'required'   => false,
+                    'type'       => 'multiselect',
+                    'full_width' => true,
+                    'async'      => true,
+                    'track_by'   => 'code',
+                    'label_by'   => 'label',
+                    'list_route' => 'bagisto.locale.fetch-all',
+                    'depends_on' => [
+                        'field' => BagistoProductFilter::CREDENTIALS->value,
+                        'as'    => BagistoProductFilter::CREDENTIALS->value,
+                    ],
+                ], [
                     'name'       => ProductFilter::ATTRIBUTE_FAMILIES->value,
                     'title'      => 'data_transfer::app.exporters.products.filters.attribute-families',
                     'required'   => false,

@@ -86,7 +86,7 @@
             "field_separator": ",",
             "file_path": "",
             "images_directory_path": "",
-            "filters": "\"\"",
+            "filters": "{}",
             "created_at": "2026-06-26 11:16:27",
             "updated_at": "2026-06-26 11:16:27"
         },
@@ -136,6 +136,7 @@
     "wk_bagisto_attribute_config_mapping": [
         {
             "id": 1,
+            "credential_id": 1,
             "section": "standard_attribute",
             "mapped_value": "{\"sku\": \"sku\", \"name\": \"name\", \"price\": \"price\", \"images\": \"image\", \"weight\": \"weight\", \"url_key\": \"url_key\", \"description\": \"description\", \"short_description\": \"short_description\"}",
             "fixed_value": "{\"cost\": null, \"brand\": null, \"width\": null, \"height\": null, \"length\": null, \"status\": \"1\", \"meta_title\": null, \"inventories\": \"10\", \"manage_stock\": \"1\", \"meta_keywords\": null, \"special_price\": null, \"guest_checkout\": \"1\", \"product_number\": null, \"meta_description\": null, \"visible_individually\": \"1\"}",
@@ -147,6 +148,7 @@
     "wk_bagisto_category_field_config_mapping": [
         {
             "id": 1,
+            "credential_id": 1,
             "section": "standard_field",
             "mapped_value": "{\"name\": \"name\", \"description\": \"description\"}",
             "fixed_value": "{\"slug\": null, \"status\": \"1\", \"position\": \"1\", \"logo_path\": null, \"meta_title\": null, \"banner_path\": null, \"display_mode\": \"products_and_description\", \"meta_keywords\": null, \"meta_description\": null}",
