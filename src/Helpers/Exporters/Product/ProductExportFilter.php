@@ -43,10 +43,7 @@ class ProductExportFilter extends BaseProductExportFilter
             return;
         }
 
-        $scoped = CategoryScope::codesWithin(
-            $codes,
-            CategoryScope::rootIds(ScopeFilters::channelCodes($filters))
-        );
+        $scoped = CategoryScope::scopedCodes($codes, ScopeFilters::channelCodes($filters));
 
         if ($scoped === []) {
             $query->whereRaw('1 = 0');

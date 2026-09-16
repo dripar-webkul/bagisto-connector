@@ -189,13 +189,7 @@ class Exporter extends BaseExporter
 
     protected function channelScopedSource(): mixed
     {
-        $rootIds = CategoryScope::rootIds(ScopeFilters::channelCodes($this->getFilters()));
-
-        if ($rootIds === []) {
-            return $this->source;
-        }
-
-        return $this->source->where(fn ($builder) => CategoryScope::withinRoots($builder, $rootIds));
+        return CategoryScope::scopeQuery($this->source, ScopeFilters::channelCodes($this->getFilters()));
     }
 
     protected function withAncestorCodes(array $codes): array

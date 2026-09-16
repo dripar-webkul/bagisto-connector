@@ -23,12 +23,34 @@ class CategoryScope
             ->all();
     }
 
-    public static function codesWithin(array $codes, array $rootIds): array
+    public static function scopedCodes(array $codes, array $channelCodes): array
     {
-        if ($codes === [] || $rootIds === []) {
+        if ($codes === []) {
             return $codes;
         }
 
+        $rootIds = self::rootIds($channelCodes);
+
+        if ($rootIds !== []) {
+            return self::codesWithin($codes, $rootIds);
+        }
+
+        return $channelCodes === [] ? $codes : [];
+    }
+
+    public static function scopeQuery(mixed $source, array $channelCodes): mixed
+    {
+        $rootIds = self::rootIds($channelCodes);
+
+        if ($rootIds !== []) {
+            return $source->where(fn ($builder) => self::withinRoots($builder, $rootIds));
+        }
+
+        return $channelCodes === [] ? $source : $source->whereRaw('1 = 0');
+    }
+
+    protected static function codesWithin(array $codes, array $rootIds): array
+    {
         return app(CategoryRepository::class)
             ->whereIn('code', $codes)
             ->where(fn ($builder) => self::withinRoots($builder, $rootIds))
@@ -36,7 +58,7 @@ class CategoryScope
             ->all();
     }
 
-    public static function withinRoots($builder, array $rootIds)
+    protected static function withinRoots($builder, array $rootIds)
     {
         foreach ($rootIds as $rootId) {
             $builder->whereDescendantOrSelf($rootId, 'or');

@@ -60,6 +60,19 @@ class ProductExportFilterTest extends TestCase
         $this->assertNotContains('"'.$this->outOfChannel.'"', $query->getBindings());
     }
 
+    public function test_apply_to_query_exports_nothing_when_the_channel_reaches_no_root()
+    {
+        $query = Product::query();
+
+        $this->filter->applyToQuery($query, [
+            'channel'    => 'channel_that_does_not_exist',
+            'categories' => $this->inChannel,
+        ]);
+
+        $this->assertStringContainsString('1 = 0', $query->toSql());
+        $this->assertNotContains('"'.$this->inChannel.'"', $query->getBindings());
+    }
+
     public function test_apply_to_query_exports_nothing_when_no_category_is_in_the_channel()
     {
         $query = Product::query();

@@ -16,7 +16,7 @@ class FileController extends Controller
 
     public function fetchAsset(string $path): Response
     {
-        abort_if(! class_exists(self::ASSET_MODEL), 404);
+        abort_if(! class_exists(self::ASSET_MODEL) || ! class_exists(self::DIRECTORY_MODEL), 404);
 
         $asset = (self::ASSET_MODEL)::where('path', $path)->first();
 
