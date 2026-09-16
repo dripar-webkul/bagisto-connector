@@ -65,13 +65,13 @@ return [
     ], [
         'code'     => 'logo_path',
         'name'     => 'bagisto::app.bagisto.bagisto-category-fields.field-name.logo_path',
-        'type'     => 'image',
+        'type'     => 'image,asset',
         'required' => false,
         'title'    => 'bagisto::app.bagisto.bagisto-category-fields.title.logo_path',
     ], [
         'code'     => 'banner_path',
         'name'     => 'bagisto::app.bagisto.bagisto-category-fields.field-name.banner_path',
-        'type'     => 'image',
+        'type'     => 'image,asset',
         'required' => false,
         'title'    => 'bagisto::app.bagisto.bagisto-category-fields.title.banner_path',
     ],

@@ -55,6 +55,14 @@ enum ProductFilter: string
         ], 'value');
     }
 
+    public static function bridgedFields(): array
+    {
+        return array_column([
+            self::CREDENTIALS,
+            self::CHANNEL,
+        ], 'value');
+    }
+
     public static function scopedByCredential(): array
     {
         return array_column([

@@ -5,12 +5,15 @@ namespace Webkul\Bagisto\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 use Webkul\Admin\Http\Controllers\Controller;
+use Webkul\Admin\Http\Resources\Catalog\CategoryTreeResource;
 use Webkul\Attribute\Repositories\AttributeFamilyRepository;
 use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Bagisto\Enums\Export\ProductFilter as BagistoProductFilter;
 use Webkul\Bagisto\Repositories\CredentialRepository;
+use Webkul\Bagisto\Support\CategoryScope;
 use Webkul\Bagisto\Support\CredentialScope;
 use Webkul\Bagisto\Traits\ApiRequest;
+use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Core\Repositories\ChannelRepository;
 use Webkul\Core\Repositories\CurrencyRepository;
 use Webkul\Core\Repositories\LocaleRepository;
@@ -35,6 +38,7 @@ class OptionController extends Controller
         protected CurrencyRepository $currencyRepository,
         protected LocaleRepository $localeRepository,
         protected AttributeFamilyRepository $attributeFamilyRepository,
+        protected CategoryRepository $categoryRepository,
     ) {}
 
     public function listBagistoCredential(): JsonResponse
@@ -113,6 +117,31 @@ class OptionController extends Controller
         $localeRepository = $this->searchByCode($localeRepository, $query);
 
         return $this->respondWithOptions($this->withLabels($localeRepository->get()->toArray()));
+    }
+
+    public function categoryTree(): JsonResponse
+    {
+        $rootIds = $this->scopedRootCategoryIds();
+
+        $roots = $rootIds === []
+            ? collect()
+            : $this->categoryRepository->whereIn('id', $rootIds)->get();
+
+        $selected = array_values(array_filter((array) request('selected', [])));
+
+        return new JsonResponse([
+            'data'          => CategoryTreeResource::collection($roots)->toArray(request()),
+            'selected_tree' => $selected === []
+                ? []
+                : CategoryTreeResource::collection($this->categoryRepository->getPathNodes($selected)->toTree())->toArray(request()),
+        ]);
+    }
+
+    protected function scopedRootCategoryIds(): array
+    {
+        return CategoryScope::rootIds(
+            ScopeFilterValue::toCodes(request(BagistoProductFilter::CHANNEL->value))
+        );
     }
 
     protected function requestedStoreInfo(): array

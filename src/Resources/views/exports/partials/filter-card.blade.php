@@ -14,4 +14,8 @@
     />
 </div>
 
+@include('bagisto::exports.partials.category-tree-field')
+
+@include('bagisto::exports.partials.category-tree-scope')
+
 @include('bagisto::exports.partials.credential-scope-bridge')

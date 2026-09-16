@@ -4,6 +4,7 @@ namespace Webkul\Bagisto\Helpers\Exporters\Product;
 
 use Illuminate\Database\Eloquent\Builder;
 use Webkul\Bagisto\Enums\Export\ProductStatus;
+use Webkul\Bagisto\Support\CategoryScope;
 use Webkul\Bagisto\Support\ScopeFilters;
 use Webkul\DataTransfer\Enums\ProductExportScope;
 use Webkul\DataTransfer\Enums\ProductFilter;
@@ -32,6 +33,32 @@ class ProductExportFilter extends BaseProductExportFilter
         }
 
         $query->whereIn('type', $types);
+    }
+
+    protected function applyCategories(Builder $query, array $filters): void
+    {
+        $codes = $this->categoryCodes($filters);
+
+        if ($codes === []) {
+            return;
+        }
+
+        $scoped = CategoryScope::codesWithin(
+            $codes,
+            CategoryScope::rootIds(ScopeFilters::channelCodes($filters))
+        );
+
+        if ($scoped === []) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where(function (Builder $query) use ($scoped): void {
+            foreach ($scoped as $code) {
+                $query->orWhereJsonContains('values->categories', $code);
+            }
+        });
     }
 
     protected function resolveChannelIds(array $filters): array

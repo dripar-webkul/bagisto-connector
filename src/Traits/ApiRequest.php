@@ -17,9 +17,13 @@ trait ApiRequest
 
     protected array $lastApiErrors = [];
 
-    public function buildHttpRequest(): ApiService
+    public function buildHttpRequest(bool $refresh = false): ApiService
     {
         $cacheKey = CacheType::BAGISTO_API_HTTP->forCredential($this->credential['id'] ?? null);
+
+        if ($refresh) {
+            Cache::forget($cacheKey);
+        }
 
         $this->httpClient = Cache::get($cacheKey);
 
@@ -48,7 +52,7 @@ trait ApiRequest
         } catch (AuthenticationException $e) {
             if (! $this->tokenReneratedAt) {
                 $this->tokenReneratedAt = true;
-                $this->buildHttpRequest();
+                $this->buildHttpRequest(true);
 
                 return $this->setApiRequest($method, $endPoint, $data, $options);
             }

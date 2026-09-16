@@ -5,12 +5,15 @@ namespace Webkul\Bagisto\Helpers\Exporters\Category;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Webkul\Bagisto\Enums\Export\BagistoImageFormat;
 use Webkul\Bagisto\Enums\Export\CacheType;
+use Webkul\Bagisto\Enums\Export\DamFileType;
 use Webkul\Bagisto\Enums\Export\MappingSection;
 use Webkul\Bagisto\Enums\Services\MethodType;
 use Webkul\Bagisto\Repositories\BagistoDataMapping;
 use Webkul\Bagisto\Repositories\CategoryFieldMappingRepository;
 use Webkul\Bagisto\Repositories\CredentialRepository;
+use Webkul\Bagisto\Support\CategoryScope;
 use Webkul\Bagisto\Support\ScopeFilters;
 use Webkul\Bagisto\Traits\ApiRequest as ApiRequestTrait;
 use Webkul\Bagisto\Traits\Credential as CredentialTrait;
@@ -35,6 +38,12 @@ class Exporter extends BaseExporter
 
     protected const MAX_ANCESTOR_DEPTH = 20;
 
+    protected const DAM_ASSET_FIELD_TYPE = 'asset';
+
+    protected const DAM_ASSET_REPOSITORY = 'Webkul\\DAM\\Repositories\\AssetRepository';
+
+    protected const DAM_DIRECTORY_MODEL = 'Webkul\\DAM\\Models\\Directory';
+
     protected bool $exportsFile = false;
 
     protected array $credential = [];
@@ -55,7 +64,7 @@ class Exporter extends BaseExporter
         protected BagistoDataMapping $bagistoDataMappingRepository,
         protected CategoryFieldRepository $categoryFieldRepository,
         protected CategoryFieldMappingRepository $categoryFieldMappingRepository,
-        protected CredentialRepository $credentialRepository
+        protected CredentialRepository $credentialRepository,
     ) {
         parent::__construct($exportBatchRepository, $exportFileBuffer, $categoryFieldRepository);
     }
@@ -161,17 +170,32 @@ class Exporter extends BaseExporter
         )));
 
         if ($selectedCodes === []) {
-            return $this->source->orderBy('parent_id')->with('parent_category')->all()?->getIterator();
+            return $this->channelScopedSource()
+                ->orderBy('parent_id')
+                ->with('parent_category')
+                ->get()
+                ?->getIterator();
         }
 
         $exportedCodes = $this->withAncestorCodes($selectedCodes);
 
-        return $this->source
+        return $this->channelScopedSource()
             ->whereIn('code', $exportedCodes)
             ->orderBy('parent_id')
             ->with('parent_category')
             ->get()
             ?->getIterator();
+    }
+
+    protected function channelScopedSource(): mixed
+    {
+        $rootIds = CategoryScope::rootIds(ScopeFilters::channelCodes($this->getFilters()));
+
+        if ($rootIds === []) {
+            return $this->source;
+        }
+
+        return $this->source->where(fn ($builder) => CategoryScope::withinRoots($builder, $rootIds));
     }
 
     protected function withAncestorCodes(array $codes): array
@@ -515,6 +539,20 @@ class Exporter extends BaseExporter
 
         foreach ($standardFields as $key => $mappingField) {
             $field = $this->categoryFieldRepository->where('code', $mappingField)->first();
+
+            if (! $field) {
+                continue;
+            }
+
+            if ($field->type === self::DAM_ASSET_FIELD_TYPE) {
+                $fileFullPath = $this->getFirstAssetFilePath($additionalData[$mappingField] ?? null);
+                if ($fileFullPath) {
+                    $fieldValues[$key] = $fileFullPath;
+                }
+
+                continue;
+            }
+
             if (in_array($field->type, [FieldValidator::FILE_FIELD_TYPE, FieldValidator::IMAGE_FIELD_TYPE])) {
                 $fileFullPath = $this->getExistingFilePath($field, $additionalData);
                 if ($fileFullPath) {
@@ -567,6 +605,33 @@ class Exporter extends BaseExporter
         }
 
         return $item;
+    }
+
+    protected function getFirstAssetFilePath(mixed $value): ?string
+    {
+        $ids = $this->parseIdentifiers($value);
+
+        if ($ids === [] || ! class_exists(self::DAM_ASSET_REPOSITORY)) {
+            return null;
+        }
+
+        $asset = app(self::DAM_ASSET_REPOSITORY)->find($ids[0]);
+
+        if (! $asset || empty($asset->path)) {
+            return null;
+        }
+
+        if (! DamFileType::isImage($asset->file_type) || ! BagistoImageFormat::accepts($asset->path)) {
+            return null;
+        }
+
+        $disk = class_exists(self::DAM_DIRECTORY_MODEL)
+            ? (self::DAM_DIRECTORY_MODEL)::getAssetDisk()
+            : config('filesystems.default');
+
+        return Storage::disk($disk)->exists($asset->path)
+            ? Storage::disk($disk)->path($asset->path)
+            : null;
     }
 
     protected function getExistingFilePath($field, $additionalData): ?string

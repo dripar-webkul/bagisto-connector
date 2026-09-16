@@ -51,6 +51,8 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
 
             Route::get('get-bagisto-locale', 'listLocale')->name('bagisto.locale.fetch-all');
 
+            Route::post('get-bagisto-category-tree', 'categoryTree')->name('bagisto.category.tree');
+
             Route::get('get-bagisto-family', 'listFamily')->name('bagisto.family.fetch-all');
 
             Route::get('get-bagisto-type', 'listType')->name('bagisto.type.fetch-all');

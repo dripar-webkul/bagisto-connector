@@ -78,7 +78,14 @@ final class ApiService implements ApiServiceContract
 
     private function initializeRequest($headers, $timeout, $isMultipart): PendingRequest
     {
-        $request = Http::withoutVerifying()->withHeaders($headers->toArray())->timeout($timeout);
+        $headerValues = $headers->toArray();
+
+        if ($isMultipart) {
+            unset($headerValues['Content-Type'], $headerValues['content-type']);
+        }
+
+        $request = Http::withoutVerifying()->withHeaders($headerValues)->timeout($timeout);
+
         if ($isMultipart) {
             $request = $request->asMultipart();
         }
@@ -101,7 +108,8 @@ final class ApiService implements ApiServiceContract
     private function preparePayload($payload, $options, $isMultipart): array
     {
         $item = [];
-        if (! isset($payload['_method']) || ! $isMultipart) {
+
+        if (! $isMultipart) {
             return $payload;
         }
         foreach ($payload as $key => $value) {

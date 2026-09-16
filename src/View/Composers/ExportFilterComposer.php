@@ -52,7 +52,8 @@ class ExportFilterComposer
             'bagistoTitle'           => trans(self::SECTIONS[$section]['title']),
             'bagistoGridClass'       => self::SECTIONS[$section]['grid_class'],
             'bagistoExporterConfig'  => $exporterConfig,
-            'bagistoCredentialField' => BagistoProductFilter::CREDENTIALS->value,
+            'bagistoBridgedFields'   => BagistoProductFilter::bridgedFields(),
+            'bagistoChannelField'    => BagistoProductFilter::CHANNEL->value,
         ]);
 
         if (! $isEdit) {

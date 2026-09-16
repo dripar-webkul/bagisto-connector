@@ -4,17 +4,82 @@ namespace Webkul\Bagisto\Tests\Unit\Helpers\Exporters\Product;
 
 use Tests\TestCase;
 use Webkul\Bagisto\Helpers\Exporters\Product\ProductExportFilter;
+use Webkul\Category\Models\Category;
+use Webkul\Core\Models\Channel;
 use Webkul\Product\Models\Product;
 
 class ProductExportFilterTest extends TestCase
 {
     private ProductExportFilter $filter;
 
+    private string $channel;
+
+    private string $inChannel;
+
+    private string $outOfChannel;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->filter = resolve(ProductExportFilter::class);
+
+        $this->buildChannelTree();
+    }
+
+    private function buildChannelTree(): void
+    {
+        $suffix = uniqid();
+
+        $root = Category::create(['code' => 'scoped_root_'.$suffix]);
+
+        $this->inChannel = 'in_channel_'.$suffix;
+        $this->outOfChannel = 'out_of_channel_'.$suffix;
+
+        Category::create(['code' => $this->inChannel, 'parent_id' => $root->id]);
+        Category::create(['code' => $this->outOfChannel]);
+
+        $channel = Channel::first()->replicate();
+        $channel->code = 'scoped_channel_'.$suffix;
+        $channel->root_category_id = $root->id;
+        $channel->save();
+
+        $this->channel = $channel->code;
+    }
+
+    public function test_apply_to_query_drops_a_category_outside_the_channel()
+    {
+        $query = Product::query();
+
+        $this->filter->applyToQuery($query, [
+            'channel'    => $this->channel,
+            'categories' => $this->inChannel.','.$this->outOfChannel,
+        ]);
+
+        $this->assertContains('"'.$this->inChannel.'"', $query->getBindings());
+        $this->assertNotContains('"'.$this->outOfChannel.'"', $query->getBindings());
+    }
+
+    public function test_apply_to_query_exports_nothing_when_no_category_is_in_the_channel()
+    {
+        $query = Product::query();
+
+        $this->filter->applyToQuery($query, [
+            'channel'    => $this->channel,
+            'categories' => $this->outOfChannel,
+        ]);
+
+        $this->assertStringContainsString('1 = 0', $query->toSql());
+    }
+
+    public function test_apply_to_query_leaves_the_query_alone_when_no_category_is_picked()
+    {
+        $query = Product::query();
+
+        $this->filter->applyToQuery($query, ['channel' => $this->channel]);
+
+        $this->assertStringNotContainsString('categories', $query->toSql());
+        $this->assertStringNotContainsString('1 = 0', $query->toSql());
     }
 
     public function test_status_value_reads_the_bagisto_status_codes()

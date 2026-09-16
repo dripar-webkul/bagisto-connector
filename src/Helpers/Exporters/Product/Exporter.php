@@ -340,7 +340,7 @@ class Exporter extends AbstractExporter
 
         return array_values(array_filter($items, function ($item) use ($required) {
             $missing = array_values(array_filter(
-                $required,
+                $this->requiredFieldsFor($item, $required),
                 fn ($code) => ! isset($item[$code]) || $item[$code] === '' || $item[$code] === null
             ));
 
@@ -352,6 +352,28 @@ class Exporter extends AbstractExporter
 
             return false;
         }));
+    }
+
+    private const CONFIGURABLE_SKIPPED_FIELDS = [
+        'price',
+        'cost',
+        'special_price',
+        'special_price_from',
+        'special_price_to',
+        'length',
+        'width',
+        'height',
+        'weight',
+        'manage_stock',
+    ];
+
+    private function requiredFieldsFor(array $item, array $required): array
+    {
+        if (($item['type'] ?? null) !== ProductType::CONFIGURABLE->value) {
+            return $required;
+        }
+
+        return array_values(array_diff($required, self::CONFIGURABLE_SKIPPED_FIELDS));
     }
 
     public function prepareBagistoProducts(JobTrackBatchContract $batch, $filePath): array
@@ -470,7 +492,7 @@ class Exporter extends AbstractExporter
 
         $this->applyFixedValues($mergedFields, $item['parent'] ?? null);
 
-        $this->generateUrlKey($mergedFields);
+        $this->generateUrlKey($mergedFields, $item);
 
         $this->applyAssociationsAndCategories($item, $mergedFields);
 
@@ -746,14 +768,23 @@ class Exporter extends AbstractExporter
         $mergedFields = $mapAttributeValues;
     }
 
-    private function generateUrlKey(array &$mergedFields): void
+    private function generateUrlKey(array &$mergedFields, array $item = []): void
     {
+        if (empty($mergedFields['url_key']) && $this->hidesUrlKey($item)) {
+            $mergedFields['url_key'] = $this->bagistoSkuFor($item);
+        }
+
         if (! empty($mergedFields['url_key'])) {
             $slug = $this->createSlug($mergedFields['url_key']);
             $slugCount = array_count_values($this->urlKey)[$slug] ?? 0;
             $mergedFields['url_key'] = $slugCount ? $slug.'-'.$slugCount : $slug;
             $this->urlKey[] = $slug;
         }
+    }
+
+    private function hidesUrlKey(array $item): bool
+    {
+        return $this->isConfigurableProduct($item) || $this->isSimpleProductWithParent($item);
     }
 
     private function applyAssociationsAndCategories(array $item, array &$mergedFields): void

@@ -6,6 +6,7 @@ use Tests\TestCase;
 use Webkul\Bagisto\Enums\Export\ProductFilter;
 use Webkul\Bagisto\Enums\Export\ProductStatus;
 use Webkul\Bagisto\Validators\JobInstances\Export\ProductJobValidator;
+use Webkul\DataTransfer\Enums\ProductFilter as CoreProductFilter;
 
 class ExportersConfigTest extends TestCase
 {
@@ -45,7 +46,22 @@ class ExportersConfigTest extends TestCase
         $picker = collect(config('exporters.bagisto_categories.filters.fields'))
             ->firstWhere('name', ProductFilter::CATEGORY_CODES->value);
 
-        $this->assertSame('category-tree', $picker['type']);
+        $this->assertSame('bagisto-category-tree', $picker['type']);
+
+        $this->assertSame(
+            ['field' => ProductFilter::CHANNEL->value, 'as' => ProductFilter::CHANNEL->value],
+            $picker['depends_on']
+        );
+
+        $productPicker = collect(config('exporters.bagisto_product.filters.fields'))
+            ->firstWhere('name', CoreProductFilter::CATEGORIES->value);
+
+        $this->assertSame('bagisto-category-tree', $productPicker['type']);
+
+        $this->assertSame(
+            ['field' => ProductFilter::CHANNEL->value, 'as' => ProductFilter::CHANNEL->value],
+            $productPicker['depends_on']
+        );
     }
 
     public function test_no_connector_filter_claims_a_core_scope_name()
