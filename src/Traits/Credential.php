@@ -4,17 +4,18 @@ namespace Webkul\Bagisto\Traits;
 
 use Illuminate\Support\Facades\Cache;
 use Webkul\Bagisto\Enums\Export\CacheType;
+use Webkul\Bagisto\Support\CredentialScope;
 
 trait Credential
 {
     use EncryptableTrait;
 
-    /**
-     * Initializes Credential for the export process.
-     */
     protected function initializeCredential($filters): void
     {
-        $this->credential = Cache::get(CacheType::CREDENTIAL->value, []);
+        $cacheKey = CacheType::CREDENTIAL->forCredential($filters['credentials'] ?? null);
+
+        $this->credential = Cache::get($cacheKey, []);
+
         if (empty($this->credential)) {
             $activeCredential = $this->credentialRepository->find($filters['credentials']);
             if ($activeCredential) {
@@ -28,7 +29,7 @@ trait Credential
                 ];
             }
 
-            Cache::put(CacheType::CREDENTIAL->value, $this->credential, config('session.lifetime'));
+            Cache::put($cacheKey, $this->credential, config('session.lifetime'));
         }
     }
 
@@ -39,37 +40,12 @@ trait Credential
 
     protected function getMappedLocales(): array
     {
-        $locales = [];
-        foreach ($this->decodeStoreInfo() as $data) {
-            if (isset($data['locales'], $data['channel']) && ! empty($data['channel'])) {
-                $locales[array_key_first($data['channel'])] = $data['locales'];
-            }
-        }
-
-        return $locales;
+        return CredentialScope::localeMap($this->credential['store_info'] ?? []);
     }
 
-    /**
-     * Decode the credential's store mappings, dropping the empty or malformed
-     * entries a partially saved mapping form can leave behind.
-     */
     protected function decodeStoreInfo(): array
     {
-        $decoded = [];
-
-        foreach ((array) ($this->credential['store_info'] ?? []) as $storeInfo) {
-            if (! is_string($storeInfo) || trim($storeInfo) === '') {
-                continue;
-            }
-
-            $data = json_decode($storeInfo, true);
-
-            if (is_array($data) && $data !== []) {
-                $decoded[] = $data;
-            }
-        }
-
-        return $decoded;
+        return CredentialScope::decode($this->credential['store_info'] ?? []);
     }
 
     protected function findMappedChannel(string $channel): ?string
@@ -90,13 +66,6 @@ trait Credential
 
     protected function getMappedChannels(): array
     {
-        $channel = [];
-        foreach ($this->decodeStoreInfo() as $data) {
-            if (! empty($data['channel'])) {
-                $channel[array_key_first($data['channel'])] = $data['channel'][array_key_first($data['channel'])];
-            }
-        }
-
-        return $channel;
+        return CredentialScope::channelMap($this->credential['store_info'] ?? []);
     }
 }

@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto Filtreleri',
@@ -26,6 +25,12 @@ return [
             'type'               => 'Ürün Türü',
             'channel'            => 'Kanal',
             'locale'             => 'Yerel Ayar',
+            'channels'           => 'Kanallar',
+            'channels-info'      => 'Yalnızca seçili kimlik bilgisiyle eşlenen kanallar. Eşlenen tüm kanalları dışa aktarmak için boş bırakın.',
+            'locales'            => 'Diller',
+            'locales-info'       => 'Yalnızca seçili kimlik bilgisiyle eşlenen diller. Eşlenen tüm dilleri dışa aktarmak için boş bırakın.',
+            'categories'         => 'Kategoriler',
+            'categories-info'    => 'Yalnızca bu kategoriler dışa aktarılır. Üst kategorileri de dışa aktarılır, böylece ağaç eksiksiz ulaşır.',
             'code'               => 'Koda Göre Filtrele',
             'sku'                => 'SKU\'ya Göre Filtrele',
             'all'                => 'Tümü',
@@ -33,22 +38,24 @@ return [
             'false'              => 'Devre Dışı (Yanlış)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => 'Kimlik bilgileri',
+                'attribute-mapping' => 'Öznitelik eşleme',
+                'category-mapping'  => 'Kategori Alanları Eşleştirme',
+            ],
             'index' => [
                 'title'      => 'Kimlik Bilgileri',
                 'invalid'    => 'Geçersiz Kimlik Bilgisi',
                 'create-btn' => 'Kimlik Bilgisi Oluştur',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'Mağaza URL\'si',
                     'email'    => 'E-posta Adresi',
                     'edit'     => 'Düzenle',
                     'delete'   => 'Sil',
                 ],
-
                 'create' => [
                     'title'    => 'Kimlik Bilgisi Oluştur',
                     'shop_url' => 'Mağaza URL\'si',
@@ -56,12 +63,10 @@ return [
                     'password' => 'Şifre',
                     'save-btn' => 'Kaydet',
                 ],
-
                 'create-success' => 'Kimlik bilgisi başarıyla oluşturuldu.',
                 'update-success' => 'Kimlik bilgisi başarıyla güncellendi.',
                 'delete-success' => 'Kimlik bilgisi başarıyla silindi.',
             ],
-
             'edit' => [
                 'title'                     => 'Kimlik Bilgisini Düzenle',
                 'shop_url'                  => 'Mağaza URL\'si',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'UnoPim Kanalı',
                 'unopim-locale'             => 'UnoPim Yerel Ayarı',
                 'credential'                => 'Kimlik Bilgisi',
+                'select-unopim-channel'     => 'UnoPim kanalı seçin',
+                'select-unopim-locale'      => 'UnoPim dili seçin',
+                'server-down'               => 'Bagisto sunucusu şu anda çalışmıyor; lütfen kimlik bilgilerini güncelleyin veya sunucuyu yeniden başlatın.',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'Kategori Alanları eşleştirmesi başarıyla kaydedildi',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Kimlik bilgisi bulunamadı.',
+                'attribute-not-found'         => 'Öznitelik bulunamadı.',
+                'no-locale-mapping'           => ':count kategori dışa aktarılmadı: kullanılabilir bir dil eşlemesi yok. Kimlik bilgisini açın ve kanal ile dil eşlemesini yeniden kaydedin.',
+                'no-attribute-locale-mapping' => ':count öznitelik dışa aktarılmadı: seçili kanalların Bagisto dil eşlemesi yok. Kimlik bilgisini açın ve kanal ile dil eşlemesini kaydedin.',
+                'invalid-locale-mapping'      => 'Dil eşleme girdisi yok sayıldı: “:locale” Bagisto dili için bir UnoPim dil kodu bekleniyordu, :given alındı.',
+                'category-ancestors-added'    => 'Seçili kategorilerin ağaçtaki yerini koruyabilmesi için dışa aktarıma :count üst kategori eklendi: :categories',
+                'variant-group-flattened'     => 'Ürün :identifier: varyant grubu kendi varyantlarına düzleştirildi.',
+            ],
+            'skipped' => [
+                'skipped-heading'          => ':count ürün dışa aktarılmadı',
+                'skipped-description'      => 'Bu ürünler UnoPim içinde kaldı. Aşağıdaki nedeni giderip dışa aktarmayı yeniden çalıştırın — indirme günlüğünde tüm ayrıntılar var.',
+                'skipped-reason'           => 'Neden dışa aktarılmadı',
+                'excluded-heading'         => ':count dosya dışa aktarımın dışında bırakıldı',
+                'excluded-description'     => 'Bu ürünler Bagisto’ya ulaştı, ancak aşağıdaki dosyalar dışarıda kaldı. Diğer her şey normal şekilde dışa aktarıldı.',
+                'excluded-reason'          => 'Dosya neden dışarıda bırakıldı',
+                'product'                  => 'Ürün',
+                'missing-required-fields'  => ':identifier ürünü dışa aktarılmadı: Bagisto :fields alanlarını zorunlu tutuyor ve eşlenen UnoPim özniteliğinin bu ürün için değeri yoktu. Bir değer girin veya Öznitelik eşleme sekmesinde alana sabit bir değer verin.',
+                'unsupported-type'         => ':identifier ürünü dışa aktarılmadı: :type ürün türünün Bagisto’da karşılığı yok.',
+                'no-scope-match'           => ':identifier ürünü dışa aktarılmadı: seçilen kanalların ve yerel ayarların hiçbiri bu Bagisto mağazasıyla eşlenmemiş.',
+                'rejected-by-bagisto'      => ':identifier ürünü Bagisto tarafından reddedildi: :errors',
+                'request-failed'           => ':identifier ürünü dışa aktarılmadı çünkü Bagisto’ya yapılan istek başarısız oldu: :errors',
+                'unsupported-media-type'   => ':identifier ürünü: :file dosyası dışarıda bırakıldı çünkü Bagisto ürün görselleri yalnızca görsel dosyalarını kabul eder.',
+                'unsupported-image-format' => ':identifier ürünü: :file dosyası dışarıda bırakıldı çünkü Bagisto bu görsel biçimini çözemiyor. JPG, PNG, GIF, WEBP, BMP veya AVIF kullanın.',
+                'media-not-found'          => ':identifier ürünü: :file dosyası dışarıda bırakıldı çünkü dosya artık depolamada yok.',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => 'Özellik Eşleştirmeleri',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'veri:',
                     'flash-message'     => 'Lütfen geçerli bir özellik kodu ve türü belirtin.',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => 'Ek Özellik Eşleştirmeleri',
-                    'description' => 'Ek bir özellik eklemek ve eşleştirmek için Bagisto özellik kodunu yazın.',
+                    'title'            => 'Ek Özellik Eşleştirmeleri',
+                    'description'      => 'Ek bir özellik eklemek ve eşleştirmek için Bagisto özellik kodunu yazın.',
+                    'attribute-code'   => 'Bagisto öznitelik kodu',
+                    'attribute-type'   => 'Öznitelik türü',
+                    'added'            => 'Ek öznitelik eşlemesi eklendi.',
+                    'removed'          => 'Ek öznitelik eşlemesi kaldırıldı.',
+                    'duplicate'        => 'Bu öznitelik kodu zaten eşlenmiş.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Yapılandırılabilir Özellik Eşleştirmeleri',
                     'description' => 'Ek bir özellik eklemek ve eşleştirmek için Bagisto özellik kodunu yazın.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Kategori Alanları Eşleştirmeleri',
                     'save'                   => 'Kaydet',

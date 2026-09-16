@@ -6,14 +6,12 @@ use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvi
 
 class EventServiceProvider extends ServiceProvider
 {
-    /**
-     * The event handler mappings for the application.
-     *
-     * @var array
-     */
     protected $listen = [
         'data_transfer.exports.update.after' => [
             'Webkul\Bagisto\Listeners\Export@afterUpdate',
+        ],
+        'data_transfer.export.completed' => [
+            'Webkul\Bagisto\Listeners\Export@afterCompleted',
         ],
         'catalog.category_field.create.after' => [
             'Webkul\Bagisto\Listeners\CategoryField@afterCreateOrUpdate',

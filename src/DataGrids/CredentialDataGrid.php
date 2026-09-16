@@ -2,12 +2,13 @@
 
 namespace Webkul\Bagisto\DataGrids;
 
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Webkul\DataGrid\DataGrid;
 
 class CredentialDataGrid extends DataGrid
 {
-    public function prepareQueryBuilder()
+    public function prepareQueryBuilder(): Builder
     {
         $queryBuilder = DB::table('wk_bagisto_credential')
             ->select(
@@ -19,7 +20,7 @@ class CredentialDataGrid extends DataGrid
         return $queryBuilder;
     }
 
-    public function prepareColumns()
+    public function prepareColumns(): void
     {
         $this->addColumn([
             'index'      => 'id',
@@ -37,6 +38,8 @@ class CredentialDataGrid extends DataGrid
             'searchable' => true,
             'filterable' => true,
             'sortable'   => true,
+            'closure'    => fn ($row) => '<span class="block max-w-[260px] truncate align-middle" title="'
+                .e($row->shop_url).'">'.e($row->shop_url).'</span>',
         ]);
 
         $this->addColumn([
@@ -49,7 +52,7 @@ class CredentialDataGrid extends DataGrid
         ]);
     }
 
-    public function prepareActions()
+    public function prepareActions(): void
     {
         if (bouncer()->hasPermission('bagisto.credentials.edit')) {
             $this->addAction([

@@ -6,10 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StandardAttributeRequest extends FormRequest
 {
-    /**
-     * Prepare data before validation.
-     */
-    protected function prepareForValidation()
+    protected function prepareForValidation(): void
     {
         if ($this->has('standard_attributes')) {
             $decoded = json_decode($this->input('standard_attributes'), true);
@@ -21,10 +18,7 @@ class StandardAttributeRequest extends FormRequest
         }
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     */
-    public function rules()
+    public function rules(): array
     {
         $bagistoAttributes = config('bagisto-attributes');
 

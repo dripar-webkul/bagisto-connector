@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Mga Filter ng Bagisto',
@@ -26,6 +25,12 @@ return [
             'type'               => 'Uri ng Produkto',
             'channel'            => 'Channel',
             'locale'             => 'Wikang Pinagmulan',
+            'channels'           => 'Mga Channel',
+            'channels-info'      => 'Ang mga channel lamang na naka-map sa napiling kredensyal. Iwanang blangko upang i-export ang lahat ng naka-map na channel.',
+            'locales'            => 'Mga Locale',
+            'locales-info'       => 'Ang mga locale lamang na naka-map sa napiling kredensyal. Iwanang blangko upang i-export ang lahat ng naka-map na locale.',
+            'categories'         => 'Mga Kategorya',
+            'categories-info'    => 'Ang mga kategoryang ito lamang ang ie-export. Ie-export din ang kanilang mga magulang na kategorya upang buo ang dating ng puno.',
             'code'               => 'I-filter ayon sa Code',
             'sku'                => 'I-filter ayon sa SKU',
             'all'                => 'Lahat',
@@ -33,22 +38,24 @@ return [
             'false'              => 'Naka-disable (Hindi Totoo)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => 'Kredensyal',
+                'attribute-mapping' => 'Pagmamapa ng attribute',
+                'category-mapping'  => 'Pagmamapa ng mga Field ng Kategorya',
+            ],
             'index' => [
                 'title'      => 'Mga Kredensyal',
                 'invalid'    => 'Hindi Wastong Kredensyal',
                 'create-btn' => 'Gumawa ng Kredensyal',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'URL ng Tindahan',
                     'email'    => 'Email Address',
                     'edit'     => 'I-edit',
                     'delete'   => 'Tanggalin',
                 ],
-
                 'create' => [
                     'title'    => 'Gumawa ng Kredensyal',
                     'shop_url' => 'URL ng Tindahan',
@@ -56,12 +63,10 @@ return [
                     'password' => 'Password',
                     'save-btn' => 'I-save',
                 ],
-
                 'create-success' => 'Matagumpay na nagawa ang kredensyal.',
                 'update-success' => 'Matagumpay na na-update ang kredensyal.',
                 'delete-success' => 'Matagumpay na natanggal ang kredensyal.',
             ],
-
             'edit' => [
                 'title'                     => 'I-edit ang Kredensyal',
                 'shop_url'                  => 'URL ng Tindahan',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'Channel ng UnoPim',
                 'unopim-locale'             => 'Wikang Pinagmulan ng UnoPim',
                 'credential'                => 'Kredensyal',
+                'select-unopim-channel'     => 'Pumili ng UnoPim Channel',
+                'select-unopim-locale'      => 'Pumili ng UnoPim Locale',
+                'server-down'               => 'Down ang Bagisto server ngayon; pakibago ang kredensyal o i-restart ang server.',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'Matagumpay na na-save ang pagmamapa ng mga field ng kategorya',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Hindi natagpuan ang kredensyal.',
+                'attribute-not-found'         => 'Hindi natagpuan ang attribute.',
+                'no-locale-mapping'           => ':count na kategorya ang hindi na-export: walang magamit na locale mapping. Buksan ang kredensyal at i-save muli ang channel at locale mapping.',
+                'no-attribute-locale-mapping' => ':count na attribute ang hindi na-export: walang Bagisto locale mapping ang mga napiling channel. Buksan ang kredensyal at i-save ang channel at locale mapping.',
+                'invalid-locale-mapping'      => 'Hindi pinansin ang entry ng locale mapping: inaasahan ang UnoPim locale code para sa Bagisto locale na “:locale”, ngunit :given ang natanggap.',
+                'category-ancestors-added'    => ':count na magulang na kategorya ang idinagdag sa export upang mapanatili ng mga napiling kategorya ang kanilang puwesto sa puno: :categories',
+                'variant-group-flattened'     => 'Produkto :identifier: pinatag ang variant group sa mga variant nito.',
+            ],
+            'skipped' => [
+                'skipped-heading'          => ':count (na) produkto ang hindi na-export',
+                'skipped-description'      => 'Nanatili sa UnoPim ang mga produktong ito. Ayusin ang dahilan sa ibaba at patakbuhin muli ang export — nasa download log ang buong detalye.',
+                'skipped-reason'           => 'Bakit hindi na-export',
+                'excluded-heading'         => ':count (na) file ang hindi kasama sa export',
+                'excluded-description'     => 'Nakarating sa Bagisto ang mga produktong ito, ngunit nilaktawan ang mga file sa ibaba. Normal na na-export ang lahat ng iba pa.',
+                'excluded-reason'          => 'Bakit nilaktawan ang file',
+                'product'                  => 'Produkto',
+                'missing-required-fields'  => 'Hindi na-export ang produktong :identifier: kailangan ng Bagisto ang :fields, at walang halaga ang naka-map na UnoPim attribute para sa produktong ito. Maglagay ng halaga, o bigyan ang field ng Fixed Value sa tab na Pagmamapa ng attribute.',
+                'unsupported-type'         => 'Hindi na-export ang produktong :identifier: walang katumbas sa Bagisto ang uri ng produktong :type.',
+                'no-scope-match'           => 'Hindi na-export ang produktong :identifier: wala sa mga napiling channel at locale ang naka-map sa Bagisto store na ito.',
+                'rejected-by-bagisto'      => 'Tinanggihan ng Bagisto ang produktong :identifier: :errors',
+                'request-failed'           => 'Hindi na-export ang produktong :identifier dahil nabigo ang request sa Bagisto: :errors',
+                'unsupported-media-type'   => 'Produktong :identifier: nilaktawan ang :file dahil mga image file lang ang tinatanggap ng mga larawan ng produkto sa Bagisto.',
+                'unsupported-image-format' => 'Produktong :identifier: nilaktawan ang :file dahil hindi ma-decode ng Bagisto ang format na iyon. Gumamit ng JPG, PNG, GIF, WEBP, BMP o AVIF.',
+                'media-not-found'          => 'Produktong :identifier: nilaktawan ang :file dahil wala na ang file sa storage.',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => 'Mga Pagmamapa ng Katangian',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'data:',
                     'flash-message'     => 'Mangyaring magbigay ng wastong code at uri ng katangian.',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => 'Mga Karagdagang Pagmamapa ng Katangian',
-                    'description' => 'Isulat ang code ng katangian ng Bagisto upang magdagdag ng karagdagang katangian at i-map ito.',
+                    'title'            => 'Mga Karagdagang Pagmamapa ng Katangian',
+                    'description'      => 'Isulat ang code ng katangian ng Bagisto upang magdagdag ng karagdagang katangian at i-map ito.',
+                    'attribute-code'   => 'Bagisto attribute code',
+                    'attribute-type'   => 'Uri ng attribute',
+                    'added'            => 'Naidagdag ang karagdagang pagmamapa ng attribute.',
+                    'removed'          => 'Inalis ang karagdagang attribute mapping.',
+                    'duplicate'        => 'Naka-map na ang attribute code na iyon.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Mga Pagmamapa ng Nako-configure na Katangian',
                     'description' => 'Isulat ang code ng katangian ng Bagisto upang magdagdag ng karagdagang katangian at i-map ito.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Mga Pagmamapa ng mga Field ng Kategorya',
                     'save'                   => 'I-save',

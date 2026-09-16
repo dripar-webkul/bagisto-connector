@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto-filtre',
@@ -26,6 +25,12 @@ return [
             'type'               => 'Produkttype',
             'channel'            => 'Kanal',
             'locale'             => 'Kildelokalisering',
+            'channels'           => 'Kanaler',
+            'channels-info'      => 'Bare kanalene som er tilknyttet den valgte legitimasjonen. La stå tomt for å eksportere alle tilknyttede kanaler.',
+            'locales'            => 'Språk',
+            'locales-info'       => 'Bare språkene som er tilknyttet den valgte legitimasjonen. La stå tomt for å eksportere alle tilknyttede språk.',
+            'categories'         => 'Kategorier',
+            'categories-info'    => 'Bare disse kategoriene eksporteres. De overordnede kategoriene eksporteres også, slik at treet kommer frem intakt.',
             'code'               => 'Filtrer etter kode',
             'sku'                => 'Filtrer etter SKU',
             'all'                => 'Alle',
@@ -33,22 +38,24 @@ return [
             'false'              => 'Deaktivert (Usann)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => 'Legitimasjon',
+                'attribute-mapping' => 'Attributtilordning',
+                'category-mapping'  => 'Kategorifeltmapping',
+            ],
             'index' => [
                 'title'      => 'Legitimasjon',
                 'invalid'    => 'Ugyldig legitimasjon',
                 'create-btn' => 'Opprett legitimasjon',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'Butikk-URL',
                     'email'    => 'E-postadresse',
                     'edit'     => 'Rediger',
                     'delete'   => 'Slett',
                 ],
-
                 'create' => [
                     'title'    => 'Opprett legitimasjon',
                     'shop_url' => 'Butikk-URL',
@@ -56,12 +63,10 @@ return [
                     'password' => 'Passord',
                     'save-btn' => 'Lagre',
                 ],
-
                 'create-success' => 'Legitimasjon ble opprettet.',
                 'update-success' => 'Legitimasjon ble oppdatert.',
                 'delete-success' => 'Legitimasjon ble slettet.',
             ],
-
             'edit' => [
                 'title'                     => 'Rediger legitimasjon',
                 'shop_url'                  => 'Butikk-URL',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'UnoPim-kanal',
                 'unopim-locale'             => 'UnoPim-kildelokalisering',
                 'credential'                => 'Legitimasjon',
+                'select-unopim-channel'     => 'Velg UnoPim-kanal',
+                'select-unopim-locale'      => 'Velg UnoPim-språk',
+                'server-down'               => 'Bagisto-serveren er nede nå; oppdater legitimasjonen eller start serveren på nytt.',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'Mappingen av kategorifelt er lagret',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Legitimasjonen ble ikke funnet.',
+                'attribute-not-found'         => 'Attributtet ble ikke funnet.',
+                'no-locale-mapping'           => ':count kategorier ble ikke eksportert: ingen brukbar språktilknytning. Åpne legitimasjonen og lagre kanal- og språktilknytningen på nytt.',
+                'no-attribute-locale-mapping' => ':count attributter ble ikke eksportert: de valgte kanalene har ingen Bagisto-språktilknytning. Åpne legitimasjonen og lagre kanal- og språktilknytningen.',
+                'invalid-locale-mapping'      => 'Oppføringen for språktilknytning ble ignorert: forventet en UnoPim-språkkode for Bagisto-språket «:locale», men fikk :given.',
+                'category-ancestors-added'    => ':count overordnede kategorier ble lagt til i eksporten slik at de valgte kategoriene beholder plassen sin i treet: :categories',
+                'variant-group-flattened'     => 'Produkt :identifier: variantgruppen ble flatet ut til variantene sine.',
+            ],
+            'skipped' => [
+                'skipped-heading'          => ':count produkt(er) ble ikke eksportert',
+                'skipped-description'      => 'Disse produktene ble værende i UnoPim. Rett årsaken nedenfor og kjør eksporten på nytt — nedlastingsloggen inneholder alle detaljer.',
+                'skipped-reason'           => 'Hvorfor det ikke ble eksportert',
+                'excluded-heading'         => ':count fil(er) ble utelatt fra eksporten',
+                'excluded-description'     => 'Disse produktene nådde Bagisto, men filene nedenfor ble utelatt. Alt annet ble eksportert som normalt.',
+                'excluded-reason'          => 'Hvorfor filen ble utelatt',
+                'product'                  => 'Produkt',
+                'missing-required-fields'  => 'Produktet :identifier ble ikke eksportert: Bagisto krever :fields, og det tilordnede UnoPim-attributtet hadde ingen verdi for dette produktet. Angi en verdi, eller gi feltet en fast verdi i fanen Attributtilordning.',
+                'unsupported-type'         => 'Produktet :identifier ble ikke eksportert: produkttypen :type har ingen tilsvarende type i Bagisto.',
+                'no-scope-match'           => 'Produktet :identifier ble ikke eksportert: ingen av de valgte kanalene og språkene er tilordnet denne Bagisto-butikken.',
+                'rejected-by-bagisto'      => 'Produktet :identifier ble avvist av Bagisto: :errors',
+                'request-failed'           => 'Produktet :identifier ble ikke eksportert fordi forespørselen til Bagisto mislyktes: :errors',
+                'unsupported-media-type'   => 'Produkt :identifier: :file ble utelatt fordi Bagistos produktbilder bare godtar bildefiler.',
+                'unsupported-image-format' => 'Produkt :identifier: :file ble utelatt fordi Bagisto ikke kan dekode det bildeformatet. Bruk JPG, PNG, GIF, WEBP, BMP eller AVIF.',
+                'media-not-found'          => 'Produkt :identifier: :file ble utelatt fordi filen ikke lenger finnes i lagringen.',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => 'Attributtmappinger',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'data:',
                     'flash-message'     => 'Angi en gyldig attributtkode og -type.',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => 'Tilleggsattributtmappinger',
-                    'description' => 'Skriv Bagisto-attributtkoden for å legge til et tilleggsattributt og mappe det.',
+                    'title'            => 'Tilleggsattributtmappinger',
+                    'description'      => 'Skriv Bagisto-attributtkoden for å legge til et tilleggsattributt og mappe det.',
+                    'attribute-code'   => 'Bagisto-attributtkode',
+                    'attribute-type'   => 'Attributtype',
+                    'added'            => 'Ekstra attributtilordning lagt til.',
+                    'removed'          => 'Tilleggsattributtkobling fjernet.',
+                    'duplicate'        => 'Den attributtkoden er allerede tilordnet.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Konfigurerbare attributtmappinger',
                     'description' => 'Skriv Bagisto-attributtkoden for å legge til et tilleggsattributt og mappe det.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Kategorifeltmappinger',
                     'save'                   => 'Lagre',

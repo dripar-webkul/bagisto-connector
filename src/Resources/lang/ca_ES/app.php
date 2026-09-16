@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Filtres de Bagisto',
@@ -26,6 +25,12 @@ return [
             'type'               => 'Tipus de producte',
             'channel'            => 'Canal',
             'locale'             => 'Configuració regional',
+            'channels'           => 'Canals',
+            'channels-info'      => 'Només els canals assignats a la credencial seleccionada. Deixeu-ho buit per exportar tots els canals assignats.',
+            'locales'            => 'Idiomes',
+            'locales-info'       => 'Només els idiomes assignats a la credencial seleccionada. Deixeu-ho buit per exportar tots els idiomes assignats.',
+            'categories'         => 'Categories',
+            'categories-info'    => 'Només s\'exporten aquestes categories. Les seves categories pare també s\'exporten, de manera que l\'arbre arriba intacte.',
             'code'               => 'Filtra per codi',
             'sku'                => 'Filtra per SKU',
             'all'                => 'Totes',
@@ -33,22 +38,24 @@ return [
             'false'              => 'Deshabilitat (Fals)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => 'Credencials',
+                'attribute-mapping' => 'Mapatge d\'atributs',
+                'category-mapping'  => 'Mapatge de camps de categoria',
+            ],
             'index' => [
                 'title'      => 'Credencials',
                 'invalid'    => 'Credencial no vàlida',
                 'create-btn' => 'Crea credencial',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'URL de la botiga',
                     'email'    => 'Adreça electrònica',
                     'edit'     => 'Edita',
                     'delete'   => 'Elimina',
                 ],
-
                 'create' => [
                     'title'    => 'Crea credencial',
                     'shop_url' => 'URL de la botiga',
@@ -56,12 +63,10 @@ return [
                     'password' => 'Contrasenya',
                     'save-btn' => 'Desa',
                 ],
-
                 'create-success' => 'Credencial creada correctament.',
                 'update-success' => 'Credencial actualitzada correctament.',
                 'delete-success' => 'Credencial eliminada correctament.',
             ],
-
             'edit' => [
                 'title'                     => 'Edita credencial',
                 'shop_url'                  => 'URL de la botiga',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'Canal d\'UnoPim',
                 'unopim-locale'             => 'Configuració regional d\'UnoPim',
                 'credential'                => 'Credencial',
+                'select-unopim-channel'     => 'Seleccioneu un canal d\'UnoPim',
+                'select-unopim-locale'      => 'Seleccioneu un idioma d\'UnoPim',
+                'server-down'               => 'El servidor Bagisto està caigut ara; si us plau, actualitzeu les credencials o reinicieu el servidor.',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'El mapatge de camps de categoria s\'ha desat correctament',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'No s\'ha trobat la credencial.',
+                'attribute-not-found'         => 'No s\'ha trobat l\'atribut.',
+                'no-locale-mapping'           => 'No s\'han exportat :count categories: no hi ha cap assignació d\'idioma utilitzable. Obriu la credencial i torneu a desar l\'assignació de canal i idioma.',
+                'no-attribute-locale-mapping' => 'No s\'han exportat :count atributs: els canals seleccionats no tenen cap assignació d\'idioma de Bagisto. Obriu la credencial i deseu l\'assignació de canal i idioma.',
+                'invalid-locale-mapping'      => 'S\'ha ignorat l\'entrada d\'assignació d\'idioma: s\'esperava un codi d\'idioma d\'UnoPim per a l\'idioma de Bagisto «:locale», s\'ha rebut :given.',
+                'category-ancestors-added'    => 'S\'han afegit :count categories pare a l\'exportació perquè les categories seleccionades mantinguin el seu lloc a l\'arbre: :categories',
+                'variant-group-flattened'     => 'Producte :identifier: el grup de variants s\'ha aplanat en les seves variants.',
+            ],
+            'skipped' => [
+                'skipped-heading'          => ':count producte(s) no s\'han exportat',
+                'skipped-description'      => 'Aquests productes s\'han quedat a UnoPim. Corregiu la causa indicada a sota i torneu a executar l\'exportació — el registre de baixada té tot el detall.',
+                'skipped-reason'           => 'Per què no s\'ha exportat',
+                'excluded-heading'         => ':count fitxer(s) han quedat fora de l\'exportació',
+                'excluded-description'     => 'Aquests productes han arribat a Bagisto, però els fitxers següents han quedat fora. Tota la resta s\'ha exportat amb normalitat.',
+                'excluded-reason'          => 'Per què s\'ha omès el fitxer',
+                'product'                  => 'Producte',
+                'missing-required-fields'  => 'El producte :identifier no s\'ha exportat: Bagisto requereix :fields, i l\'atribut d\'UnoPim assignat no tenia cap valor per a aquest producte. Assigneu un valor o doneu al camp un valor fix a la pestanya Mapatge d\'atributs.',
+                'unsupported-type'         => 'El producte :identifier no s\'ha exportat: el tipus de producte :type no té equivalent a Bagisto.',
+                'no-scope-match'           => 'El producte :identifier no s\'ha exportat: cap dels canals i locales seleccionats està assignat a aquesta botiga Bagisto.',
+                'rejected-by-bagisto'      => 'Bagisto ha rebutjat el producte :identifier: :errors',
+                'request-failed'           => 'El producte :identifier no s\'ha exportat perquè la sol·licitud a Bagisto ha fallat: :errors',
+                'unsupported-media-type'   => 'Producte :identifier: :file s\'ha omès perquè les imatges de producte de Bagisto només admeten fitxers d\'imatge.',
+                'unsupported-image-format' => 'Producte :identifier: :file s\'ha omès perquè Bagisto no pot descodificar aquest format d\'imatge. Feu servir JPG, PNG, GIF, WEBP, BMP o AVIF.',
+                'media-not-found'          => 'Producte :identifier: :file s\'ha omès perquè el fitxer ja no es troba a l\'emmagatzematge.',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => 'Mapatges d\'atributs',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'dades:',
                     'flash-message'     => 'Proporcioneu un codi i un tipus d\'atribut vàlids.',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => 'Mapatges d\'atributs addicionals',
-                    'description' => 'Escriviu el codi d\'atribut de Bagisto per afegir un atribut addicional i mapar-lo.',
+                    'title'            => 'Mapatges d\'atributs addicionals',
+                    'description'      => 'Escriviu el codi d\'atribut de Bagisto per afegir un atribut addicional i mapar-lo.',
+                    'attribute-code'   => 'Codi d\'atribut de Bagisto',
+                    'attribute-type'   => 'Tipus d\'atribut',
+                    'added'            => 'Mapatge d\'atribut addicional afegit.',
+                    'removed'          => 'Mapatge d\'atribut addicional eliminat.',
+                    'duplicate'        => 'Aquest codi d\'atribut ja està assignat.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Mapatges d\'atributs configurables',
                     'description' => 'Escriviu el codi d\'atribut de Bagisto per afegir un atribut addicional i mapar-lo.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Mapatges de camps de categoria',
                     'save'                   => 'Desa',

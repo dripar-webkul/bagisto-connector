@@ -2,17 +2,22 @@
 
 use Illuminate\Support\Facades\Route;
 use Webkul\Bagisto\Http\Controllers\CredentialController;
+use Webkul\Bagisto\Http\Controllers\FileController;
 use Webkul\Bagisto\Http\Controllers\Mappings\AttributeController;
 use Webkul\Bagisto\Http\Controllers\Mappings\CategoryFieldController;
 use Webkul\Bagisto\Http\Controllers\OptionController;
+use Webkul\Bagisto\Http\Controllers\SkippedItemsController;
 
-/**
- * bagisto plugin routes.
- */
+Route::prefix('bagisto')->withoutMiddleware(['admin'])->middleware('signed')->group(function () {
+    Route::get('asset/{path}', [FileController::class, 'fetchAsset'])
+        ->where('path', '.*')
+        ->name('bagisto.asset.fetch');
+});
+
 Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], function () {
     Route::prefix('bagisto')->group(function () {
-        Route::controller(CredentialController::class)->group(function () {
-            Route::prefix('credentials')->group(function () {
+        Route::prefix('credentials')->group(function () {
+            Route::controller(CredentialController::class)->group(function () {
                 Route::get('', 'index')->name('admin.bagisto.credentials.index');
 
                 Route::post('create', 'store')->name('admin.bagisto.credentials.store');
@@ -23,27 +28,20 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
 
                 Route::delete('{id}', 'destroy')->name('admin.bagisto.credentials.destroy');
             });
-        });
 
-        /** Attribute Mapping */
-        Route::controller(AttributeController::class)->group(function () {
-            Route::prefix('attributes-mapping')->group(function () {
-                Route::get('/{id}', 'index')->name('admin.bagisto.mappings.attributes.index');
-                Route::post('storeOrUpdate', 'storeOrUpdate')->name('admin.bagisto.mappings.attributes.store');
-                Route::post('add-attributes', 'addAdditionalAttributes')->name('admin.bagisto.attributes.add');
-                Route::post('remove-attributes', 'removeAdditionalAttributes')->name('admin.bagisto.attributes.remove');
+            Route::controller(AttributeController::class)->prefix('{credentialId}/attribute-mapping')->group(function () {
+                Route::get('', 'index')->name('admin.bagisto.credentials.attribute_mapping');
+                Route::post('', 'storeOrUpdate')->name('admin.bagisto.credentials.attribute_mapping.store');
+                Route::post('add-attributes', 'addAdditionalAttributes')->name('admin.bagisto.credentials.attribute_mapping.add');
+                Route::post('remove-attributes', 'removeAdditionalAttributes')->name('admin.bagisto.credentials.attribute_mapping.remove');
+            });
+
+            Route::controller(CategoryFieldController::class)->prefix('{credentialId}/category-mapping')->group(function () {
+                Route::get('', 'index')->name('admin.bagisto.credentials.category_mapping');
+                Route::post('', 'storeOrUpdate')->name('admin.bagisto.credentials.category_mapping.store');
             });
         });
 
-        /** Category Fields Mapping */
-        Route::controller(CategoryFieldController::class)->group(function () {
-            Route::prefix('category-fields-mapping')->group(function () {
-                Route::get('/{id}', 'index')->name('admin.bagisto.mappings.category_fields.index');
-                Route::post('storeOrUpdate', 'storeOrUpdate')->name('admin.bagisto.mappings.category_fields.store');
-            });
-        });
-
-        /** Get option data */
         Route::controller(OptionController::class)->group(function () {
             Route::get('get-bagisto-credentials', 'listBagistoCredential')->name('bagisto.credential.fetch-all');
 
@@ -53,6 +51,8 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
 
             Route::get('get-bagisto-locale', 'listLocale')->name('bagisto.locale.fetch-all');
 
+            Route::post('get-bagisto-category-tree', 'categoryTree')->name('bagisto.category.tree');
+
             Route::get('get-bagisto-family', 'listFamily')->name('bagisto.family.fetch-all');
 
             Route::get('get-bagisto-type', 'listType')->name('bagisto.type.fetch-all');
@@ -60,5 +60,8 @@ Route::group(['middleware' => ['admin'], 'prefix' => config('app.admin_url')], f
             Route::get('get-attributes', 'fetchAttribute')->name('admin.bagisto.attributes.fetch');
         });
 
+        Route::get('job-track/{trackId}/skipped-items', [SkippedItemsController::class, 'show'])
+            ->whereNumber('trackId')
+            ->name('admin.bagisto.job_track.skipped_items');
     });
 });

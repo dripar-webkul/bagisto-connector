@@ -51,20 +51,17 @@ class Exporter extends AbstractExporter
         parent::__construct($exportBatchRepository, $exportFileBuffer);
     }
 
-    /**
-     * Initializes the data for the export process.
-     */
-    public function initialize()
+    public function initialize(): void
     {
         $this->initializeCredential($this->getFilters());
 
         $this->standardAttributes = array_column(config('bagisto-attributes'), 'code');
     }
 
-    public function checkRequiredCondition()
+    public function checkRequiredCondition(): bool
     {
         if (empty($this->credential)) {
-            $this->jobLogger->warning('Credential not found!');
+            $this->jobLogger->warning(trans('bagisto::app.bagisto.export.errors.credential-not-found'));
 
             return true;
         }
@@ -72,9 +69,6 @@ class Exporter extends AbstractExporter
         return false;
     }
 
-    /**
-     * Start the export process
-     */
     public function exportBatch(JobTrackBatchContract $batch, $filePath): bool
     {
         $this->initialize();
@@ -92,10 +86,7 @@ class Exporter extends AbstractExporter
         return true;
     }
 
-    /**
-     * Get results based on filters.
-     */
-    protected function getResults()
+    protected function getResults(): \Iterator
     {
         $this->initialize();
 
@@ -108,16 +99,13 @@ class Exporter extends AbstractExporter
 
         return $attributeFamilyCodes
             ? $this->source->with(['familyGroups', 'attributeFamilyGroupMappings.customAttributes'])
-                ->whereIn('code', $this->convertCommaSeparatedToArray($attributeFamilyCodes))
+                ->whereIn('code', $this->parseIdentifiers($attributeFamilyCodes))
                 ->get()->getIterator()
             : $this->source->with(['familyGroups', 'attributeFamilyGroupMappings.customAttributes'])
                 ->all()->getIterator();
     }
 
-    /**
-     * Writes the export data.
-     */
-    public function write($items, $batchId)
+    public function write($items, $batchId): void
     {
         foreach ($items as $item) {
             $id = $item['id'];
@@ -159,10 +147,7 @@ class Exporter extends AbstractExporter
         }
     }
 
-    /**
-     * Prepare attribute Families from current batch
-     */
-    public function prepareAttributeFamilies(JobTrackBatchContract $batch, mixed $filePath)
+    public function prepareAttributeFamilies(JobTrackBatchContract $batch, mixed $filePath): array
     {
         $attributeFamilies = [];
         foreach ($batch->data as $rowData) {
@@ -172,9 +157,6 @@ class Exporter extends AbstractExporter
         return $attributeFamilies;
     }
 
-    /**
-     * Handles API response and sets mapping.
-     */
     protected function handleResponse($item, $response, $batchId, $mapData, $id): void
     {
         $this->mapResponseGroups($item, $response, $batchId);
@@ -184,9 +166,6 @@ class Exporter extends AbstractExporter
         }
     }
 
-    /**
-     * Maps response groups if not already mapped.
-     */
     private function mapResponseGroups($item, $response, $batchId): void
     {
         if (empty($response['groups'])) {
@@ -195,22 +174,19 @@ class Exporter extends AbstractExporter
         $groupIds = ! empty($item['attribute_groups']) ? array_keys($item['attribute_groups']) : [];
 
         foreach ($response['groups'] as $key => $groups) {
-            if (! $this->getMapping($this->credential['id'], null, $groups['id'], $item['code'].'|'.$groups['code'], null, 'groups') && isset($groupIds[$key])) {
+            if (! $this->getMapping($this->credential['id'], null, $groups['id'], $item['code'].'|'.$groups['code'], null, self::GROUP_ENTITY_TYPE) && isset($groupIds[$key])) {
                 $this->setMapping(
                     $this->credential['id'],
                     str_replace('group_', '', $groupIds[$key]),
                     $groups['id'],
                     $batchId,
                     $item['code'].'|'.$groups['code'],
-                    'groups'
+                    self::GROUP_ENTITY_TYPE
                 );
             }
         }
     }
 
-    /**
-     * Handles missing mappings by retrieving Bagisto families.
-     */
     private function handleMissingMapping($item, &$response, &$mapData, $batchId, $id): void
     {
         $bagistoFamily = $this->setApiRequest(MethodType::GET->value, self::GET_ENTITY_TYPE, [], ['id' => $item['code']]);
@@ -230,7 +206,7 @@ class Exporter extends AbstractExporter
         }
     }
 
-    public function convertToPayload($attributeGroups)
+    public function convertToPayload($attributeGroups): array
     {
         $transformedArray = [];
 
@@ -243,14 +219,11 @@ class Exporter extends AbstractExporter
         return $transformedArray;
     }
 
-    protected function afterMappingResendRequest($response, $item, $batchId, $id)
+    protected function afterMappingResendRequest($response, $item, $batchId, $id): mixed
     {
         return $this->setApiRequest(MethodType::PUT->value, self::ENTITY_TYPE, $item, ['id' => $response['id']]);
     }
 
-    /**
-     * Maps Bagisto groups with UnoPIM groups.
-     */
     private function mapBagistoGroups($family, &$item, $batchId): void
     {
         $bagistoGroups = array_combine(
@@ -265,9 +238,9 @@ class Exporter extends AbstractExporter
         );
 
         foreach ($bagistoGroups as $id => $groupCode) {
-            if (! $this->getMapping($this->credential['id'], null, $id, $item['code'].'|'.$groupCode, null, 'groups')
+            if (! $this->getMapping($this->credential['id'], null, $id, $item['code'].'|'.$groupCode, null, self::GROUP_ENTITY_TYPE)
                 && in_array($groupCode, $unopimGroups)) {
-                $this->setMapping($this->credential['id'], array_search($groupCode, $unopimGroups), $id, $batchId, $item['code'].'|'.$groupCode, 'groups');
+                $this->setMapping($this->credential['id'], array_search($groupCode, $unopimGroups), $id, $batchId, $item['code'].'|'.$groupCode, self::GROUP_ENTITY_TYPE);
                 $groupKey = ! empty(array_search($groupCode, $unopimGroups)) ? 'group_'.array_search($groupCode, $unopimGroups) : 'group_0';
                 if (! empty($item['attribute_groups'][$groupKey])) {
                     $item['attribute_groups'][$id] = $item['attribute_groups'][$groupKey];
@@ -277,10 +250,7 @@ class Exporter extends AbstractExporter
         }
     }
 
-    /**
-     * Formats common fields for export.
-     */
-    protected function getCommonFields($item)
+    protected function getCommonFields($item): array
     {
         $formatData = [
             'id'               => $item['id'],
@@ -292,9 +262,6 @@ class Exporter extends AbstractExporter
         return $formatData;
     }
 
-    /**
-     * Formats attribute groups.
-     */
     private function formatAttributeGroups($item): array
     {
         $formattedAttributes = [];
@@ -316,9 +283,6 @@ class Exporter extends AbstractExporter
         return $formattedAttributes;
     }
 
-    /**
-     * Formats custom attributes.
-     */
     private function formatCustomAttributes($groupMapping): array
     {
         $attributeIds = [];
@@ -337,12 +301,9 @@ class Exporter extends AbstractExporter
         return $attributeIds;
     }
 
-    /**
-     * Gets the formatted group key.
-     */
     private function getFormattedGroupKey($familyGroup): string
     {
-        $mapData = $this->getMapping($this->credential['id'], $familyGroup['id'], null, null, null, 'groups');
+        $mapData = $this->getMapping($this->credential['id'], $familyGroup['id'], null, null, null, self::GROUP_ENTITY_TYPE);
 
         return $mapData ? $mapData->external_id : 'group_'.$familyGroup['id'];
     }

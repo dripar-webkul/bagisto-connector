@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto-Filter',
@@ -26,6 +25,12 @@ return [
             'type'               => 'Produkttyp',
             'channel'            => 'Kanal',
             'locale'             => 'Quellsprache',
+            'channels'           => 'Kanäle',
+            'channels-info'      => 'Nur die Kanäle, die den ausgewählten Zugangsdaten zugeordnet sind. Leer lassen, um alle zugeordneten Kanäle zu exportieren.',
+            'locales'            => 'Sprachen',
+            'locales-info'       => 'Nur die Sprachen, die den ausgewählten Zugangsdaten zugeordnet sind. Leer lassen, um alle zugeordneten Sprachen zu exportieren.',
+            'categories'         => 'Kategorien',
+            'categories-info'    => 'Nur diese Kategorien werden exportiert. Ihre übergeordneten Kategorien werden ebenfalls exportiert, damit der Baum vollständig ankommt.',
             'code'               => 'Nach Code filtern',
             'sku'                => 'Nach SKU filtern',
             'all'                => 'Alle',
@@ -33,22 +38,24 @@ return [
             'false'              => 'Deaktiviert (Falsch)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => 'Zugangsdaten',
+                'attribute-mapping' => 'Attributzuordnung',
+                'category-mapping'  => 'Zuordnung der Kategoriefelder',
+            ],
             'index' => [
                 'title'      => 'Anmeldeinformationen',
                 'invalid'    => 'Ungültige Anmeldeinformationen',
                 'create-btn' => 'Anmeldeinformationen erstellen',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'Shop-URL',
                     'email'    => 'E-Mail-Adresse',
                     'edit'     => 'Bearbeiten',
                     'delete'   => 'Löschen',
                 ],
-
                 'create' => [
                     'title'    => 'Anmeldeinformationen erstellen',
                     'shop_url' => 'Shop-URL',
@@ -56,12 +63,10 @@ return [
                     'password' => 'Passwort',
                     'save-btn' => 'Speichern',
                 ],
-
                 'create-success' => 'Anmeldeinformationen erfolgreich erstellt.',
                 'update-success' => 'Anmeldeinformationen erfolgreich aktualisiert.',
                 'delete-success' => 'Anmeldeinformationen erfolgreich gelöscht.',
             ],
-
             'edit' => [
                 'title'                     => 'Anmeldeinformationen bearbeiten',
                 'shop_url'                  => 'Shop-URL',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'UnoPim-Kanal',
                 'unopim-locale'             => 'UnoPim-Quellsprache',
                 'credential'                => 'Anmeldeinformationen',
+                'select-unopim-channel'     => 'UnoPim-Kanal auswählen',
+                'select-unopim-locale'      => 'UnoPim-Sprache auswählen',
+                'server-down'               => 'Der Bagisto-Server ist momentan ausgefallen. Bitte aktualisieren Sie die Zugangsdaten oder starten Sie den Server neu.',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'Die Zuordnung der Kategoriefelder wurde erfolgreich gespeichert',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Zugangsdaten nicht gefunden.',
+                'attribute-not-found'         => 'Attribut nicht gefunden.',
+                'no-locale-mapping'           => ':count Kategorien wurden nicht exportiert: keine verwendbare Sprachzuordnung. Öffnen Sie die Zugangsdaten und speichern Sie die Kanal- und Sprachzuordnung erneut.',
+                'no-attribute-locale-mapping' => ':count Attribute wurden nicht exportiert: Für die ausgewählten Kanäle gibt es keine Bagisto-Sprachzuordnung. Öffnen Sie die Zugangsdaten und speichern Sie die Kanal- und Sprachzuordnung.',
+                'invalid-locale-mapping'      => 'Eintrag der Sprachzuordnung ignoriert: Für die Bagisto-Sprache „:locale“ wurde ein UnoPim-Sprachcode erwartet, erhalten wurde :given.',
+                'category-ancestors-added'    => ':count übergeordnete Kategorien wurden dem Export hinzugefügt, damit die ausgewählten Kategorien ihren Platz im Baum behalten: :categories',
+                'variant-group-flattened'     => 'Produkt :identifier: Variantengruppe wurde in ihre Varianten aufgelöst.',
+            ],
+            'skipped' => [
+                'skipped-heading'          => ':count Produkt(e) wurden nicht exportiert',
+                'skipped-description'      => 'Diese Produkte sind in UnoPim geblieben. Beheben Sie die unten genannte Ursache und starten Sie den Export erneut — das Download-Protokoll enthält alle Details.',
+                'skipped-reason'           => 'Warum es nicht exportiert wurde',
+                'excluded-heading'         => ':count Datei(en) wurden vom Export ausgeschlossen',
+                'excluded-description'     => 'Diese Produkte haben Bagisto erreicht, aber die unten aufgeführten Dateien wurden ausgelassen. Alles andere wurde normal exportiert.',
+                'excluded-reason'          => 'Warum die Datei ausgelassen wurde',
+                'product'                  => 'Produkt',
+                'missing-required-fields'  => 'Produkt :identifier wurde nicht exportiert: Bagisto benötigt :fields, und das zugeordnete UnoPim-Attribut hatte für dieses Produkt keinen Wert. Legen Sie einen Wert fest oder geben Sie dem Feld im Tab Attributzuordnung einen festen Wert.',
+                'unsupported-type'         => 'Produkt :identifier wurde nicht exportiert: Der Produkttyp :type hat keine Entsprechung in Bagisto.',
+                'no-scope-match'           => 'Produkt :identifier wurde nicht exportiert: Keiner der ausgewählten Kanäle und Sprachen ist diesem Bagisto-Shop zugeordnet.',
+                'rejected-by-bagisto'      => 'Produkt :identifier wurde von Bagisto abgelehnt: :errors',
+                'request-failed'           => 'Produkt :identifier wurde nicht exportiert, da die Anfrage an Bagisto fehlgeschlagen ist: :errors',
+                'unsupported-media-type'   => 'Produkt :identifier: :file wurde ausgelassen, da Bagisto-Produktbilder nur Bilddateien akzeptieren.',
+                'unsupported-image-format' => 'Produkt :identifier: :file wurde ausgelassen, da Bagisto dieses Bildformat nicht dekodieren kann. Verwenden Sie JPG, PNG, GIF, WEBP, BMP oder AVIF.',
+                'media-not-found'          => 'Produkt :identifier: :file wurde ausgelassen, da die Datei nicht mehr im Speicher vorhanden ist.',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => 'Attributzuordnungen',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'Daten:',
                     'flash-message'     => 'Bitte geben Sie einen gültigen Attributcode und -typ an.',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => 'Zusätzliche Attributzuordnungen',
-                    'description' => 'Geben Sie den Bagisto-Attributcode ein, um ein zusätzliches Attribut hinzuzufügen und zuzuordnen.',
+                    'title'            => 'Zusätzliche Attributzuordnungen',
+                    'description'      => 'Geben Sie den Bagisto-Attributcode ein, um ein zusätzliches Attribut hinzuzufügen und zuzuordnen.',
+                    'attribute-code'   => 'Bagisto-Attributcode',
+                    'attribute-type'   => 'Attributtyp',
+                    'added'            => 'Zusätzliche Attributzuordnung hinzugefügt.',
+                    'removed'          => 'Zusätzliche Attributzuordnung entfernt.',
+                    'duplicate'        => 'Dieser Attributcode ist bereits zugeordnet.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Konfigurierbare Attributzuordnungen',
                     'description' => 'Geben Sie den Bagisto-Attributcode ein, um ein zusätzliches Attribut hinzuzufügen und zuzuordnen.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Zuordnungen der Kategoriefelder',
                     'save'                   => 'Speichern',

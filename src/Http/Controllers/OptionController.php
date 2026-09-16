@@ -3,28 +3,34 @@
 namespace Webkul\Bagisto\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Str;
 use Webkul\Admin\Http\Controllers\Controller;
+use Webkul\Admin\Http\Resources\Catalog\CategoryTreeResource;
 use Webkul\Attribute\Repositories\AttributeFamilyRepository;
 use Webkul\Attribute\Repositories\AttributeRepository;
+use Webkul\Bagisto\Enums\Export\ProductFilter as BagistoProductFilter;
 use Webkul\Bagisto\Repositories\CredentialRepository;
+use Webkul\Bagisto\Support\CategoryScope;
+use Webkul\Bagisto\Support\CredentialScope;
 use Webkul\Bagisto\Traits\ApiRequest;
+use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Core\Repositories\ChannelRepository;
 use Webkul\Core\Repositories\CurrencyRepository;
 use Webkul\Core\Repositories\LocaleRepository;
+use Webkul\DataTransfer\Helpers\Formatters\ScopeFilterValue;
 
 class OptionController extends Controller
 {
+    public const CREDENTIAL_LABEL = 'shop_url_label';
+
+    protected const CREDENTIAL_LABEL_LENGTH = 28;
+
     use ApiRequest;
 
     const PER_PAGE = 20;
 
     const DEFAULT_PAGE = 1;
 
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct(
         protected CredentialRepository $bagistoRepository,
         protected AttributeRepository $attributeRepository,
@@ -32,11 +38,9 @@ class OptionController extends Controller
         protected CurrencyRepository $currencyRepository,
         protected LocaleRepository $localeRepository,
         protected AttributeFamilyRepository $attributeFamilyRepository,
+        protected CategoryRepository $categoryRepository,
     ) {}
 
-    /**
-     * Return All credentials
-     */
     public function listBagistoCredential(): JsonResponse
     {
         $queryParams = request()->except(['page', 'query', 'entityName', 'attributeId']);
@@ -46,33 +50,38 @@ class OptionController extends Controller
 
         $bagistoRepository = $this->searchByCode($bagistoRepository, $query, 'shop_url');
 
-        return $this->respondWithOptions($bagistoRepository->get()->toArray());
+        $credentials = array_map(
+            fn (array $credential) => $credential + [
+                self::CREDENTIAL_LABEL => Str::limit($credential['shop_url'] ?? '', self::CREDENTIAL_LABEL_LENGTH),
+            ],
+            $bagistoRepository->get()->toArray()
+        );
+
+        return $this->respondWithOptions($credentials);
     }
 
-    /**
-     * Return All Channels
-     */
     public function listChannel(): JsonResponse
     {
+        $mappedCodes = CredentialScope::unopimChannelCodes($this->requestedStoreInfo());
+
+        if ($mappedCodes === []) {
+            return $this->respondWithOptions([]);
+        }
+
         $queryParams = request()->except(['page', 'query', 'entityName', 'attributeId']);
         $query = request()->get('query');
 
-        $channelRepository = $this->applySearchIdentifiers($this->channelRepository, $queryParams, 'code');
+        $channelRepository = $this->applySearchIdentifiers(
+            $this->channelRepository->whereIn('code', $mappedCodes),
+            $queryParams,
+            'code'
+        );
 
         $channelRepository = $this->searchByCode($channelRepository, $query);
 
-        $allActivateChannel = $channelRepository->get()->toArray();
-
-        foreach ($allActivateChannel as $key => $channel) {
-            $allActivateChannel[$key]['name'] = ! empty($channel['name']) ? $channel['name'] : $channel['code'];
-        }
-
-        return $this->respondWithOptions($allActivateChannel);
+        return $this->respondWithOptions($this->withLabels($channelRepository->get()->toArray()));
     }
 
-    /**
-     * Return All Currency
-     */
     public function listCurrency(): JsonResponse
     {
         $queryParams = request()->except(['page', 'query', 'entityName', 'attributeId']);
@@ -85,24 +94,81 @@ class OptionController extends Controller
         return $this->respondWithOptions($currencyRepository->get()->toArray());
     }
 
-    /**
-     * Return All Locale
-     */
     public function listLocale(): JsonResponse
     {
+        $mappedCodes = CredentialScope::unopimLocaleCodes(
+            $this->requestedStoreInfo(),
+            ScopeFilterValue::toCodes(request(BagistoProductFilter::CHANNEL->value))
+        );
+
+        if ($mappedCodes === []) {
+            return $this->respondWithOptions([]);
+        }
+
         $queryParams = request()->except(['page', 'query', 'entityName', 'attributeId']);
         $query = request()->get('query');
 
-        $localeRepository = $this->applySearchIdentifiers($this->localeRepository->where('status', 1), $queryParams, 'code');
+        $localeRepository = $this->applySearchIdentifiers(
+            $this->localeRepository->where('status', 1)->whereIn('code', $mappedCodes),
+            $queryParams,
+            'code'
+        );
 
         $localeRepository = $this->searchByCode($localeRepository, $query);
 
-        return $this->respondWithOptions($localeRepository->get()->toArray());
+        return $this->respondWithOptions($this->withLabels($localeRepository->get()->toArray()));
     }
 
-    /**
-     * Return All family
-     */
+    public function categoryTree(): JsonResponse
+    {
+        $rootIds = $this->scopedRootCategoryIds();
+
+        $roots = $rootIds === []
+            ? collect()
+            : $this->categoryRepository->whereIn('id', $rootIds)->get();
+
+        $selected = array_values(array_filter((array) request('selected', [])));
+
+        return new JsonResponse([
+            'data'          => CategoryTreeResource::collection($roots)->toArray(request()),
+            'selected_tree' => $selected === []
+                ? []
+                : CategoryTreeResource::collection($this->categoryRepository->getPathNodes($selected)->toTree())->toArray(request()),
+        ]);
+    }
+
+    protected function scopedRootCategoryIds(): array
+    {
+        return CategoryScope::rootIds(
+            ScopeFilterValue::toCodes(request(BagistoProductFilter::CHANNEL->value))
+        );
+    }
+
+    protected function requestedStoreInfo(): array
+    {
+        $credentialIds = ScopeFilterValue::toCodes(request(BagistoProductFilter::CREDENTIALS->value));
+
+        if ($credentialIds === []) {
+            return [];
+        }
+
+        $credential = $this->bagistoRepository->find(reset($credentialIds));
+
+        return (array) ($credential?->store_info ?? []);
+    }
+
+    protected function withLabels(array $options): array
+    {
+        foreach ($options as $key => $option) {
+            $label = ! empty($option['name']) ? $option['name'] : ($option['code'] ?? '');
+
+            $options[$key]['name'] = $label;
+            $options[$key]['label'] = $label;
+        }
+
+        return $options;
+    }
+
     public function listFamily(): JsonResponse
     {
         $queryParams = request()->except(['page', 'query', 'entityName', 'attributeId']);
@@ -120,9 +186,6 @@ class OptionController extends Controller
         return $this->respondWithOptions($allActivateFamilies);
     }
 
-    /**
-     * Return All type
-     */
     public function listType(): JsonResponse
     {
         $queryParams = request()->except(['page', 'query', 'entityName', 'attributeId']);
@@ -131,6 +194,8 @@ class OptionController extends Controller
         $supportedTypes = config('product_types');
 
         if (isset($queryParams['identifiers']['values'])) {
+            $types = [];
+
             foreach ($supportedTypes as $id => $type) {
                 $label = trans($type['name']);
                 if (in_array($id, $queryParams['identifiers']['values'])) {
@@ -160,11 +225,6 @@ class OptionController extends Controller
         return $this->respondWithOptions($types);
     }
 
-    /**
-     * Shape the option list the way the admin's async select handler expects it.
-     * It reads `options`, `page` and `lastPage` from every response, and its
-     * load-more guard compares `lastPage` against the current page.
-     */
     protected function respondWithOptions(array $options): JsonResponse
     {
         $options = array_values($options);
@@ -188,7 +248,7 @@ class OptionController extends Controller
         ]);
     }
 
-    protected function applySearchIdentifiers($repository, array $queryParams, ?string $code = null)
+    protected function applySearchIdentifiers($repository, array $queryParams, ?string $code = null): mixed
     {
         $searchIdentifiers = $queryParams['identifiers']['columnName'] ?? null;
 
@@ -200,7 +260,7 @@ class OptionController extends Controller
         return $repository;
     }
 
-    protected function searchByCode($repository, $query, string $code = 'code')
+    protected function searchByCode($repository, $query, string $code = 'code'): mixed
     {
         if (! empty($query)) {
             $repository = $repository->where($code, 'LIKE', '%'.$query.'%');
@@ -209,7 +269,7 @@ class OptionController extends Controller
         return $repository;
     }
 
-    public function fetchAttribute()
+    public function fetchAttribute(): JsonResponse
     {
         $attribute = $this->attributeRepository->where('code', request()->query('code'))->first();
 
@@ -226,6 +286,9 @@ class OptionController extends Controller
             ]);
         }
 
-        return response()->json(['data' => false, 'message' => 'Attribute not found'], 404);
+        return response()->json([
+            'data'    => false,
+            'message' => trans('bagisto::app.bagisto.export.errors.attribute-not-found'),
+        ], 404);
     }
 }

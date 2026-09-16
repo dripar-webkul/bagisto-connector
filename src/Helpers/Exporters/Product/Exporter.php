@@ -5,28 +5,40 @@ namespace Webkul\Bagisto\Helpers\Exporters\Product;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Webkul\Attribute\Repositories\AttributeOptionRepository;
 use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Attribute\Rules\AttributeTypes;
+use Webkul\Bagisto\Enums\Export\BagistoImageFormat;
 use Webkul\Bagisto\Enums\Export\CacheType;
+use Webkul\Bagisto\Enums\Export\DamFileType;
+use Webkul\Bagisto\Enums\Export\JobFilter;
+use Webkul\Bagisto\Enums\Export\MappingSection;
+use Webkul\Bagisto\Enums\Export\ProductFilter as BagistoProductFilter;
+use Webkul\Bagisto\Enums\Export\ProductType;
+use Webkul\Bagisto\Enums\Export\SkipReason;
 use Webkul\Bagisto\Enums\Services\MethodType;
 use Webkul\Bagisto\Repositories\AttributeMappingRepository;
 use Webkul\Bagisto\Repositories\BagistoDataMapping;
 use Webkul\Bagisto\Repositories\CredentialRepository;
+use Webkul\Bagisto\Support\ScopeFilters;
 use Webkul\Bagisto\Traits\ApiRequest as ApiRequestTrait;
 use Webkul\Bagisto\Traits\Credential as CredentialTrait;
 use Webkul\Bagisto\Traits\ExportSummary as ExportSummaryTrait;
 use Webkul\Bagisto\Traits\Mapping as MappingTrait;
+use Webkul\Bagisto\Traits\SkippedItems as SkippedItemsTrait;
 use Webkul\Category\Repositories\CategoryRepository;
 use Webkul\Category\Validator\FieldValidator;
 use Webkul\Core\Repositories\ChannelRepository;
 use Webkul\DataTransfer\Contracts\JobTrackBatch as JobTrackBatchContract;
+use Webkul\DataTransfer\Enums\ProductFilter;
 use Webkul\DataTransfer\Helpers\Export;
 use Webkul\DataTransfer\Helpers\Exporters\Product\Exporter as AbstractExporter;
 use Webkul\DataTransfer\Helpers\Sources\Export\ProductSource;
 use Webkul\DataTransfer\Jobs\Export\File\FlatItemBuffer as FileExportFileBuffer;
 use Webkul\DataTransfer\Repositories\JobTrackBatchRepository;
 use Webkul\Product\Repositories\ProductRepository;
+use Webkul\Product\Services\VariantValueResolver;
 
 class Exporter extends AbstractExporter
 {
@@ -34,65 +46,48 @@ class Exporter extends AbstractExporter
     use CredentialTrait;
     use ExportSummaryTrait;
     use MappingTrait;
+    use SkippedItemsTrait;
 
     protected const ENTITY_TYPE = 'bulk_product';
 
-    protected const VARIANT = 'variant';
-
-    protected const VARIANT_GROUP = 'variant_group';
-
     protected const MEASUREMENT_ATTRIBUTE_TYPE = 'measurement';
+
+    protected const DAM_ASSET_ATTRIBUTE_TYPE = 'asset';
+
+    protected const DAM_ASSET_REPOSITORY = 'Webkul\\DAM\\Repositories\\AssetRepository';
 
     protected const NON_INHERITABLE_FIELDS = ['sku', 'url_key'];
 
-    /**
-     * UnoPim bounds a variant tree at two axes (variant_structure_axes.level is
-     * an enum of level_1/level_2), so the walk never needs to go deeper.
-     */
+    protected const UNOPIM_SKU_FIELD = 'sku';
+
+    protected const CURSOR_COLUMNS = ['id', 'sku', 'type', 'parent_id'];
+
     protected const MAX_VARIANT_DEPTH = 2;
 
     public const BATCH_SIZE = 100;
 
-    /*
-     * For check initialization
-     */
     protected bool $initialized = false;
 
-    /*
-     * For exporting file
-     */
     protected bool $exportsFile = false;
 
-    /*
-     * For mappingAttributes
-     */
     protected array $mappingAttributes = [];
 
-    /**
-     * Current crenetial.
-     *
-     * @var array
-     */
-    protected $credential = [];
+    private ?array $attributesByCode = null;
 
-    /**
-     * @var array
-     */
-    protected $attributes = [];
+    private array $channelsByCode = [];
 
-    /**
-     * @var array
-     */
-    protected $jobFilters = [];
+    private array $categoriesByCode = [];
 
-    /**
-     * @var array
-     */
-    protected $urlKey = [];
+    protected array $credential = [];
 
-    /**
-     * Create a new instance of the exporter.
-     */
+    protected array $jobFilters = [];
+
+    protected array $urlKey = [];
+
+    protected array $knownSkus = [];
+
+    protected ?object $assetRepository = null;
+
     public function __construct(
         protected JobTrackBatchRepository $exportBatchRepository,
         protected FileExportFileBuffer $exportFileBuffer,
@@ -109,9 +104,6 @@ class Exporter extends AbstractExporter
         parent::__construct($exportBatchRepository, $exportFileBuffer, $channelRepository, $attributeRepository, $productSource);
     }
 
-    /**
-     * Initializes the data for the export process.
-     */
     public function initialize(): void
     {
         $this->initializeCredential($this->getFilters());
@@ -119,72 +111,59 @@ class Exporter extends AbstractExporter
         $this->initializeJobFilters();
     }
 
-    /**
-     * Initializes mappingAttribute for the export process.
-     *
-     * @return void
-     */
-    public function initializeMappingAttributes()
+    public function initializeMappingAttributes(): void
     {
-        $this->mappingAttributes = Cache::get(CacheType::ATTRIBUTE_MAPPING->value, []);
+        $cacheKey = CacheType::ATTRIBUTE_MAPPING->forCredential($this->credential['id'] ?? null);
+
+        $this->mappingAttributes = Cache::get($cacheKey, []);
+
         if (empty($this->mappingAttributes)) {
+            $credentialId = $this->credential['id'] ?? null;
+
             $this->mappingAttributes = [
-                'standard_attribute' => $this->attributeMappingRepository->findByField('section', 'standard_attribute')->first(),
-                'image_attribute'    => $this->attributeMappingRepository->findByField('section', 'image_attribute')->first(),
+                MappingSection::STANDARD_ATTRIBUTE->value => $this->attributeMappingRepository->forCredential($credentialId, MappingSection::STANDARD_ATTRIBUTE),
+                MappingSection::IMAGE_ATTRIBUTE->value    => $this->attributeMappingRepository->forCredential($credentialId, MappingSection::IMAGE_ATTRIBUTE),
             ];
 
-            Cache::put(CacheType::ATTRIBUTE_MAPPING->value, $this->mappingAttributes, config('session.lifetime'));
+            Cache::put($cacheKey, $this->mappingAttributes, config('session.lifetime'));
         }
     }
 
-    /**
-     * Initializes Job Filters for the export process.
-     *
-     * @return void
-     */
-    public function initializeJobFilters()
+    public function initializeJobFilters(): void
     {
-        $this->jobFilters = Cache::get(CacheType::PRODUCT_JOB_FILTERS->value, []);
+        $filters = $this->getFilters();
 
-        if (empty($this->jobFilters)) {
-            $filters = $this->getFilters();
+        $filtersChannels = ScopeFilters::channelCodes($filters);
+        $filtersLocales = ScopeFilters::localeCodes($filters);
 
-            $filtersChannels = ! empty($filters['channel']) ? explode(',', $filters['channel']) : [];
-            $filtersLocales = ! empty($filters['locale']) ? explode(',', $filters['locale']) : [];
+        $bagistoChannels = $this->getMappedChannels();
+        $bagistoLocales = $this->getMappedLocales();
 
-            $bagistoChannels = $this->getMappedChannels();
-            $bagistoLocales = $this->getMappedLocales();
+        $mappedBagistoChannels = [];
+        $exportBagistoLocales = [];
 
-            $mappedBagistoChannels = [];
-            $exportBagistoLocales = [];
+        foreach ($bagistoChannels as $bagistoChannel => $unopimChannel) {
+            if (empty($filtersChannels) || in_array($unopimChannel, $filtersChannels, true)) {
+                $mappedBagistoChannels[$bagistoChannel] = $unopimChannel;
 
-            foreach ($bagistoChannels as $bagistoChannel => $unopimChannel) {
-                if (empty($filtersChannels) || in_array($unopimChannel, $filtersChannels, true)) {
-                    $mappedBagistoChannels[$bagistoChannel] = $unopimChannel;
-
-                    if (isset($bagistoLocales[$bagistoChannel])) {
-                        foreach ($bagistoLocales[$bagistoChannel] as $bagistoLocal => $unopimLocal) {
-                            if (empty($filtersLocales) || in_array($unopimLocal, $filtersLocales, true)) {
-                                $exportBagistoLocales[$bagistoChannel][$bagistoLocal] = $unopimLocal;
-                            }
+                if (isset($bagistoLocales[$bagistoChannel])) {
+                    foreach ($bagistoLocales[$bagistoChannel] as $bagistoLocal => $unopimLocal) {
+                        if (empty($filtersLocales) || in_array($unopimLocal, $filtersLocales, true)) {
+                            $exportBagistoLocales[$bagistoChannel][$bagistoLocal] = $unopimLocal;
                         }
                     }
                 }
             }
-
-            $this->jobFilters = [
-                'withMedia' => $filters['with_media'] ?? false,
-                'channel'   => $mappedBagistoChannels,
-                'locales'   => $exportBagistoLocales,
-            ];
-
-            Cache::put(CacheType::PRODUCT_JOB_FILTERS->value, $this->jobFilters, config('session.lifetime'));
         }
+
+        $this->jobFilters = [
+            JobFilter::WITH_MEDIA->value        => $filters[BagistoProductFilter::WITH_MEDIA->value] ?? false,
+            JobFilter::WITH_ASSOCIATIONS->value => $filters[BagistoProductFilter::WITH_ASSOCIATIONS->value] ?? false,
+            JobFilter::CHANNEL->value           => $mappedBagistoChannels,
+            JobFilter::LOCALES->value           => $exportBagistoLocales,
+        ];
     }
 
-    /**
-     * Start the export process
-     */
     public function exportBatch(JobTrackBatchContract $batch, $filePath): bool
     {
         if (! $this->initialized) {
@@ -196,64 +175,34 @@ class Exporter extends AbstractExporter
 
         $this->write($preparedData, $batch->id);
 
-        /**
-         * Update export batch process state summary
-         */
         $this->updateBatchState($batch->id, Export::STATE_PROCESSED);
 
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function getResults(): CollectionCursor
     {
-        $filters = $this->getFilters();
+        $query = $this->source->newQuery();
 
-        $query = $this->source->with(['attribute_family', 'parent', 'super_attributes', 'variants']);
+        resolve(ProductExportFilter::class)->applyToQuery($query, $this->prepareFilters());
 
-        if (! empty($filters['sku'])) {
-            $query->whereIn('sku', $this->convertCommaSeparatedToArray($filters['sku']));
-        }
+        $products = $query->get(self::CURSOR_COLUMNS);
 
-        if (! empty($filters['type'])) {
-            $query->whereIn('type', $this->convertCommaSeparatedToArray($filters['type']));
-        }
-
-        if (! empty($filters['family'])) {
-            $familyIds = \DB::table('attribute_families')
-                ->whereIn('code', $this->convertCommaSeparatedToArray($filters['family']))
-                ->pluck('id')
-                ->toArray();
-
-            if (! empty($familyIds)) {
-                $query->whereIn('attribute_family_id', $familyIds);
-            }
-        }
-
-        if (! empty($filters['status']) && $filters['status'] !== 'all') {
-            $status = ($filters['status'] == 't') ? 1 : 0;
-            $query->where('status', $status);
-        }
-
-        $products = $query->get(['id', 'sku', 'type', 'parent_id']);
-
-        $parentIds = $products->where('type', 'configurable')->pluck('id')->filter()->all();
+        $parentIds = $products->where('type', ProductType::CONFIGURABLE->value)->pluck('id')->filter()->all();
         $descendants = collect();
         $depth = 0;
 
         while (! empty($parentIds) && $depth++ < self::MAX_VARIANT_DEPTH) {
             $children = $this->productRepository
                 ->whereIn('parent_id', $parentIds)
-                ->get(['id', 'sku', 'type', 'parent_id']);
+                ->get(self::CURSOR_COLUMNS);
 
             if ($children->isEmpty()) {
                 break;
             }
 
             $descendants = $descendants->concat($children);
-            $parentIds = $children->where('type', self::VARIANT_GROUP)->pluck('id')->filter()->all();
+            $parentIds = $children->where('type', ProductType::VARIANT_GROUP->value)->pluck('id')->filter()->all();
         }
 
         if ($descendants->isNotEmpty()) {
@@ -263,12 +212,16 @@ class Exporter extends AbstractExporter
         return new CollectionCursor($this->orderFamiliesContiguously($products)->toArray());
     }
 
-    /**
-     * Bagisto links a variant only once its parent exists, so a family split
-     * across two batches loses the variants in the later batch until the next
-     * run. Emitting each family together keeps it inside one batch unless the
-     * family itself straddles a batch boundary.
-     */
+    protected function prepareFilters(): array
+    {
+        $filters = $this->getFilters();
+
+        $filters[ProductFilter::UPDATED_AFTER->value] = $this->resolveUpdatedAfter($filters);
+        $filters[ProductFilter::UPDATED_BEFORE->value] = $this->resolveUpdatedBefore($filters);
+
+        return $filters;
+    }
+
     private function orderFamiliesContiguously(Collection $products): Collection
     {
         $byId = $products->keyBy('id');
@@ -326,11 +279,11 @@ class Exporter extends AbstractExporter
             $skusAttempted = array_values(array_unique(array_column($items, 'sku')));
 
             if (! empty($this->lastApiErrors)) {
-                $this->skippedItemsCount += count($skusAttempted);
+                $errors = $this->flattenApiErrors($this->lastApiErrors);
 
-                $this->jobLogger?->warning(
-                    'Bulk product batch skipped ['.implode(', ', $skusAttempted).']: '.json_encode($this->lastApiErrors)
-                );
+                foreach ($skusAttempted as $sku) {
+                    $this->recordSkipped($sku, SkipReason::REQUEST_FAILED, $errors);
+                }
 
                 return;
             }
@@ -342,50 +295,52 @@ class Exporter extends AbstractExporter
             $rejectedSkus = array_values(array_diff($skusAttempted, $queuedSkus));
 
             if (! empty($rejectedSkus)) {
-                $this->skippedItemsCount += count($rejectedSkus);
+                $errors = $this->flattenApiErrors($response['errors'] ?? []);
 
-                $this->jobLogger?->warning(
-                    'Bagisto rejected ['.implode(', ', $rejectedSkus).']: '.json_encode($response['errors'] ?? [])
-                );
+                foreach ($rejectedSkus as $sku) {
+                    $this->recordSkipped($sku, SkipReason::REJECTED_BY_BAGISTO, $errors);
+                }
             }
 
             if (empty($queuedSkus)) {
                 return;
             }
 
-            $products = $this->productRepository->whereIn('sku', $queuedSkus)->get(['id', 'sku']);
-
-            foreach ($products as $product) {
-                if ($this->getMapping($this->credential['id'], $product->id, null, null, null, self::ENTITY_TYPE)) {
+            foreach ($this->productIdsByBagistoSku($items, $queuedSkus) as $productId) {
+                if ($this->getMapping($this->credential['id'], $productId, null, null, null, self::ENTITY_TYPE)) {
                     $this->updatedItemsCount++;
                 } else {
                     $this->createdItemsCount++;
-                    $this->setMapping($this->credential['id'], $product->id, 0, $batchId, null, self::ENTITY_TYPE);
+                    $this->setMapping($this->credential['id'], $productId, 0, $batchId, null, self::ENTITY_TYPE);
                 }
             }
         } catch (\Exception $e) {
-            $skusAttempted = array_values(array_unique(array_column($items, 'sku')));
-
-            $this->skippedItemsCount += count($skusAttempted);
-
-            $this->jobLogger?->warning(
-                'Bulk product batch failed ['.implode(', ', $skusAttempted).']: '.$e->getMessage()
-            );
+            foreach (array_values(array_unique(array_column($items, 'sku'))) as $sku) {
+                $this->recordSkipped($sku, SkipReason::REQUEST_FAILED, [$e->getMessage()]);
+            }
         }
     }
 
-    /**
-     * Bagisto validates the bulk payload in one transaction, so a single row
-     * missing a required field fails the whole batch. Drop those rows here and
-     * log them individually, letting the rest of the batch through.
-     */
+    protected function flattenApiErrors(array $errors): array
+    {
+        $flat = [];
+
+        array_walk_recursive($errors, function ($value) use (&$flat): void {
+            if (is_scalar($value) && (string) $value !== '') {
+                $flat[] = (string) $value;
+            }
+        });
+
+        return array_values(array_unique($flat));
+    }
+
     private function rejectIncompleteItems(array $items): array
     {
         $required = $this->getRequiredBagistoFields();
 
         return array_values(array_filter($items, function ($item) use ($required) {
             $missing = array_values(array_filter(
-                $required,
+                $this->requiredFieldsFor($item, $required),
                 fn ($code) => ! isset($item[$code]) || $item[$code] === '' || $item[$code] === null
             ));
 
@@ -393,13 +348,32 @@ class Exporter extends AbstractExporter
                 return true;
             }
 
-            $this->skippedItemsCount++;
-            $this->jobLogger?->warning(
-                'Product '.($item['sku'] ?? '(no sku)').' not exported: missing required Bagisto field(s) '.implode(', ', $missing).'.'
-            );
+            $this->recordSkipped($item['sku'] ?? '(no sku)', SkipReason::MISSING_REQUIRED_FIELDS, $missing);
 
             return false;
         }));
+    }
+
+    private const CONFIGURABLE_SKIPPED_FIELDS = [
+        'price',
+        'cost',
+        'special_price',
+        'special_price_from',
+        'special_price_to',
+        'length',
+        'width',
+        'height',
+        'weight',
+        'manage_stock',
+    ];
+
+    private function requiredFieldsFor(array $item, array $required): array
+    {
+        if (($item['type'] ?? null) !== ProductType::CONFIGURABLE->value) {
+            return $required;
+        }
+
+        return array_values(array_diff($required, self::CONFIGURABLE_SKIPPED_FIELDS));
     }
 
     public function prepareBagistoProducts(JobTrackBatchContract $batch, $filePath): array
@@ -411,16 +385,23 @@ class Exporter extends AbstractExporter
             ->whereIn('sku', $skus)
             ->get();
 
+        $resolvedValues = resolve(VariantValueResolver::class)->resolveBatch($allProducts);
+
         foreach ($allProducts as $productModel) {
             $rowData = $productModel->toArray();
-            $rowData['values'] = $productModel->values ?? [];
+            $ownValues = $productModel->values ?? [];
+            $rowData['values'] = $this->keepOwnIdentityFields(
+                $resolvedValues[$productModel->id] ?? $ownValues,
+                $ownValues
+            );
 
             if (! $this->isExportableType($rowData)) {
-                if ($rowData['type'] === self::VARIANT_GROUP) {
-                    $this->jobLogger?->info("Product {$rowData['sku']}: variant group flattened into its variants.");
+                if ($rowData['type'] === ProductType::VARIANT_GROUP->value) {
+                    $this->jobLogger?->info(trans('bagisto::app.bagisto.export.errors.variant-group-flattened', [
+                        'identifier' => $rowData['sku'],
+                    ]));
                 } else {
-                    $this->skippedItemsCount++;
-                    $this->jobLogger?->warning("Product {$rowData['sku']} not exported: product type '{$rowData['type']}' has no Bagisto equivalent.");
+                    $this->recordSkipped($rowData['sku'], SkipReason::UNSUPPORTED_TYPE, [$rowData['type']]);
                 }
 
                 continue;
@@ -428,20 +409,19 @@ class Exporter extends AbstractExporter
 
             $builtForRow = 0;
 
-            foreach ($this->jobFilters['channel'] as $bagistoChannel => $unoPimChannel) {
-                if (! isset($this->jobFilters['locales'][$bagistoChannel])) {
+            foreach ($this->jobFilters[JobFilter::CHANNEL->value] as $bagistoChannel => $unoPimChannel) {
+                if (! isset($this->jobFilters[JobFilter::LOCALES->value][$bagistoChannel])) {
                     continue;
                 }
 
-                foreach ($this->jobFilters['locales'][$bagistoChannel] as $bagistoLocale => $unoPimLocale) {
+                foreach ($this->jobFilters[JobFilter::LOCALES->value][$bagistoChannel] as $bagistoLocale => $unoPimLocale) {
                     $products[] = $this->processProductRow($rowData, $unoPimLocale, $bagistoLocale, $unoPimChannel, $bagistoChannel);
                     $builtForRow++;
                 }
             }
 
             if ($builtForRow === 0) {
-                $this->skippedItemsCount++;
-                $this->jobLogger?->warning("Product {$rowData['sku']} not exported: no Bagisto channel/locale mapping matched the selected channel and locale filters.");
+                $this->recordSkipped($rowData['sku'], SkipReason::NO_SCOPE_MATCH);
             }
         }
         usort($products, function ($a, $b) {
@@ -453,7 +433,7 @@ class Exporter extends AbstractExporter
                     return 0;
                 }
 
-                return ($a['type'] === 'simple') ? -1 : 1;
+                return ($a['type'] === ProductType::SIMPLE->value) ? -1 : 1;
             }
 
             return strcmp($baseSkuA, $baseSkuB);
@@ -475,24 +455,24 @@ class Exporter extends AbstractExporter
         }
 
         return array_merge(
-            $this->getFormatedProductData($rowData, $unoPimLocale, $bagistoLocale, $unoPimChannel, $bagistoChannel, $this->jobFilters['withMedia']),
+            $this->getFormatedProductData($rowData, $unoPimLocale, $bagistoLocale, $unoPimChannel, $bagistoChannel, $this->jobFilters[JobFilter::WITH_MEDIA->value]),
             $simple ?? $config ?? $variants
         );
     }
 
     private function isSimpleProductWithoutParent(array $rowData): bool
     {
-        return $rowData['type'] === 'simple' && empty($rowData['parent']);
+        return $rowData['type'] === ProductType::SIMPLE->value && empty($rowData['parent']);
     }
 
     private function isConfigurableProduct(array $rowData): bool
     {
-        return $rowData['type'] === 'configurable' && ! empty($rowData['super_attributes']);
+        return $rowData['type'] === ProductType::CONFIGURABLE->value && ! empty($rowData['super_attributes']);
     }
 
     private function isSimpleProductWithParent(array $rowData): bool
     {
-        return $rowData['type'] === 'simple' && ! empty($rowData['parent']);
+        return $rowData['type'] === ProductType::SIMPLE->value && ! empty($rowData['parent']);
     }
 
     private function isExportableType(array $rowData): bool
@@ -510,11 +490,9 @@ class Exporter extends AbstractExporter
 
         $this->mapAttributesToBagisto($mergedFields);
 
-        $this->inheritRequiredFieldsFromParent($mergedFields, $item, $locale, $channel, $withMedia);
-
         $this->applyFixedValues($mergedFields, $item['parent'] ?? null);
 
-        $this->generateUrlKey($mergedFields);
+        $this->generateUrlKey($mergedFields, $item);
 
         $this->applyAssociationsAndCategories($item, $mergedFields);
 
@@ -546,14 +524,54 @@ class Exporter extends AbstractExporter
 
         $mergedFields = array_merge($commonFields, $localeSpecificFields, $channelSpecificFields, $channelLocaleSpecificFields);
 
-        $this->handleAttributeType($mergedFields, $withMedia, $channel);
+        $identifier = $item['sku'] ?? '(no sku)';
+
+        $this->resolveDamAssetPaths($mergedFields, $identifier);
+
+        $this->handleAttributeType($mergedFields, $withMedia, $channel, $identifier);
 
         return $mergedFields;
     }
 
+    private function attributeByCode(string $code): ?object
+    {
+        if ($this->attributesByCode === null) {
+            $this->attributesByCode = [];
+
+            foreach ($this->attributeRepository->all() as $attribute) {
+                $this->attributesByCode[$attribute->code] = $attribute;
+            }
+        }
+
+        return $this->attributesByCode[$code] ?? null;
+    }
+
+    private function channelByCode(string $code): ?array
+    {
+        if (! array_key_exists($code, $this->channelsByCode)) {
+            $channel = $this->channelRepository->where('code', $code)->with(['locales', 'currencies'])->first();
+
+            $this->channelsByCode[$code] = $channel?->toArray();
+        }
+
+        return $this->channelsByCode[$code];
+    }
+
+    private function categoryByCode(string $code): ?object
+    {
+        if (! array_key_exists($code, $this->categoriesByCode)) {
+            $this->categoriesByCode[$code] = $this->categoryRepository->where('code', $code)->first();
+        }
+
+        return $this->categoriesByCode[$code];
+    }
+
     private function applyFixedValues(array &$mergedFields, $parent): void
     {
-        $fixedValue = $this->mappingAttributes['standard_attribute']->fixed_value ?? [];
+        $fixedValueStandard = $this->mappingAttributes['standard_attribute']->fixed_value ?? [];
+        $fixedValueImage = $this->mappingAttributes['image_attribute']->fixed_value ?? [];
+
+        $fixedValue = array_merge($fixedValueStandard, $fixedValueImage);
 
         foreach ($fixedValue as $bagistoAttribute => $value) {
             if (isset($mergedFields[$bagistoAttribute]) && empty($mergedFields[$bagistoAttribute])) {
@@ -587,36 +605,27 @@ class Exporter extends AbstractExporter
         }
     }
 
-    private function inheritRequiredFieldsFromParent(array &$mergedFields, array $item, string $locale, string $channel, bool $withMedia): void
+    private function keepOwnIdentityFields(array $resolved, array $own): array
     {
-        $missing = array_values(array_filter(
-            $this->getRequiredBagistoFields(),
-            fn ($code) => ! in_array($code, self::NON_INHERITABLE_FIELDS, true)
-                && (! isset($mergedFields[$code]) || $mergedFields[$code] === '' || $mergedFields[$code] === null)
-        ));
+        foreach ($resolved as $key => $value) {
+            if (is_array($value)) {
+                $resolved[$key] = $this->keepOwnIdentityFields($value, is_array($own[$key] ?? null) ? $own[$key] : []);
 
-        if ($missing === []) {
-            return;
-        }
-
-        $ancestor = $item['parent'] ?? null;
-        $hops = 0;
-
-        while (! empty($ancestor) && is_array($ancestor) && $missing !== [] && $hops++ <= self::MAX_VARIANT_DEPTH) {
-            $ancestorFields = $this->mergeAllFields($ancestor, $locale, $channel, $withMedia);
-
-            $this->mapAttributesToBagisto($ancestorFields);
-
-            foreach ($missing as $index => $code) {
-                if (isset($ancestorFields[$code]) && $ancestorFields[$code] !== '' && $ancestorFields[$code] !== null) {
-                    $mergedFields[$code] = $ancestorFields[$code];
-
-                    unset($missing[$index]);
-                }
+                continue;
             }
 
-            $ancestor = $ancestor['parent'] ?? null;
+            if (! in_array($key, self::NON_INHERITABLE_FIELDS, true)) {
+                continue;
+            }
+
+            if (array_key_exists($key, $own)) {
+                $resolved[$key] = $own[$key];
+            } else {
+                unset($resolved[$key]);
+            }
         }
+
+        return $resolved;
     }
 
     private function getRequiredBagistoFields(): array
@@ -627,22 +636,144 @@ class Exporter extends AbstractExporter
         );
     }
 
+    private function resolveDamAssetPaths(array &$mergedFields, string $identifier = '(no sku)'): void
+    {
+        foreach ($mergedFields as $code => $value) {
+            if (empty($value)) {
+                continue;
+            }
+
+            $attribute = $this->attributeByCode((string) $code);
+
+            if (! $attribute) {
+                continue;
+            }
+
+            if (($attribute->type ?? null) !== self::DAM_ASSET_ATTRIBUTE_TYPE) {
+                continue;
+            }
+
+            $ids = is_array($value) ? $value : array_filter(array_map('trim', explode(',', (string) $value)), 'strlen');
+
+            if (empty($ids)) {
+                continue;
+            }
+
+            $assets = $this->damAssets($ids);
+
+            $paths = [];
+
+            foreach ($ids as $id) {
+                $asset = $assets->get($id);
+
+                if (! $asset) {
+                    $this->recordExcludedMedia($identifier, SkipReason::MEDIA_NOT_FOUND, ['#'.$id]);
+
+                    continue;
+                }
+
+                if (! DamFileType::isImage($asset->file_type)) {
+                    $this->recordExcludedMedia($identifier, SkipReason::UNSUPPORTED_MEDIA_TYPE, [$asset->file_name ?? $asset->path]);
+
+                    continue;
+                }
+
+                if (! BagistoImageFormat::accepts($asset->path)) {
+                    $this->recordExcludedMedia($identifier, SkipReason::UNSUPPORTED_IMAGE_FORMAT, [$asset->file_name ?? $asset->path]);
+
+                    continue;
+                }
+
+                if ($asset->path) {
+                    $paths[] = $asset->path;
+                }
+            }
+
+            if (empty($paths)) {
+                unset($mergedFields[$code]);
+
+                continue;
+            }
+
+            $mergedFields[$code] = count($paths) > 1 ? $paths : $paths[0];
+        }
+    }
+
+    protected function damAssets(array $ids): Collection
+    {
+        $repository = $this->assetRepository ??= class_exists(self::DAM_ASSET_REPOSITORY)
+            ? app(self::DAM_ASSET_REPOSITORY)
+            : null;
+
+        if (! $repository) {
+            return new Collection;
+        }
+
+        return $repository->findWhereIn('id', $ids)->keyBy('id');
+    }
+
     private function mapAttributesToBagisto(array &$mergedFields): void
     {
-        $mapAttributes = $this->mappingAttributes['standard_attribute']->mapped_value ?? [];
+        $mapAttributesStandard = $this->mappingAttributes['standard_attribute']->mapped_value ?? [];
+        $mapAttributesImage = $this->mappingAttributes['image_attribute']->mapped_value ?? [];
+
+        $mapAttributes = array_merge($mapAttributesStandard, $mapAttributesImage);
+
         $mapAttributeValues = [];
+
         foreach ($mapAttributes as $bagistoAttribute => $unpoimAttribute) {
+            if (is_array($unpoimAttribute)) {
+                $combinedValues = [];
+
+                foreach ($unpoimAttribute as $unpoimAttributeCode) {
+                    if (
+                        isset($mergedFields[$unpoimAttributeCode])
+                        && $mergedFields[$unpoimAttributeCode] !== ''
+                        && $mergedFields[$unpoimAttributeCode] !== null
+                    ) {
+                        $combinedValues[] = is_array($mergedFields[$unpoimAttributeCode])
+                            ? implode(',', $mergedFields[$unpoimAttributeCode])
+                            : $mergedFields[$unpoimAttributeCode];
+                    }
+                }
+
+                if ($combinedValues !== []) {
+                    $mapAttributeValues[$bagistoAttribute] = implode(',', $combinedValues);
+                } elseif (isset($mergedFields[$bagistoAttribute]) && $mergedFields[$bagistoAttribute] !== null && $mergedFields[$bagistoAttribute] !== '') {
+                    $mapAttributeValues[$bagistoAttribute] = $mergedFields[$bagistoAttribute];
+                }
+
+                continue;
+            }
+
             if (isset($mergedFields[$unpoimAttribute])) {
                 $mapAttributeValues[$bagistoAttribute] = $bagistoAttribute === 'inventories'
                     ? 'default='.$mergedFields[$unpoimAttribute]
                     : $mergedFields[$unpoimAttribute];
+
+                continue;
+            }
+
+            if (is_string((string) $unpoimAttribute) && trim((string) $unpoimAttribute) !== '') {
+                $attributeExists = (bool) $this->attributeByCode((string) $unpoimAttribute);
+
+                if (! $attributeExists) {
+                    $mapAttributeValues[$bagistoAttribute] = $bagistoAttribute === 'inventories'
+                        ? 'default='.$unpoimAttribute
+                        : $unpoimAttribute;
+                }
             }
         }
+
         $mergedFields = $mapAttributeValues;
     }
 
-    private function generateUrlKey(array &$mergedFields): void
+    private function generateUrlKey(array &$mergedFields, array $item = []): void
     {
+        if (empty($mergedFields['url_key']) && $this->hidesUrlKey($item)) {
+            $mergedFields['url_key'] = $this->bagistoSkuFor($item);
+        }
+
         if (! empty($mergedFields['url_key'])) {
             $slug = $this->createSlug($mergedFields['url_key']);
             $slugCount = array_count_values($this->urlKey)[$slug] ?? 0;
@@ -651,9 +782,17 @@ class Exporter extends AbstractExporter
         }
     }
 
+    private function hidesUrlKey(array $item): bool
+    {
+        return $this->isConfigurableProduct($item) || $this->isSimpleProductWithParent($item);
+    }
+
     private function applyAssociationsAndCategories(array $item, array &$mergedFields): void
     {
-        $this->getAssociationsData($item, $mergedFields);
+        if (! empty($this->jobFilters[JobFilter::WITH_ASSOCIATIONS->value])) {
+            $this->getAssociationsData($item, $mergedFields);
+        }
+
         $this->getCategoryFormatData($item, $mergedFields);
     }
 
@@ -661,10 +800,47 @@ class Exporter extends AbstractExporter
     {
         return [
             'id'                    => $item['id'],
-            'sku'                   => $item['sku'],
+            'sku'                   => $this->bagistoSkuFor($item),
             'type'                  => $item['type'],
             'attribute_family_code' => $item['attribute_family']['code'],
         ];
+    }
+
+    protected function bagistoSkuFor(array $item): string
+    {
+        $code = $this->mappedSkuAttributeCode();
+
+        if ($code === self::UNOPIM_SKU_FIELD) {
+            return (string) ($item[self::UNOPIM_SKU_FIELD] ?? '');
+        }
+
+        $mapped = $this->getCommonFields($item)[$code] ?? null;
+
+        return $mapped === null || $mapped === ''
+            ? (string) ($item[self::UNOPIM_SKU_FIELD] ?? '')
+            : (string) $mapped;
+    }
+
+    protected function mappedSkuAttributeCode(): string
+    {
+        $mapped = $this->mappingAttributes['standard_attribute']->mapped_value[self::UNOPIM_SKU_FIELD] ?? null;
+
+        return is_string($mapped) && $mapped !== '' ? $mapped : self::UNOPIM_SKU_FIELD;
+    }
+
+    protected function productIdsByBagistoSku(array $items, array $skus): array
+    {
+        $idsBySku = array_column($items, 'id', 'sku');
+
+        $resolved = [];
+
+        foreach ($skus as $sku) {
+            if (isset($idsBySku[$sku])) {
+                $resolved[$sku] = $idsBySku[$sku];
+            }
+        }
+
+        return $resolved;
     }
 
     protected function createConfigurableProductDataFormat(array $item): array
@@ -676,11 +852,11 @@ class Exporter extends AbstractExporter
         return $formatData;
     }
 
-    protected function createConfigurableVariantProductDataFormat($item)
+    protected function createConfigurableVariantProductDataFormat($item): array
     {
         $formatData = $this->createSimpleProductDataFormat($item);
 
-        $formatData['parent_sku'] = $item['parent']['sku'];
+        $formatData['parent_sku'] = $this->bagistoSkuFor($item['parent']);
 
         return $formatData;
     }
@@ -730,13 +906,6 @@ class Exporter extends AbstractExporter
         return implode('|', $newFormatData);
     }
 
-    /**
-     * Bagisto has no nested variants, so a UnoPim variant_group level is folded
-     * away: every leaf inherits the axis values of the nodes above it and, on a
-     * collision, its own value wins.
-     *
-     * @return list<array{sku: string, axes: array<string, mixed>}>
-     */
     private function collectVariantLeaves(array $node, array $axisCodes, array $inherited = [], int $depth = 0): array
     {
         if ($depth >= self::MAX_VARIANT_DEPTH) {
@@ -756,8 +925,8 @@ class Exporter extends AbstractExporter
                 array_intersect_key($this->getCommonFields($child), array_flip($axisCodes))
             );
 
-            if (($child['type'] ?? null) !== self::VARIANT_GROUP) {
-                $leaves[] = ['sku' => $child['sku'] ?? '(no sku)', 'axes' => $axes];
+            if (($child['type'] ?? null) !== ProductType::VARIANT_GROUP->value) {
+                $leaves[] = ['sku' => $this->bagistoSkuFor($child) ?: '(no sku)', 'axes' => $axes];
 
                 continue;
             }
@@ -776,18 +945,41 @@ class Exporter extends AbstractExporter
         return $leaves;
     }
 
-    protected function handleAttributeType(array &$mergedFields, bool $withMedia, string $channel): void
+    protected function handleAttributeType(array &$mergedFields, bool $withMedia, string $channel, string $identifier = '(no sku)'): void
     {
         foreach ($mergedFields as $attributeCode => $attributeValue) {
-            $attribute = $this->attributeRepository->where('code', $attributeCode)->first();
+            $attribute = $this->attributeByCode((string) $attributeCode);
             if (! $attribute) {
                 continue;
             }
             switch ($attribute->type) {
+                case self::DAM_ASSET_ATTRIBUTE_TYPE:
+                    if ($withMedia && $attributeValue !== '' && $attributeValue !== null) {
+                        if (is_array($attributeValue)) {
+                            $mergedFields[$attributeCode] = implode(',', array_map(fn ($path) => $this->makeDamPublicUrl((string) $path), $attributeValue));
+                        } else {
+                            $mergedFields[$attributeCode] = $this->makeDamPublicUrl((string) $attributeValue);
+                        }
+                    } else {
+                        unset($mergedFields[$attributeCode]);
+                    }
+                    break;
                 case AttributeTypes::GALLERY_ATTRIBUTE_TYPE:
                     if ($withMedia) {
-                        $mergedFields[$attributeCode] = array_map(fn ($path) => $this->getExistingFilePath($path), (array) $attributeValue);
-                        $mergedFields[$attributeCode] = implode(',', $mergedFields[$attributeCode]);
+                        $paths = is_array($attributeValue) ? $attributeValue : preg_split('/[\s,]+/', (string) $attributeValue);
+                        $paths = array_values(array_filter(
+                            array_map(
+                                fn ($path) => $this->resolveMediaForExport((string) $path, $identifier),
+                                (array) $paths
+                            ),
+                            'strlen'
+                        ));
+
+                        if ($paths === []) {
+                            unset($mergedFields[$attributeCode]);
+                        } else {
+                            $mergedFields[$attributeCode] = implode(',', $paths);
+                        }
                     } else {
                         unset($mergedFields[$attributeCode]);
                     }
@@ -795,15 +987,24 @@ class Exporter extends AbstractExporter
                 case AttributeTypes::IMAGE_ATTRIBUTE_TYPE:
                 case AttributeTypes::FILE_ATTRIBUTE_TYPE:
                     if ($withMedia) {
-                        $mergedFields[$attributeCode] = is_array($attributeValue) ? $this->getExistingFilePath($attributeValue[0]) : $this->getExistingFilePath($attributeValue);
+                        $path = is_array($attributeValue) ? ($attributeValue[0] ?? null) : $attributeValue;
+
+                        $resolved = $path ? $this->resolveMediaForExport((string) $path, $identifier) : null;
+
+                        if ($resolved) {
+                            $mergedFields[$attributeCode] = $resolved;
+                        } else {
+                            unset($mergedFields[$attributeCode]);
+                        }
                     } else {
                         unset($mergedFields[$attributeCode]);
                     }
                     break;
 
                 case AttributeTypes::PRICE_ATTRIBUTE_TYPE:
-                    $channelData = $this->channelRepository->where('code', $channel)->with(['locales', 'currencies'])->first()->toArray();
-                    foreach ($channelData['currencies'] as $currency) {
+                    $channelData = $this->channelByCode($channel);
+
+                    foreach ($channelData['currencies'] ?? [] as $currency) {
                         if (! empty($attributeValue[$currency['code']])) {
                             $mergedFields[$attributeCode] = is_array($attributeValue) ? $attributeValue[$currency['code']] : $attributeValue;
                         }
@@ -828,6 +1029,68 @@ class Exporter extends AbstractExporter
                     break;
             }
         }
+
+        $bagistoConfig = config('bagisto-attributes', []);
+
+        $multiTypeMap = [];
+        foreach ($bagistoConfig as $cfg) {
+            if (empty($cfg['multiple']) || empty($cfg['type'])) {
+                continue;
+            }
+            $types = array_map('trim', explode(',', $cfg['type']));
+            $multiTypeMap[$cfg['code']] = $types;
+        }
+
+        foreach ($multiTypeMap as $bagistoCode => $types) {
+            $combined = [];
+
+            foreach ($this->sourceCodesInMappedOrder($bagistoCode, $mergedFields) as $code) {
+                $val = $mergedFields[$code];
+
+                if ($val === null || $val === '' || $val === []) {
+                    continue;
+                }
+
+                $attr = $this->attributeByCode((string) $code);
+
+                if ($attr && in_array($attr->type, $types, true)) {
+                    $combined[] = is_array($val) ? implode(',', $val) : $val;
+                    unset($mergedFields[$code]);
+                }
+            }
+
+            if ($combined !== []) {
+                $mergedFields[$bagistoCode] = implode(',', $combined);
+            }
+        }
+    }
+
+    private function sourceCodesInMappedOrder(string $bagistoCode, array $mergedFields): array
+    {
+        $mapped = (array) (
+            $this->mappingAttributes['image_attribute']->mapped_value[$bagistoCode]
+            ?? $this->mappingAttributes['standard_attribute']->mapped_value[$bagistoCode]
+            ?? []
+        );
+
+        $codes = array_keys($mergedFields);
+
+        $ordered = array_values(array_intersect($mapped, $codes));
+
+        return array_merge($ordered, array_values(array_diff($codes, $ordered)));
+    }
+
+    protected function makeDamPublicUrl(string $filePath): string
+    {
+        if (config('filesystems.default') === 's3') {
+            return $this->resolveMediaUrl($filePath);
+        }
+
+        return URL::temporarySignedRoute(
+            'bagisto.asset.fetch',
+            now()->addMinutes($this->temporaryUrlTtl()),
+            ['path' => $filePath]
+        );
     }
 
     protected function getCategoryFormatData(array $item, &$mergedFields): void
@@ -835,7 +1098,7 @@ class Exporter extends AbstractExporter
         if (! empty($item['values']['categories']) && is_array($item['values']['categories'])) {
             $categoryData = [];
             foreach ($item['values']['categories'] as $code) {
-                $category = $this->categoryRepository->where('code', $code)->first();
+                $category = $this->categoryByCode((string) $code);
                 if (! $category) {
                     continue;
                 }
@@ -866,25 +1129,106 @@ class Exporter extends AbstractExporter
 
     protected function getAssociationsFormat(array $item, string $type): ?string
     {
-        $associations = [];
-        $newAssociations = null;
-        if ($association = $this->getAssociations($item, $type)) {
-            $products = explode(',', $association);
-            foreach ($products as $sku) {
-                $productData = $this->productRepository->where('sku', $sku)->first();
-                if ($productData) {
-                    $associations[] = $productData->sku;
-                }
-            }
-            $newAssociations = implode(',', $associations);
+        $association = $this->getAssociations($item, $type);
+
+        if (! $association) {
+            return null;
         }
 
-        return $newAssociations;
+        return implode(',', $this->resolveExistingSkus($this->parseIdentifiers($association)));
+    }
+
+    protected function resolveExistingSkus(array $skus): array
+    {
+        $unresolved = array_values(array_diff($skus, array_keys($this->knownSkus)));
+
+        if ($unresolved !== []) {
+            $isDefaultMapping = $this->mappedSkuAttributeCode() === self::UNOPIM_SKU_FIELD;
+
+            $columns = $isDefaultMapping ? ['id', 'sku'] : ['id', 'sku', 'values'];
+
+            $found = [];
+
+            foreach ($this->productRepository->whereIn('sku', $unresolved)->get($columns) as $product) {
+                $found[$product->sku] = $isDefaultMapping
+                    ? $product->sku
+                    : $this->bagistoSkuFor($product->toArray());
+            }
+
+            foreach ($unresolved as $sku) {
+                $this->knownSkus[$sku] = $found[$sku] ?? null;
+            }
+        }
+
+        return array_values(array_filter(array_map(
+            fn (string $sku): ?string => $this->knownSkus[$sku],
+            $skus
+        )));
+    }
+
+    protected function resolveMediaForExport(string $mediaPath, string $identifier): ?string
+    {
+        if (! BagistoImageFormat::accepts($mediaPath)) {
+            $this->recordExcludedMedia($identifier, SkipReason::UNSUPPORTED_IMAGE_FORMAT, [basename($mediaPath)]);
+
+            return null;
+        }
+
+        $resolved = $this->getExistingFilePath($mediaPath);
+
+        if (! $resolved) {
+            $this->recordExcludedMedia($identifier, SkipReason::MEDIA_NOT_FOUND, [basename($mediaPath)]);
+        }
+
+        return $resolved;
     }
 
     protected function getExistingFilePath(string $mediaPath): ?string
     {
-        return Storage::exists($mediaPath) ? Storage::url($mediaPath) : null;
+        if (config('filesystems.default') === 's3') {
+            $disk = Storage::disk('s3');
+
+            if (! $disk->exists($mediaPath)) {
+                return null;
+            }
+
+            return $this->resolveMediaUrl($mediaPath);
+        }
+
+        if (! Storage::exists($mediaPath)) {
+            return null;
+        }
+
+        return Storage::url($this->encodeMediaPath($mediaPath));
+    }
+
+    protected function temporaryUrlTtl(): int
+    {
+        $ttl = (int) config('bagisto-media.temporary_url_ttl', 60);
+
+        return $ttl > 0 ? $ttl : 60;
+    }
+
+    protected function resolveMediaUrl(string $mediaPath): string
+    {
+        $visibility = config('filesystems.disks.s3.visibility') ?? 'public';
+
+        if ($visibility === 'private') {
+            return Storage::disk('s3')->temporaryUrl($mediaPath, now()->addMinutes($this->temporaryUrlTtl()));
+        }
+
+        $bucketUrl = config('filesystems.disks.s3.url');
+
+        if (! empty($bucketUrl)) {
+            return rtrim($bucketUrl, '/').'/'.$this->encodeMediaPath($mediaPath);
+        }
+
+        return Storage::disk('s3')->url(ltrim($mediaPath, '/'));
+    }
+
+    protected function encodeMediaPath(string $mediaPath): string
+    {
+        return implode('/', array_map('rawurlencode', explode('/', ltrim($mediaPath, '/'))));
     }
 
     protected function createSlug(string $name): string

@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto-suodattimet',
@@ -26,6 +25,12 @@ return [
             'type'               => 'Tuotetyyppi',
             'channel'            => 'Kanava',
             'locale'             => 'Lähdealue',
+            'channels'           => 'Kanavat',
+            'channels-info'      => 'Vain valittuun tunnisteeseen liitetyt kanavat. Jätä tyhjäksi, jos haluat viedä kaikki liitetyt kanavat.',
+            'locales'            => 'Kielet',
+            'locales-info'       => 'Vain valittuun tunnisteeseen liitetyt kielet. Jätä tyhjäksi, jos haluat viedä kaikki liitetyt kielet.',
+            'categories'         => 'Kategoriat',
+            'categories-info'    => 'Vain nämä kategoriat viedään. Myös niiden yläkategoriat viedään, jotta puurakenne säilyy ehjänä.',
             'code'               => 'Suodata koodin mukaan',
             'sku'                => 'Suodata SKU:n mukaan',
             'all'                => 'Kaikki',
@@ -33,22 +38,24 @@ return [
             'false'              => 'Ei käytössä (Epätosi)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => 'Tunnistetiedot',
+                'attribute-mapping' => 'Attribuuttien määritys',
+                'category-mapping'  => 'Kategoriakenttien yhdistäminen',
+            ],
             'index' => [
                 'title'      => 'Tunnistetiedot',
                 'invalid'    => 'Virheelliset tunnistetiedot',
                 'create-btn' => 'Luo tunnistetiedot',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'Kaupan URL',
                     'email'    => 'Sähköpostiosoite',
                     'edit'     => 'Muokkaa',
                     'delete'   => 'Poista',
                 ],
-
                 'create' => [
                     'title'    => 'Luo tunnistetiedot',
                     'shop_url' => 'Kaupan URL',
@@ -56,12 +63,10 @@ return [
                     'password' => 'Salasana',
                     'save-btn' => 'Tallenna',
                 ],
-
                 'create-success' => 'Tunnistetiedot luotiin onnistuneesti.',
                 'update-success' => 'Tunnistetiedot päivitettiin onnistuneesti.',
                 'delete-success' => 'Tunnistetiedot poistettiin onnistuneesti.',
             ],
-
             'edit' => [
                 'title'                     => 'Muokkaa tunnistetietoja',
                 'shop_url'                  => 'Kaupan URL',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'UnoPim-kanava',
                 'unopim-locale'             => 'UnoPim-lähdealue',
                 'credential'                => 'Tunnistetieto',
+                'select-unopim-channel'     => 'Valitse UnoPim-kanava',
+                'select-unopim-locale'      => 'Valitse UnoPim-kieli',
+                'server-down'               => 'Bagisto-palvelin on tällä hetkellä alhaalla; päivitä tunnistetiedot tai käynnistä palvelin uudelleen.',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'Kategoriakenttien yhdistäminen tallennettiin onnistuneesti',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Tunnistetietoja ei löytynyt.',
+                'attribute-not-found'         => 'Määritettä ei löytynyt.',
+                'no-locale-mapping'           => ':count kategoriaa ei viety: käyttökelpoista kielimääritystä ei ole. Avaa tunnistetiedot ja tallenna kanava- ja kielimääritys uudelleen.',
+                'no-attribute-locale-mapping' => ':count määritettä ei viety: valituilla kanavilla ei ole Bagiston kielimääritystä. Avaa tunnistetiedot ja tallenna kanava- ja kielimääritys.',
+                'invalid-locale-mapping'      => 'Kielimäärityksen merkintä ohitettiin: Bagiston kielelle ”:locale” odotettiin UnoPim-kielikoodia, saatiin :given.',
+                'category-ancestors-added'    => 'Vientiin lisättiin :count yläkategoriaa, jotta valitut kategoriat säilyttävät paikkansa puussa: :categories',
+                'variant-group-flattened'     => 'Tuote :identifier: varianttiryhmä purettiin varianteikseen.',
+            ],
+            'skipped' => [
+                'skipped-heading'          => ':count tuotetta ei viety',
+                'skipped-description'      => 'Nämä tuotteet jäivät UnoPimiin. Korjaa alla mainittu syy ja suorita vienti uudelleen — latausloki sisältää kaikki tiedot.',
+                'skipped-reason'           => 'Miksi sitä ei viety',
+                'excluded-heading'         => ':count tiedostoa jätettiin viennistä pois',
+                'excluded-description'     => 'Nämä tuotteet päätyivät Bagistoon, mutta alla olevat tiedostot jäivät pois. Kaikki muu vietiin normaalisti.',
+                'excluded-reason'          => 'Miksi tiedosto jätettiin pois',
+                'product'                  => 'Tuote',
+                'missing-required-fields'  => 'Tuotetta :identifier ei viety: Bagisto vaatii kentät :fields, eikä määritetyllä UnoPim-attribuutilla ollut arvoa tälle tuotteelle. Aseta arvo tai anna kentälle kiinteä arvo Attribuuttien määritys -välilehdellä.',
+                'unsupported-type'         => 'Tuotetta :identifier ei viety: tuotetyypille :type ei ole vastinetta Bagistossa.',
+                'no-scope-match'           => 'Tuotetta :identifier ei viety: mitään valituista kanavista ja kielistä ei ole määritetty tähän Bagisto-kauppaan.',
+                'rejected-by-bagisto'      => 'Bagisto hylkäsi tuotteen :identifier: :errors',
+                'request-failed'           => 'Tuotetta :identifier ei viety, koska pyyntö Bagistoon epäonnistui: :errors',
+                'unsupported-media-type'   => 'Tuote :identifier: :file jätettiin pois, koska Bagiston tuotekuvat hyväksyvät vain kuvatiedostoja.',
+                'unsupported-image-format' => 'Tuote :identifier: :file jätettiin pois, koska Bagisto ei pysty purkamaan tätä kuvamuotoa. Käytä muotoa JPG, PNG, GIF, WEBP, BMP tai AVIF.',
+                'media-not-found'          => 'Tuote :identifier: :file jätettiin pois, koska tiedostoa ei enää ole tallennustilassa.',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => 'Attribuuttien yhdistämiset',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'data:',
                     'flash-message'     => 'Anna kelvollinen attribuuttikoodi ja -tyyppi.',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => 'Lisäattribuuttien yhdistämiset',
-                    'description' => 'Kirjoita Bagisto-attribuuttikoodi lisätäksesi lisäattribuutin ja yhdistääksesi sen.',
+                    'title'            => 'Lisäattribuuttien yhdistämiset',
+                    'description'      => 'Kirjoita Bagisto-attribuuttikoodi lisätäksesi lisäattribuutin ja yhdistääksesi sen.',
+                    'attribute-code'   => 'Bagiston attribuuttikoodi',
+                    'attribute-type'   => 'Attribuutin tyyppi',
+                    'added'            => 'Lisäattribuutin määritys lisätty.',
+                    'removed'          => 'Lisämääritteen kartoitus poistettu.',
+                    'duplicate'        => 'Kyseinen attribuuttikoodi on jo määritetty.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Konfiguroitavien attribuuttien yhdistämiset',
                     'description' => 'Kirjoita Bagisto-attribuuttikoodi lisätäksesi lisäattribuutin ja yhdistääksesi sen.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Kategoriakenttien yhdistämiset',
                     'save'                   => 'Tallenna',

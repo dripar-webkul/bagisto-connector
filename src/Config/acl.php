@@ -27,14 +27,14 @@ return [
         'route' => 'admin.bagisto.credentials.destroy',
         'sort'  => 3,
     ], [
-        'key'   => 'bagisto.attributes_mapping',
+        'key'   => 'bagisto.credentials.attribute_mapping',
         'name'  => 'bagisto::app.components.layouts.sidebar.attributes-mapping',
-        'route' => 'admin.bagisto.mappings.attributes.index',
-        'sort'  => 2,
+        'route' => 'admin.bagisto.credentials.attribute_mapping',
+        'sort'  => 4,
     ], [
-        'key'   => 'bagisto.category_fields_mapping',
+        'key'   => 'bagisto.credentials.category_mapping',
         'name'  => 'bagisto::app.components.layouts.sidebar.category-fields-mapping',
-        'route' => 'admin.bagisto.mappings.category_fields.index',
-        'sort'  => 3,
+        'route' => 'admin.bagisto.credentials.category_mapping',
+        'sort'  => 5,
     ],
 ];

@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto-filtre',
@@ -26,6 +25,12 @@ return [
             'type'               => 'Produkttype',
             'channel'            => 'Kanal',
             'locale'             => 'Kildelokalitet',
+            'channels'           => 'Kanaler',
+            'channels-info'      => 'Kun de kanaler, der er tilknyttet den valgte legitimation. Lad feltet være tomt for at eksportere alle tilknyttede kanaler.',
+            'locales'            => 'Sprog',
+            'locales-info'       => 'Kun de sprog, der er tilknyttet den valgte legitimation. Lad feltet være tomt for at eksportere alle tilknyttede sprog.',
+            'categories'         => 'Kategorier',
+            'categories-info'    => 'Kun disse kategorier eksporteres. Deres overordnede kategorier eksporteres også, så træet kommer frem intakt.',
             'code'               => 'Filtrer efter kode',
             'sku'                => 'Filtrer efter SKU',
             'all'                => 'Alle',
@@ -33,22 +38,24 @@ return [
             'false'              => 'Deaktiveret (Falsk)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => 'Legitimationsoplysninger',
+                'attribute-mapping' => 'Attributtilknytning',
+                'category-mapping'  => 'Mapning af kategorifelter',
+            ],
             'index' => [
                 'title'      => 'Legitimationsoplysninger',
                 'invalid'    => 'Ugyldige legitimationsoplysninger',
                 'create-btn' => 'Opret legitimationsoplysninger',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'Butiks-URL',
                     'email'    => 'E-mailadresse',
                     'edit'     => 'Rediger',
                     'delete'   => 'Slet',
                 ],
-
                 'create' => [
                     'title'    => 'Opret legitimationsoplysninger',
                     'shop_url' => 'Butiks-URL',
@@ -56,12 +63,10 @@ return [
                     'password' => 'Adgangskode',
                     'save-btn' => 'Gem',
                 ],
-
                 'create-success' => 'Legitimationsoplysninger blev oprettet.',
                 'update-success' => 'Legitimationsoplysninger blev opdateret.',
                 'delete-success' => 'Legitimationsoplysninger blev slettet.',
             ],
-
             'edit' => [
                 'title'                     => 'Rediger legitimationsoplysninger',
                 'shop_url'                  => 'Butiks-URL',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'UnoPim-kanal',
                 'unopim-locale'             => 'UnoPim-kildelokalitet',
                 'credential'                => 'Legitimationsoplysning',
+                'select-unopim-channel'     => 'Vælg UnoPim-kanal',
+                'select-unopim-locale'      => 'Vælg UnoPim-sprog',
+                'server-down'               => 'Bagisto-serveren er nede nu; opdater venligst legitimationsoplysningerne, eller genstart serveren.',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'Mapningen af kategorifelter er blevet gemt',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Legitimationsoplysningerne blev ikke fundet.',
+                'attribute-not-found'         => 'Attributten blev ikke fundet.',
+                'no-locale-mapping'           => ':count kategorier blev ikke eksporteret: ingen brugbar sprogtilknytning. Åbn legitimationsoplysningerne, og gem kanal- og sprogtilknytningen igen.',
+                'no-attribute-locale-mapping' => ':count attributter blev ikke eksporteret: de valgte kanaler har ingen Bagisto-sprogtilknytning. Åbn legitimationsoplysningerne, og gem kanal- og sprogtilknytningen.',
+                'invalid-locale-mapping'      => 'Sprogtilknytningen blev ignoreret: forventede en UnoPim-sprogkode for Bagisto-sproget „:locale“, men modtog :given.',
+                'category-ancestors-added'    => ':count overordnede kategorier blev føjet til eksporten, så de valgte kategorier beholder deres plads i træet: :categories',
+                'variant-group-flattened'     => 'Produkt :identifier: variantgruppen blev fladet ud til sine varianter.',
+            ],
+            'skipped' => [
+                'skipped-heading'          => ':count produkt(er) blev ikke eksporteret',
+                'skipped-description'      => 'Disse produkter blev i UnoPim. Ret årsagen nedenfor, og kør eksporten igen — downloadloggen indeholder alle detaljer.',
+                'skipped-reason'           => 'Hvorfor det ikke blev eksporteret',
+                'excluded-heading'         => ':count fil(er) blev udeladt af eksporten',
+                'excluded-description'     => 'Disse produkter nåede frem til Bagisto, men filerne nedenfor blev udeladt. Alt andet blev eksporteret normalt.',
+                'excluded-reason'          => 'Hvorfor filen blev udeladt',
+                'product'                  => 'Produkt',
+                'missing-required-fields'  => 'Produktet :identifier blev ikke eksporteret: Bagisto kræver :fields, og den tilknyttede UnoPim-attribut havde ingen værdi for dette produkt. Angiv en værdi, eller giv feltet en fast værdi under fanen Attributtilknytning.',
+                'unsupported-type'         => 'Produktet :identifier blev ikke eksporteret: produkttypen :type har ingen tilsvarende type i Bagisto.',
+                'no-scope-match'           => 'Produktet :identifier blev ikke eksporteret: ingen af de valgte kanaler og sprog er tilknyttet denne Bagisto-butik.',
+                'rejected-by-bagisto'      => 'Produktet :identifier blev afvist af Bagisto: :errors',
+                'request-failed'           => 'Produktet :identifier blev ikke eksporteret, fordi anmodningen til Bagisto mislykkedes: :errors',
+                'unsupported-media-type'   => 'Produkt :identifier: :file blev udeladt, fordi Bagistos produktbilleder kun accepterer billedfiler.',
+                'unsupported-image-format' => 'Produkt :identifier: :file blev udeladt, fordi Bagisto ikke kan afkode det billedformat. Brug JPG, PNG, GIF, WEBP, BMP eller AVIF.',
+                'media-not-found'          => 'Produkt :identifier: :file blev udeladt, fordi filen ikke længere findes i lageret.',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => 'Attributmapninger',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'data:',
                     'flash-message'     => 'Angiv en gyldig attributkode og -type.',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => 'Yderligere attributmapninger',
-                    'description' => 'Skriv Bagisto-attributkoden for at tilføje en yderligere attribut og mappe den.',
+                    'title'            => 'Yderligere attributmapninger',
+                    'description'      => 'Skriv Bagisto-attributkoden for at tilføje en yderligere attribut og mappe den.',
+                    'attribute-code'   => 'Bagisto-attributkode',
+                    'attribute-type'   => 'Attributtype',
+                    'added'            => 'Ekstra attributtilknytning tilføjet.',
+                    'removed'          => 'Yderligere attributtilknytning fjernet.',
+                    'duplicate'        => 'Den attributkode er allerede tilknyttet.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Konfigurerbare attributmapninger',
                     'description' => 'Skriv Bagisto-attributkoden for at tilføje en yderligere attribut og mappe den.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Mapninger af kategorifelter',
                     'save'                   => 'Gem',

@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto 筛选器',
@@ -26,6 +25,12 @@ return [
             'type'               => '产品类型',
             'channel'            => '渠道',
             'locale'             => '语言区域',
+            'channels'           => '渠道',
+            'channels-info'      => '仅显示与所选凭据映射的渠道。留空则导出所有已映射的渠道。',
+            'locales'            => '语言区域',
+            'locales-info'       => '仅显示与所选凭据映射的语言区域。留空则导出所有已映射的语言区域。',
+            'categories'         => '分类',
+            'categories-info'    => '仅导出这些分类。其父级分类也会一并导出，以保证分类树完整。',
             'code'               => '按代码筛选',
             'sku'                => '按 SKU 筛选',
             'all'                => '全部',
@@ -33,22 +38,24 @@ return [
             'false'              => '已禁用（假）',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => '凭据',
+                'attribute-mapping' => '属性映射',
+                'category-mapping'  => '分类字段映射',
+            ],
             'index' => [
                 'title'      => '凭证',
                 'invalid'    => '无效的凭证',
                 'create-btn' => '创建凭证',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => '店铺 URL',
                     'email'    => '电子邮件地址',
                     'edit'     => '编辑',
                     'delete'   => '删除',
                 ],
-
                 'create' => [
                     'title'    => '创建凭证',
                     'shop_url' => '店铺 URL',
@@ -56,12 +63,10 @@ return [
                     'password' => '密码',
                     'save-btn' => '保存',
                 ],
-
                 'create-success' => '凭证创建成功。',
                 'update-success' => '凭证更新成功。',
                 'delete-success' => '凭证删除成功。',
             ],
-
             'edit' => [
                 'title'                     => '编辑凭证',
                 'shop_url'                  => '店铺 URL',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'UnoPim 渠道',
                 'unopim-locale'             => 'UnoPim 语言区域',
                 'credential'                => '凭证',
+                'select-unopim-channel'     => '选择 UnoPim 渠道',
+                'select-unopim-locale'      => '选择 UnoPim 语言区域',
+                'server-down'               => 'Bagisto 服务器当前不可用，请更新凭据或重启服务器。',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => '分类字段映射已成功保存',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => '未找到凭据。',
+                'attribute-not-found'         => '未找到属性。',
+                'no-locale-mapping'           => ':count 个分类未导出：没有可用的语言区域映射。请打开凭据并重新保存渠道与语言区域映射。',
+                'no-attribute-locale-mapping' => ':count 个属性未导出：所选渠道没有 Bagisto 语言区域映射。请打开凭据并保存渠道与语言区域映射。',
+                'invalid-locale-mapping'      => '已忽略语言区域映射条目：Bagisto 语言区域“:locale”需要一个 UnoPim 语言区域代码，但收到的是 :given。',
+                'category-ancestors-added'    => '已将 :count 个父级分类加入导出，以便所选分类在分类树中保持原有位置：:categories',
+                'variant-group-flattened'     => '商品 :identifier：变体组已展开为各个变体。',
+            ],
+            'skipped' => [
+                'skipped-heading'          => '有 :count 个商品未导出',
+                'skipped-description'      => '这些商品仍留在 UnoPim 中。请修复下方列出的原因后重新运行导出 — 下载日志中包含完整详情。',
+                'skipped-reason'           => '未导出的原因',
+                'excluded-heading'         => '有 :count 个文件被排除在导出之外',
+                'excluded-description'     => '这些商品已成功导入 Bagisto，但下列文件被跳过。其余内容均已正常导出。',
+                'excluded-reason'          => '文件被跳过的原因',
+                'product'                  => '商品',
+                'missing-required-fields'  => '商品 :identifier 未导出：Bagisto 要求填写 :fields，而映射的 UnoPim 属性在此商品上没有值。请设置一个值，或在“属性映射”选项卡中为该字段指定固定值。',
+                'unsupported-type'         => '商品 :identifier 未导出：商品类型 :type 在 Bagisto 中没有对应类型。',
+                'no-scope-match'           => '商品 :identifier 未导出：所选渠道和语言均未映射到该 Bagisto 商店。',
+                'rejected-by-bagisto'      => '商品 :identifier 被 Bagisto 拒绝：:errors',
+                'request-failed'           => '商品 :identifier 未导出，因为向 Bagisto 发送的请求失败：:errors',
+                'unsupported-media-type'   => '商品 :identifier：文件 :file 被跳过，因为 Bagisto 商品图片仅接受图片文件。',
+                'unsupported-image-format' => '商品 :identifier：文件 :file 被跳过，因为 Bagisto 无法解码该图片格式。请使用 JPG、PNG、GIF、WEBP、BMP 或 AVIF。',
+                'media-not-found'          => '商品 :identifier：文件 :file 被跳过，因为该文件已不在存储中。',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => '属性映射',
@@ -180,17 +214,19 @@ return [
                     'data'              => '数据：',
                     'flash-message'     => '请提供有效的属性代码和类型。',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => '附加属性映射',
-                    'description' => '编写 Bagisto 属性代码以添加附加属性并进行映射。',
+                    'title'            => '附加属性映射',
+                    'description'      => '编写 Bagisto 属性代码以添加附加属性并进行映射。',
+                    'attribute-code'   => 'Bagisto 属性代码',
+                    'attribute-type'   => '属性类型',
+                    'added'            => '已添加附加属性映射。',
+                    'removed'          => '已移除附加属性映射。',
+                    'duplicate'        => '该属性代码已被映射。',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => '可配置属性映射',
                     'description' => '编写 Bagisto 属性代码以添加附加属性并进行映射。',
                 ],
-
                 'category-fields' => [
                     'title'                  => '分类字段映射',
                     'save'                   => '保存',

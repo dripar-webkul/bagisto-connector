@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'عوامل تصفية Bagisto',
@@ -26,6 +25,12 @@ return [
             'type'               => 'نوع المنتج',
             'channel'            => 'القناة',
             'locale'             => 'اللغة المحلية',
+            'channels'           => 'القنوات',
+            'channels-info'      => 'القنوات المرتبطة ببيانات الاعتماد المحددة فقط. اتركه فارغًا لتصدير جميع القنوات المرتبطة.',
+            'locales'            => 'اللغات',
+            'locales-info'       => 'اللغات المرتبطة ببيانات الاعتماد المحددة فقط. اتركه فارغًا لتصدير جميع اللغات المرتبطة.',
+            'categories'         => 'الفئات',
+            'categories-info'    => 'يتم تصدير هذه الفئات فقط. ويتم تصدير الفئات الأصلية لها أيضًا، لتصل الشجرة كاملة.',
             'code'               => 'التصفية حسب الرمز',
             'sku'                => 'التصفية حسب SKU',
             'all'                => 'الكل',
@@ -33,22 +38,24 @@ return [
             'false'              => 'معطّل (خطأ)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => 'بيانات الاعتماد',
+                'attribute-mapping' => 'ربط السمات',
+                'category-mapping'  => 'تعيين حقول الفئة',
+            ],
             'index' => [
                 'title'      => 'أوراق الاعتماد',
                 'invalid'    => 'بيانات اعتماد غير صالحة',
                 'create-btn' => 'إنشاء بيانات اعتماد',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'المعرّف',
                     'shop-url' => 'رابط المتجر',
                     'email'    => 'عنوان البريد الإلكتروني',
                     'edit'     => 'تعديل',
                     'delete'   => 'حذف',
                 ],
-
                 'create' => [
                     'title'    => 'إنشاء بيانات اعتماد',
                     'shop_url' => 'رابط المتجر',
@@ -56,12 +63,10 @@ return [
                     'password' => 'كلمة المرور',
                     'save-btn' => 'حفظ',
                 ],
-
                 'create-success' => 'تم إنشاء بيانات الاعتماد بنجاح.',
                 'update-success' => 'تم تحديث بيانات الاعتماد بنجاح.',
                 'delete-success' => 'تم حذف بيانات الاعتماد بنجاح.',
             ],
-
             'edit' => [
                 'title'                     => 'تعديل بيانات الاعتماد',
                 'shop_url'                  => 'رابط المتجر',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'قناة UnoPim',
                 'unopim-locale'             => 'اللغة المحلية لـ UnoPim',
                 'credential'                => 'بيانات الاعتماد',
+                'select-unopim-channel'     => 'اختر قناة UnoPim',
+                'select-unopim-locale'      => 'اختر لغة UnoPim',
+                'server-down'               => 'خادم Bagisto متوقف الآن، يرجى تحديث بيانات الاعتماد أو إعادة تشغيل الخادم.',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'تم حفظ تعيين حقول الفئة بنجاح',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'لم يتم العثور على بيانات الاعتماد.',
+                'attribute-not-found'         => 'لم يتم العثور على السمة.',
+                'no-locale-mapping'           => 'لم يتم تصدير :count فئة: لا يوجد ربط لغة صالح. افتح بيانات الاعتماد وأعد حفظ ربط القناة واللغة.',
+                'no-attribute-locale-mapping' => 'لم يتم تصدير :count سمة: القنوات المحددة ليس لها ربط لغة في Bagisto. افتح بيانات الاعتماد واحفظ ربط القناة واللغة.',
+                'invalid-locale-mapping'      => 'تم تجاهل إدخال ربط اللغة: كان من المتوقع رمز لغة UnoPim للغة Bagisto «:locale»، وتم استلام :given.',
+                'category-ancestors-added'    => 'تمت إضافة :count فئة أصلية إلى التصدير للحفاظ على موضع الفئات المحددة في الشجرة: :categories',
+                'variant-group-flattened'     => 'المنتج :identifier: تم تسطيح مجموعة المتغيرات إلى متغيراتها.',
+            ],
+            'skipped' => [
+                'skipped-heading'          => 'لم يتم تصدير :count من المنتجات',
+                'skipped-description'      => 'بقيت هذه المنتجات في UnoPim. عالج السبب الموضح أدناه ثم شغّل التصدير مرة أخرى — يحتوي سجل التنزيل على كل التفاصيل.',
+                'skipped-reason'           => 'سبب عدم التصدير',
+                'excluded-heading'         => 'تم استبعاد :count من الملفات من التصدير',
+                'excluded-description'     => 'وصلت هذه المنتجات إلى Bagisto، لكن الملفات أدناه استُبعدت. أما كل ما عداها فقد صُدِّر بشكل طبيعي.',
+                'excluded-reason'          => 'سبب استبعاد الملف',
+                'product'                  => 'المنتج',
+                'missing-required-fields'  => 'لم يتم تصدير المنتج :identifier: يتطلب Bagisto الحقول :fields، ولم تكن لسمة UnoPim المرتبطة أي قيمة لهذا المنتج. عيّن قيمة، أو امنح الحقل قيمة ثابتة من تبويب ربط السمات.',
+                'unsupported-type'         => 'لم يتم تصدير المنتج :identifier: نوع المنتج :type ليس له مقابل في Bagisto.',
+                'no-scope-match'           => 'لم يتم تصدير المنتج :identifier: لا توجد أي من القنوات واللغات المحددة مرتبطة بمتجر Bagisto هذا.',
+                'rejected-by-bagisto'      => 'رفض Bagisto المنتج :identifier: :errors',
+                'request-failed'           => 'لم يتم تصدير المنتج :identifier لأن الطلب المُرسل إلى Bagisto قد فشل: :errors',
+                'unsupported-media-type'   => 'المنتج :identifier: استُبعد الملف :file لأن صور منتجات Bagisto تقبل ملفات الصور فقط.',
+                'unsupported-image-format' => 'المنتج :identifier: استُبعد الملف :file لأن Bagisto لا يستطيع فك ترميز هذا التنسيق. استخدم JPG أو PNG أو GIF أو WEBP أو BMP أو AVIF.',
+                'media-not-found'          => 'المنتج :identifier: استُبعد الملف :file لأنه لم يعد موجودًا في وحدة التخزين.',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => 'تعيينات السمات',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'البيانات:',
                     'flash-message'     => 'يرجى تقديم رمز ونوع سمة صالحين.',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => 'تعيينات السمات الإضافية',
-                    'description' => 'اكتب رمز سمة Bagisto لإضافة سمة إضافية وتعيينها.',
+                    'title'            => 'تعيينات السمات الإضافية',
+                    'description'      => 'اكتب رمز سمة Bagisto لإضافة سمة إضافية وتعيينها.',
+                    'attribute-code'   => 'رمز سمة Bagisto',
+                    'attribute-type'   => 'نوع السمة',
+                    'added'            => 'تمت إضافة ربط سمة إضافي.',
+                    'removed'          => 'تمت إزالة تعيين السمة الإضافية.',
+                    'duplicate'        => 'رمز السمة هذا مرتبط بالفعل.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'تعيينات السمات القابلة للتكوين',
                     'description' => 'اكتب رمز سمة Bagisto لإضافة سمة إضافية وتعيينها.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'تعيينات حقول الفئة',
                     'save'                   => 'حفظ',

@@ -5,10 +5,12 @@ namespace Webkul\Bagisto\Helpers\Exporters\Attribute;
 use Illuminate\Support\Facades\Cache;
 use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Bagisto\Enums\Export\CacheType;
+use Webkul\Bagisto\Enums\Export\MappingSection;
 use Webkul\Bagisto\Enums\Services\MethodType;
 use Webkul\Bagisto\Repositories\AttributeMappingRepository;
 use Webkul\Bagisto\Repositories\BagistoDataMapping;
 use Webkul\Bagisto\Repositories\CredentialRepository;
+use Webkul\Bagisto\Support\ScopeFilters;
 use Webkul\Bagisto\Traits\ApiRequest as ApiRequestTrait;
 use Webkul\Bagisto\Traits\Credential as CredentialTrait;
 use Webkul\Bagisto\Traits\ExportSummary as ExportSummaryTrait;
@@ -32,31 +34,12 @@ class Exporter extends AbstractExporter
 
     public const GET_ENTITY_TYPE = 'getAttribute';
 
-    /*
-     * For exporting file
-     */
     protected bool $exportsFile = false;
 
-    /**
-     * Current crenetial.
-     *
-     * @var array
-     */
-    protected $credential = [];
+    protected array $credential = [];
 
-    /**
-     * @var array
-     */
-    protected $attributes = [];
+    protected array $additionalInfoValue = [];
 
-    /**
-     * @var array
-     */
-    protected $additionalInfoValue = [];
-
-    /**
-     * Create a new instance of the exporter.
-     */
     public function __construct(
         protected JobTrackBatchRepository $exportBatchRepository,
         protected FileExportFileBuffer $exportFileBuffer,
@@ -68,22 +51,17 @@ class Exporter extends AbstractExporter
         parent::__construct($exportBatchRepository, $exportFileBuffer);
     }
 
-    /**
-     * Initializes the data for the export process.
-     *
-     * @return void
-     */
-    public function initialize()
+    public function initialize(): void
     {
         $this->initializeCredential($this->getFilters());
 
-        $this->additionalInfoValue = Cache::get(CacheType::ADDITIONAL_INFO->value, []);
+        $this->additionalInfoValue = Cache::get(CacheType::ADDITIONAL_INFO->forCredential($this->credential['id'] ?? null), []);
     }
 
-    public function checkRequiredCondition()
+    public function checkRequiredCondition(): bool
     {
         if (empty($this->credential)) {
-            $this->jobLogger->warning('Credential not found!');
+            $this->jobLogger->warning(trans('bagisto::app.bagisto.export.errors.credential-not-found'));
 
             return true;
         }
@@ -91,9 +69,6 @@ class Exporter extends AbstractExporter
         return false;
     }
 
-    /**
-     * Start the export process
-     */
     public function exportBatch(JobTrackBatchContract $batch, $filePath): bool
     {
         $this->initialize();
@@ -106,18 +81,27 @@ class Exporter extends AbstractExporter
 
         $this->write($preparedData, $batch->id);
 
-        /**
-         * Update export batch process state summary
-         */
         $this->updateBatchState($batch->id, Export::STATE_PROCESSED);
 
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function getResults()
+    protected function flattenMappedCodes(array $mappedValue): array
+    {
+        $codes = [];
+
+        foreach ($mappedValue as $value) {
+            foreach ((array) $value as $code) {
+                if (is_string($code) && $code !== '') {
+                    $codes[] = $code;
+                }
+            }
+        }
+
+        return $codes;
+    }
+
+    protected function getResults(): \Iterator
     {
         $this->initialize();
 
@@ -127,20 +111,32 @@ class Exporter extends AbstractExporter
 
         $filters = $this->getFilters();
         $attributeCodes = $filters['code'] ?? null;
-        $mappedAttributeValue = [];
-        $mappedAttributeValue = $this->attributeMappingRepository->findByField('section', 'standard_attribute')->first();
+        $credentialId = $this->credential['id'] ?? null;
+
+        $mapping = $this->attributeMappingRepository->forCredential($credentialId, MappingSection::STANDARD_ATTRIBUTE);
+
         $mappedAttributes = [];
-        if ($mappedAttributeValue) {
-            $additionalInfo = $mappedAttributeValue?->additional_info ?? [];
-            ! empty($additionalInfo['configurable_attribute']) ? $additionalInfoValue = explode(',', $additionalInfo['configurable_attribute']) : $additionalInfoValue = [];
-            $mappedAttributes = array_unique(array_values($mappedAttributeValue?->mapped_value));
-            $mappedAttributes = array_unique(array_merge($mappedAttributes, $additionalInfoValue));
-            Cache::put(CacheType::ADDITIONAL_INFO->value, $additionalInfoValue, config('session.lifetime'));
+
+        if ($mapping) {
+            $configurable = $mapping->additional_info['configurable_attribute'] ?? null;
+
+            $configurableAttributes = empty($configurable) ? [] : explode(',', $configurable);
+
+            $mappedAttributes = array_values(array_unique(array_merge(
+                $this->flattenMappedCodes($mapping->mapped_value ?? []),
+                $configurableAttributes
+            )));
+
+            Cache::put(
+                CacheType::ADDITIONAL_INFO->forCredential($credentialId),
+                $configurableAttributes,
+                config('session.lifetime')
+            );
         }
 
         if ($attributeCodes) {
             return $this->source->with('options')
-                ->whereIn('code', $this->convertCommaSeparatedToArray($attributeCodes))
+                ->whereIn('code', $this->parseIdentifiers($attributeCodes))
                 ->get()->getIterator();
         }
 
@@ -157,7 +153,7 @@ class Exporter extends AbstractExporter
         return $this->source->with('options')->all()->getIterator();
     }
 
-    public function write($items, $batchId)
+    public function write($items, $batchId): void
     {
         foreach ($items as $item) {
             $id = $item['id'];
@@ -250,35 +246,54 @@ class Exporter extends AbstractExporter
         $mapData = $response;
     }
 
-    /**
-     * Prepare attributes from current batch
-     */
-    public function prepareAttributes(JobTrackBatchContract $batch, mixed $filePath)
+    public function prepareAttributes(JobTrackBatchContract $batch, mixed $filePath): array
     {
         $attributes = [];
-        $filters = $this->getFilters();
-        $bagistoLocales = $this->getMappedLocales();
-        $bagistoChannel = $this->findMappedChannel($filters['channel']);
 
-        if (! $bagistoChannel || empty($bagistoLocales[$bagistoChannel])) {
+        $locales = $this->exportableLocales($this->getFilters());
+
+        if ($locales === []) {
             $this->skippedItemsCount += count($batch->data);
 
-            $this->jobLogger?->warning(
-                count($batch->data).' attributes not exported: no Bagisto channel/locale mapping for "'
-                .$filters['channel'].'". Open the credential and save the channel and locale mapping.'
-            );
+            $this->jobLogger?->warning(trans('bagisto::app.bagisto.export.errors.no-attribute-locale-mapping', [
+                'count' => count($batch->data),
+            ]));
 
             return $attributes;
         }
 
         foreach ($batch->data as $rowData) {
-            $attributes[] = $this->getCommonFields($rowData, $bagistoLocales[$bagistoChannel]);
+            $attributes[] = $this->getCommonFields($rowData, $locales);
         }
 
         return $attributes;
     }
 
-    protected function getCommonFields($item, $locale)
+    protected function exportableLocales(array $filters): array
+    {
+        $filterChannels = ScopeFilters::channelCodes($filters);
+        $filterLocales = ScopeFilters::localeCodes($filters);
+
+        $localeMap = $this->getMappedLocales();
+
+        $locales = [];
+
+        foreach ($this->getMappedChannels() as $bagistoChannel => $unopimChannel) {
+            if ($filterChannels !== [] && ! in_array($unopimChannel, $filterChannels, true)) {
+                continue;
+            }
+
+            foreach ($localeMap[$bagistoChannel] ?? [] as $bagistoLocale => $unopimLocale) {
+                if ($filterLocales === [] || in_array($unopimLocale, $filterLocales, true)) {
+                    $locales[$bagistoLocale] = $unopimLocale;
+                }
+            }
+        }
+
+        return $locales;
+    }
+
+    protected function getCommonFields($item, $locale): array
     {
         $locale = array_flip($locale);
         unset($item['created_at'], $item['updated_at']);

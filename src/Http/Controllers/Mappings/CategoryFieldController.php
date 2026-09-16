@@ -4,10 +4,13 @@ namespace Webkul\Bagisto\Http\Controllers\Mappings;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\View\View;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Bagisto\Enums\Export\CacheType;
+use Webkul\Bagisto\Enums\Export\MappingSection;
 use Webkul\Bagisto\Http\Requests\StandardFieldRequest;
 use Webkul\Bagisto\Repositories\CategoryFieldMappingRepository;
+use Webkul\Bagisto\Repositories\CredentialRepository;
 use Webkul\Category\Repositories\CategoryFieldRepository;
 
 class CategoryFieldController extends Controller
@@ -15,59 +18,53 @@ class CategoryFieldController extends Controller
     public function __construct(
         protected CategoryFieldRepository $categoryFieldRepository,
         protected CategoryFieldMappingRepository $categoryFieldMappingRepository,
+        protected CredentialRepository $credentialRepository,
     ) {}
 
-    public function index()
+    public function index(int $credentialId): View
     {
-        $bagistoCategoryFields = config('bagisto-category-fields');
+        $credential = $this->credentialRepository->findOrFail($credentialId);
 
-        $bagistoCategoryFields = $this->translate($bagistoCategoryFields);
+        $bagistoCategoryFields = $this->translate(config('bagisto-category-fields'));
 
         $categoryFields = $this->categoryFieldRepository->all();
 
-        $mappedCategoryFields = $this->categoryFieldMappingRepository->findByField('section', 'standard_field')->first();
+        $mappedCategoryFields = $this->categoryFieldMappingRepository->forCredential($credential->id, MappingSection::STANDARD_FIELD);
 
-        return view('bagisto::export.mappings.categoryfields.index', compact('bagistoCategoryFields', 'categoryFields', 'mappedCategoryFields'));
+        return view('bagisto::credentials.category-mapping', compact('credential', 'bagistoCategoryFields', 'categoryFields', 'mappedCategoryFields'));
     }
 
-    /**
-     * Handles the process of storing or updating attribute mappings.
-     */
-    public function storeOrUpdate(StandardFieldRequest $request): JsonResponse
+    public function storeOrUpdate(StandardFieldRequest $request, int $credentialId): JsonResponse
     {
-        try {
-            // Format the data for attribute mapping
-            $formatedData = $this->setFormatForMapping(request()->all());
+        abort_unless(bouncer()->hasPermission('bagisto.credentials.category_mapping'), 403);
 
-            // Check if standard attribute mapping exists, update if exists, otherwise create a new one
-            $standardAttributes = $this->categoryFieldMappingRepository->findByField('section', 'standard_field')->first();
+        try {
+            $credential = $this->credentialRepository->findOrFail($credentialId);
+
+            $formatedData = $this->setFormatForMapping(request()->all());
 
             if (! empty($formatedData['standard_field']['fixed_value'])) {
                 $formatedData['standard_field']['fixed_value'] = $this->sortJsonKeysCustom($formatedData['standard_field']['fixed_value']);
             }
-            if ($standardAttributes) {
-                $standardAttributes->update($formatedData['standard_field']);
-            } else {
-                $this->categoryFieldMappingRepository->create($formatedData['standard_field']);
-            }
 
-            // if exist in cache then remove from cache
-            Cache::forget(CacheType::CATEGORY_FIELD_MAPPING->value);
+            $this->categoryFieldMappingRepository->saveSection(
+                $credential->id,
+                MappingSection::STANDARD_FIELD,
+                $formatedData['standard_field']
+            );
+
+            Cache::forget(CacheType::CATEGORY_FIELD_MAPPING->forCredential($credential->id));
 
             return new JsonResponse([
                 'message' => trans('bagisto::app.bagisto.bagisto-category-fields.success-message'),
             ], 201);
         } catch (\Exception $e) {
-            // Return an error response
             return new JsonResponse([
                 'message' => $e->getMessage(),
             ], 400);
         }
     }
 
-    /**
-     * Arrange Data for the attribute mapping
-     */
     private function setFormatForMapping(array $data): array
     {
         $formatedData = [];
@@ -81,9 +78,7 @@ class CategoryFieldController extends Controller
             return $value !== '';
         });
 
-        /** Format for standard category fields */
         $formatedData['standard_field'] = [
-            'section'      => 'standard_field',
             'mapped_value' => $standardCategoryFields,
             'fixed_value'  => $fixedValue,
         ];

@@ -1,23 +1,32 @@
-<x-admin::layouts.with-history>
+<x-admin::layouts.with-history
+    :active-tab="\Webkul\Bagisto\Enums\CredentialTab::CATEGORY_MAPPING->value"
+    :tab-items="\Webkul\Bagisto\Enums\CredentialTab::items($credential->id)"
+    :history-id="$credential->id"
+    :history-url="\Webkul\Bagisto\Enums\CredentialTab::historyUrl($credential->id)"
+>
     <x-slot:entityName>
-        bagitsto_category_field_mapping
+        bagitsto_credentials
     </x-slot>
 
     <x-slot:title>
         @lang('bagisto::app.bagisto.export.mapping.category-fields.title')
     </x-slot>
 
-    <v-category-field-mapping 
-        :bagisto-category-fields='@json($bagistoCategoryFields)'
-        :category-fields='@json($categoryFields)'
-    /> 
+    <x-slot:tabContents>
+        @unless (request()->has('history'))
+            <v-category-field-mapping
+                :bagisto-category-fields='@json($bagistoCategoryFields)'
+                :category-fields='@json($categoryFields)'
+            />
+        @endunless
+    </x-slot>
 
     @pushOnce('scripts')
         <script type="text/x-template" id="v-category-field-mapping-template">
             <x-admin::form
                 id="bagisto-category-field-mapping-form"
                 ajax
-                :action="route('admin.bagisto.mappings.category_fields.store')"
+                :action="route('admin.bagisto.credentials.category_mapping.store', $credential->id)"
             >
                     <div class="flex justify-between items-center">
                         <p class="text-xl text-gray-800 dark:text-slate-50 font-bold">
@@ -29,32 +38,48 @@
                         <div class="flex flex-col gap-2 flex-1 max-xl:flex-auto">
                             <div class="p-4 bg-white dark:bg-cherry-900 rounded box-shadow">
                                 <div class="grid grid-cols-3 gap-10 items-center px-4 py-2.5 border-b bg-violet-50 dark:border-cherry-800 dark:bg-cherry-900 font-semibold">
-                                    <p class="break-words font-bold dark:text-slate-50 font-bold">@lang('bagisto::app.bagisto.export.mapping.category-fields.bagisto-fields')</p>
-                                    <p class="break-words font-bold dark:text-slate-50 font-bold">@lang('bagisto::app.bagisto.export.mapping.category-fields.unopim-category-fields')</p>
-                                    <p class="break-words font-bold dark:text-slate-50 font-bold">@lang('bagisto::app.bagisto.export.mapping.category-fields.fixed-value')</p>
+                                    <p class="break-words font-bold dark:text-slate-50">@lang('bagisto::app.bagisto.export.mapping.category-fields.bagisto-fields')</p>
+                                    <p class="break-words font-bold dark:text-slate-50">@lang('bagisto::app.bagisto.export.mapping.category-fields.unopim-category-fields')</p>
+                                    <p class="break-words font-bold dark:text-slate-50">@lang('bagisto::app.bagisto.export.mapping.category-fields.fixed-value')</p>
                                 </div>
 
                                 <div
                                     v-for="(bagostoField, index) in bagistoCategoryFields"
                                     :key="index"
+                                    data-control-group
                                     class="grid grid-cols-3 gap-10 items-center px-4 py-4 border-b dark:border-cherry-800 text-gray-600 dark:text-gray-300 transition-all hover:bg-violet-50 hover:bg-opacity-30 dark:hover:bg-cherry-800"
                                 >
-                                    <p 
-                                        :title="bagostoField.title" 
-                                        class="break-words items-center"
-                                    >
-                                        <span class="font-bold"> @{{ bagostoField.name }} [@{{ bagostoField.code }}] </span>
-                                        <span 
-                                            class="required text-red-600" 
-                                            v-if="bagostoField.required"
-                                        >
-                                        </span><br/>
-                                        <small class="text-gray-500"><i class="icon-information text-xs"></i> @{{bagostoField.title}}</small>
-                                    </p>
-                                    
+                                    <div class="break-words">
+                                        <x-admin::form.control-group.label ::title="bagostoField.title">
+                                            <span class="font-bold">@{{ bagostoField.name }} [@{{ bagostoField.code }}]</span>
 
-                                    <!-- UnoPim CategoryField -->
-                                    <x-admin::form.control-group class="!mb-0">
+                                            <span
+                                                class="required text-red-600"
+                                                v-if="bagostoField.required"
+                                            >
+                                            </span>
+                                        </x-admin::form.control-group.label>
+
+                                        <small class="block text-gray-500">
+                                            <i class="icon-information text-xs"></i> @{{ bagostoField.title }}
+                                        </small>
+
+                                        <v-error-message
+                                            :name="'standard_category_fields[' + bagostoField.name + ']'"
+                                            v-slot="{ message }"
+                                        >
+                                            <p class="mt-1 text-red-600 text-xs italic" v-text="message"></p>
+                                        </v-error-message>
+
+                                        <v-error-message
+                                            :name="'standard_category_fields_default[' + bagostoField.code + ']'"
+                                            v-slot="{ message }"
+                                        >
+                                            <p class="mt-1 text-red-600 text-xs italic" v-text="message"></p>
+                                        </v-error-message>
+                                    </div>
+
+                                    <div>
                                         <x-admin::form.control-group.control
                                             type="select"
                                             ::id="'standard_category_fields[' + bagostoField.name + ']'"
@@ -67,12 +92,9 @@
                                             track-by="code"
                                             label-by="name"
                                         />
+                                    </div>
 
-                                        <x-admin::form.control-group.error ::control-name="'standard_category_fields[' + bagostoField.name + ']'" />
-                                    </x-admin::form.control-group>
-
-                                    <!-- Fixed Value -->
-                                    <x-admin::form.control-group class="!mb-0">
+                                    <div>
                                         <x-admin::form.control-group.control
                                             type="text"
                                             ::id="'standard_category_fields_default[' + bagostoField.code + ']'"
@@ -81,9 +103,7 @@
                                             ::label="bagostoField.name"
                                             ::disabled="isDisabled(bagostoField.code)"
                                         />
-
-                                        <x-admin::form.control-group.error ::control-name="'standard_category_fields_default[' + bagostoField.code + ']'" />
-                                    </x-admin::form.control-group>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -113,10 +133,10 @@
                         try {
                             if (value) {
                                 let selectedValue = JSON.parse(value);
-                                this.mappedCategoryFields[fieldCode] = selectedValue.code;  
+                                this.mappedCategoryFields[fieldCode] = selectedValue.code;
                             } else {
                                 delete this.mappedCategoryFields[fieldCode];
-                            } 
+                            }
                         } catch (e) {console.error(e)}
                     },
 

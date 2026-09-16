@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Filtry Bagisto',
@@ -26,6 +25,12 @@ return [
             'type'               => 'Typ produktu',
             'channel'            => 'Kanał',
             'locale'             => 'Ustawienia regionalne',
+            'channels'           => 'Kanały',
+            'channels-info'      => 'Tylko kanały przypisane do wybranych poświadczeń. Pozostaw puste, aby wyeksportować wszystkie przypisane kanały.',
+            'locales'            => 'Języki',
+            'locales-info'       => 'Tylko języki przypisane do wybranych poświadczeń. Pozostaw puste, aby wyeksportować wszystkie przypisane języki.',
+            'categories'         => 'Kategorie',
+            'categories-info'    => 'Eksportowane są tylko te kategorie. Ich kategorie nadrzędne również są eksportowane, dzięki czemu drzewo dociera w całości.',
             'code'               => 'Filtruj według kodu',
             'sku'                => 'Filtruj według SKU',
             'all'                => 'Wszystkie',
@@ -33,22 +38,24 @@ return [
             'false'              => 'Wyłączony (Fałsz)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => 'Dane uwierzytelniające',
+                'attribute-mapping' => 'Mapowanie atrybutów',
+                'category-mapping'  => 'Mapowanie pól kategorii',
+            ],
             'index' => [
                 'title'      => 'Dane dostępu',
                 'invalid'    => 'Nieprawidłowe dane dostępu',
                 'create-btn' => 'Utwórz dane dostępu',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'Adres URL sklepu',
                     'email'    => 'Adres e-mail',
                     'edit'     => 'Edytuj',
                     'delete'   => 'Usuń',
                 ],
-
                 'create' => [
                     'title'    => 'Utwórz dane dostępu',
                     'shop_url' => 'Adres URL sklepu',
@@ -56,12 +63,10 @@ return [
                     'password' => 'Hasło',
                     'save-btn' => 'Zapisz',
                 ],
-
                 'create-success' => 'Dane dostępu zostały pomyślnie utworzone.',
                 'update-success' => 'Dane dostępu zostały pomyślnie zaktualizowane.',
                 'delete-success' => 'Dane dostępu zostały pomyślnie usunięte.',
             ],
-
             'edit' => [
                 'title'                     => 'Edytuj dane dostępu',
                 'shop_url'                  => 'Adres URL sklepu',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'Kanał UnoPim',
                 'unopim-locale'             => 'Ustawienia regionalne UnoPim',
                 'credential'                => 'Dane dostępu',
+                'select-unopim-channel'     => 'Wybierz kanał UnoPim',
+                'select-unopim-locale'      => 'Wybierz język UnoPim',
+                'server-down'               => 'Serwer Bagisto jest obecnie niedostępny. Zaktualizuj poświadczenia lub uruchom serwer ponownie.',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'Mapowanie pól kategorii zostało pomyślnie zapisane',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Nie znaleziono poświadczeń.',
+                'attribute-not-found'         => 'Nie znaleziono atrybutu.',
+                'no-locale-mapping'           => 'Nie wyeksportowano :count kategorii: brak użytecznego przypisania języka. Otwórz poświadczenia i zapisz ponownie przypisanie kanałów i języków.',
+                'no-attribute-locale-mapping' => 'Nie wyeksportowano :count atrybutów: wybrane kanały nie mają przypisania języka Bagisto. Otwórz poświadczenia i zapisz przypisanie kanałów i języków.',
+                'invalid-locale-mapping'      => 'Zignorowano wpis przypisania języka: oczekiwano kodu języka UnoPim dla języka Bagisto „:locale”, otrzymano :given.',
+                'category-ancestors-added'    => 'Do eksportu dodano :count kategorii nadrzędnych, aby wybrane kategorie zachowały swoje miejsce w drzewie: :categories',
+                'variant-group-flattened'     => 'Produkt :identifier: grupa wariantów została spłaszczona do swoich wariantów.',
+            ],
+            'skipped' => [
+                'skipped-heading'          => 'Nie wyeksportowano :count produktu/ów',
+                'skipped-description'      => 'Te produkty pozostały w UnoPim. Usuń przyczynę wskazaną poniżej i uruchom eksport ponownie — dziennik pobierania zawiera pełne szczegóły.',
+                'skipped-reason'           => 'Dlaczego nie został wyeksportowany',
+                'excluded-heading'         => 'Pominięto :count plik(ów) podczas eksportu',
+                'excluded-description'     => 'Te produkty trafiły do Bagisto, ale poniższe pliki zostały pominięte. Wszystko inne wyeksportowano normalnie.',
+                'excluded-reason'          => 'Dlaczego plik został pominięty',
+                'product'                  => 'Produkt',
+                'missing-required-fields'  => 'Produkt :identifier nie został wyeksportowany: Bagisto wymaga pól :fields, a zmapowany atrybut UnoPim nie miał wartości dla tego produktu. Ustaw wartość lub nadaj polu wartość stałą na karcie Mapowanie atrybutów.',
+                'unsupported-type'         => 'Produkt :identifier nie został wyeksportowany: typ produktu :type nie ma odpowiednika w Bagisto.',
+                'no-scope-match'           => 'Produkt :identifier nie został wyeksportowany: żaden z wybranych kanałów i języków nie jest zmapowany do tego sklepu Bagisto.',
+                'rejected-by-bagisto'      => 'Produkt :identifier został odrzucony przez Bagisto: :errors',
+                'request-failed'           => 'Produkt :identifier nie został wyeksportowany, ponieważ żądanie do Bagisto nie powiodło się: :errors',
+                'unsupported-media-type'   => 'Produkt :identifier: plik :file został pominięty, ponieważ zdjęcia produktów Bagisto przyjmują wyłącznie pliki graficzne.',
+                'unsupported-image-format' => 'Produkt :identifier: plik :file został pominięty, ponieważ Bagisto nie potrafi odczytać tego formatu obrazu. Użyj JPG, PNG, GIF, WEBP, BMP lub AVIF.',
+                'media-not-found'          => 'Produkt :identifier: plik :file został pominięty, ponieważ nie ma go już w magazynie.',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => 'Mapowania atrybutów',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'dane:',
                     'flash-message'     => 'Podaj prawidłowy kod i typ atrybutu.',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => 'Mapowania atrybutów dodatkowych',
-                    'description' => 'Wpisz kod atrybutu Bagisto, aby dodać dodatkowy atrybut i go zmapować.',
+                    'title'            => 'Mapowania atrybutów dodatkowych',
+                    'description'      => 'Wpisz kod atrybutu Bagisto, aby dodać dodatkowy atrybut i go zmapować.',
+                    'attribute-code'   => 'Kod atrybutu Bagisto',
+                    'attribute-type'   => 'Typ atrybutu',
+                    'added'            => 'Dodano dodatkowe mapowanie atrybutu.',
+                    'removed'          => 'Usunięto dodatkowe mapowanie atrybutu.',
+                    'duplicate'        => 'Ten kod atrybutu jest już zmapowany.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Mapowania atrybutów konfigurowalnych',
                     'description' => 'Wpisz kod atrybutu Bagisto, aby dodać dodatkowy atrybut i go zmapować.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Mapowania pól kategorii',
                     'save'                   => 'Zapisz',

@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Filtre Bagisto',
@@ -26,6 +25,12 @@ return [
             'type'               => 'Tip produs',
             'channel'            => 'Canal',
             'locale'             => 'Setări regionale',
+            'channels'           => 'Canale',
+            'channels-info'      => 'Doar canalele asociate credențialei selectate. Lăsați gol pentru a exporta toate canalele asociate.',
+            'locales'            => 'Limbi',
+            'locales-info'       => 'Doar limbile asociate credențialei selectate. Lăsați gol pentru a exporta toate limbile asociate.',
+            'categories'         => 'Categorii',
+            'categories-info'    => 'Doar aceste categorii sunt exportate. Categoriile lor părinte sunt exportate și ele, astfel încât arborele ajunge intact.',
             'code'               => 'Filtrează după cod',
             'sku'                => 'Filtrează după SKU',
             'all'                => 'Toate',
@@ -33,22 +38,24 @@ return [
             'false'              => 'Dezactivat (Fals)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => 'Credențiale',
+                'attribute-mapping' => 'Mapare atribute',
+                'category-mapping'  => 'Corelare câmpuri categorie',
+            ],
             'index' => [
                 'title'      => 'Credențiale',
                 'invalid'    => 'Credențiale nevalide',
                 'create-btn' => 'Creează credențiale',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'URL magazin',
                     'email'    => 'Adresă de e-mail',
                     'edit'     => 'Editează',
                     'delete'   => 'Șterge',
                 ],
-
                 'create' => [
                     'title'    => 'Creează credențiale',
                     'shop_url' => 'URL magazin',
@@ -56,12 +63,10 @@ return [
                     'password' => 'Parolă',
                     'save-btn' => 'Salvează',
                 ],
-
                 'create-success' => 'Credențialele au fost create cu succes.',
                 'update-success' => 'Credențialele au fost actualizate cu succes.',
                 'delete-success' => 'Credențialele au fost șterse cu succes.',
             ],
-
             'edit' => [
                 'title'                     => 'Editează credențiale',
                 'shop_url'                  => 'URL magazin',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'Canal UnoPim',
                 'unopim-locale'             => 'Setări regionale UnoPim',
                 'credential'                => 'Credențial',
+                'select-unopim-channel'     => 'Selectați canalul UnoPim',
+                'select-unopim-locale'      => 'Selectați limba UnoPim',
+                'server-down'               => 'Serverul Bagisto este momentan indisponibil; actualizați acreditările sau reporniți serverul.',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'Corelarea câmpurilor de categorie a fost salvată cu succes',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Credențiala nu a fost găsită.',
+                'attribute-not-found'         => 'Atributul nu a fost găsit.',
+                'no-locale-mapping'           => ':count categorii nu au fost exportate: nu există o asociere de limbă utilizabilă. Deschideți credențiala și salvați din nou asocierea canalelor și a limbilor.',
+                'no-attribute-locale-mapping' => ':count atribute nu au fost exportate: canalele selectate nu au nicio asociere de limbă Bagisto. Deschideți credențiala și salvați asocierea canalelor și a limbilor.',
+                'invalid-locale-mapping'      => 'Intrarea de asociere a limbii a fost ignorată: se aștepta un cod de limbă UnoPim pentru limba Bagisto „:locale”, s-a primit :given.',
+                'category-ancestors-added'    => ':count categorii părinte au fost adăugate la export pentru ca acele categorii selectate să își păstreze locul în arbore: :categories',
+                'variant-group-flattened'     => 'Produsul :identifier: grupul de variante a fost aplatizat în variantele sale.',
+            ],
+            'skipped' => [
+                'skipped-heading'          => ':count produs(e) nu au fost exportate',
+                'skipped-description'      => 'Aceste produse au rămas în UnoPim. Remediați cauza de mai jos și rulați exportul din nou — jurnalul de descărcare conține toate detaliile.',
+                'skipped-reason'           => 'De ce nu a fost exportat',
+                'excluded-heading'         => ':count fișier(e) au fost lăsate în afara exportului',
+                'excluded-description'     => 'Aceste produse au ajuns în Bagisto, dar fișierele de mai jos au fost omise. Restul a fost exportat normal.',
+                'excluded-reason'          => 'De ce a fost omis fișierul',
+                'product'                  => 'Produs',
+                'missing-required-fields'  => 'Produsul :identifier nu a fost exportat: Bagisto necesită :fields, iar atributul UnoPim mapat nu avea nicio valoare pentru acest produs. Setați o valoare sau atribuiți câmpului o valoare fixă în fila Mapare atribute.',
+                'unsupported-type'         => 'Produsul :identifier nu a fost exportat: tipul de produs :type nu are echivalent în Bagisto.',
+                'no-scope-match'           => 'Produsul :identifier nu a fost exportat: niciunul dintre canalele și localele selectate nu este mapat la acest magazin Bagisto.',
+                'rejected-by-bagisto'      => 'Produsul :identifier a fost respins de Bagisto: :errors',
+                'request-failed'           => 'Produsul :identifier nu a fost exportat deoarece cererea către Bagisto a eșuat: :errors',
+                'unsupported-media-type'   => 'Produsul :identifier: :file a fost omis deoarece imaginile de produs Bagisto acceptă doar fișiere imagine.',
+                'unsupported-image-format' => 'Produsul :identifier: :file a fost omis deoarece Bagisto nu poate decoda acest format de imagine. Folosiți JPG, PNG, GIF, WEBP, BMP sau AVIF.',
+                'media-not-found'          => 'Produsul :identifier: :file a fost omis deoarece fișierul nu mai există în stocare.',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => 'Corelări de atribute',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'date:',
                     'flash-message'     => 'Furnizați un cod și un tip de atribut valide.',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => 'Corelări de atribute suplimentare',
-                    'description' => 'Scrieți codul de atribut Bagisto pentru a adăuga un atribut suplimentar și a-l corela.',
+                    'title'            => 'Corelări de atribute suplimentare',
+                    'description'      => 'Scrieți codul de atribut Bagisto pentru a adăuga un atribut suplimentar și a-l corela.',
+                    'attribute-code'   => 'Cod atribut Bagisto',
+                    'attribute-type'   => 'Tip atribut',
+                    'added'            => 'Maparea suplimentară a atributului a fost adăugată.',
+                    'removed'          => 'Maparea atributului suplimentar a fost eliminată.',
+                    'duplicate'        => 'Acest cod de atribut este deja mapat.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Corelări de atribute configurabile',
                     'description' => 'Scrieți codul de atribut Bagisto pentru a adăuga un atribut suplimentar și a-l corela.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Corelări de câmpuri de categorie',
                     'save'                   => 'Salvează',

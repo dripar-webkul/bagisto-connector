@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto filtri',
@@ -26,6 +25,12 @@ return [
             'type'               => 'Vrsta proizvoda',
             'channel'            => 'Kanal',
             'locale'             => 'Izvorna lokalizacija',
+            'channels'           => 'Kanali',
+            'channels-info'      => 'Samo kanali mapirani na odabranu vjerodajnicu. Ostavite prazno za izvoz svih mapiranih kanala.',
+            'locales'            => 'Jezici',
+            'locales-info'       => 'Samo jezici mapirani na odabranu vjerodajnicu. Ostavite prazno za izvoz svih mapiranih jezika.',
+            'categories'         => 'Kategorije',
+            'categories-info'    => 'Izvoze se samo ove kategorije. Izvoze se i njihove nadređene kategorije kako bi stablo stiglo cjelovito.',
             'code'               => 'Filtriraj prema kodu',
             'sku'                => 'Filtriraj prema SKU',
             'all'                => 'Sve',
@@ -33,22 +38,24 @@ return [
             'false'              => 'Onemogućeno (Neistina)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => 'Vjerodajnice',
+                'attribute-mapping' => 'Mapiranje atributa',
+                'category-mapping'  => 'Mapiranje polja kategorije',
+            ],
             'index' => [
                 'title'      => 'Vjerodajnice',
                 'invalid'    => 'Nevažeća vjerodajnica',
                 'create-btn' => 'Izradi vjerodajnicu',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'URL trgovine',
                     'email'    => 'Adresa e-pošte',
                     'edit'     => 'Uredi',
                     'delete'   => 'Izbriši',
                 ],
-
                 'create' => [
                     'title'    => 'Izradi vjerodajnicu',
                     'shop_url' => 'URL trgovine',
@@ -56,12 +63,10 @@ return [
                     'password' => 'Lozinka',
                     'save-btn' => 'Spremi',
                 ],
-
                 'create-success' => 'Vjerodajnica je uspješno izrađena.',
                 'update-success' => 'Vjerodajnica je uspješno ažurirana.',
                 'delete-success' => 'Vjerodajnica je uspješno izbrisana.',
             ],
-
             'edit' => [
                 'title'                     => 'Uredi vjerodajnicu',
                 'shop_url'                  => 'URL trgovine',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'UnoPim kanal',
                 'unopim-locale'             => 'UnoPim izvorna lokalizacija',
                 'credential'                => 'Vjerodajnica',
+                'select-unopim-channel'     => 'Odaberite UnoPim kanal',
+                'select-unopim-locale'      => 'Odaberite UnoPim jezik',
+                'server-down'               => 'Bagisto poslužitelj trenutno ne radi, ažurirajte vjerodajnice ili ponovno pokrenite poslužitelj.',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'Mapiranje polja kategorije uspješno je spremljeno',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Vjerodajnica nije pronađena.',
+                'attribute-not-found'         => 'Atribut nije pronađen.',
+                'no-locale-mapping'           => ':count kategorija nije izvezeno: nema upotrebljivog mapiranja jezika. Otvorite vjerodajnicu i ponovno spremite mapiranje kanala i jezika.',
+                'no-attribute-locale-mapping' => ':count atributa nije izvezeno: odabrani kanali nemaju Bagisto mapiranje jezika. Otvorite vjerodajnicu i spremite mapiranje kanala i jezika.',
+                'invalid-locale-mapping'      => 'Unos mapiranja jezika zanemaren: očekivan je UnoPim kod jezika za Bagisto jezik „:locale”, primljeno :given.',
+                'category-ancestors-added'    => ':count nadređenih kategorija dodano je u izvoz kako bi odabrane kategorije zadržale svoje mjesto u stablu: :categories',
+                'variant-group-flattened'     => 'Proizvod :identifier: grupa varijanti sravnjena je u svoje varijante.',
+            ],
+            'skipped' => [
+                'skipped-heading'          => ':count proizvod(a) nije izvezeno',
+                'skipped-description'      => 'Ovi su proizvodi ostali u UnoPimu. Otklonite uzrok naveden u nastavku i ponovno pokrenite izvoz — zapisnik preuzimanja sadrži sve pojedinosti.',
+                'skipped-reason'           => 'Zašto nije izvezen',
+                'excluded-heading'         => ':count datoteka izostavljena je iz izvoza',
+                'excluded-description'     => 'Ovi su proizvodi stigli u Bagisto, ali su datoteke navedene u nastavku izostavljene. Sve ostalo izvezeno je uobičajeno.',
+                'excluded-reason'          => 'Zašto je datoteka izostavljena',
+                'product'                  => 'Proizvod',
+                'missing-required-fields'  => 'Proizvod :identifier nije izvezen: Bagisto zahtijeva :fields, a mapirani UnoPim atribut nije imao vrijednost za ovaj proizvod. Postavite vrijednost ili polju dodijelite fiksnu vrijednost na kartici Mapiranje atributa.',
+                'unsupported-type'         => 'Proizvod :identifier nije izvezen: vrsta proizvoda :type nema odgovarajuću vrstu u Bagistu.',
+                'no-scope-match'           => 'Proizvod :identifier nije izvezen: nijedan od odabranih kanala i jezika nije mapiran na ovu Bagisto trgovinu.',
+                'rejected-by-bagisto'      => 'Bagisto je odbio proizvod :identifier: :errors',
+                'request-failed'           => 'Proizvod :identifier nije izvezen jer zahtjev prema Bagistu nije uspio: :errors',
+                'unsupported-media-type'   => 'Proizvod :identifier: datoteka :file izostavljena je jer slike proizvoda u Bagistu prihvaćaju samo slikovne datoteke.',
+                'unsupported-image-format' => 'Proizvod :identifier: datoteka :file izostavljena je jer Bagisto ne može dekodirati taj format slike. Upotrijebite JPG, PNG, GIF, WEBP, BMP ili AVIF.',
+                'media-not-found'          => 'Proizvod :identifier: datoteka :file izostavljena je jer je više nema u pohrani.',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => 'Mapiranja atributa',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'podaci:',
                     'flash-message'     => 'Unesite valjan kod i vrstu atributa.',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => 'Mapiranja dodatnih atributa',
-                    'description' => 'Upišite Bagisto kod atributa kako biste dodali dodatni atribut i mapirali ga.',
+                    'title'            => 'Mapiranja dodatnih atributa',
+                    'description'      => 'Upišite Bagisto kod atributa kako biste dodali dodatni atribut i mapirali ga.',
+                    'attribute-code'   => 'Bagisto kod atributa',
+                    'attribute-type'   => 'Vrsta atributa',
+                    'added'            => 'Dodano dodatno mapiranje atributa.',
+                    'removed'          => 'Dodatno mapiranje atributa uklonjeno.',
+                    'duplicate'        => 'Taj kod atributa već je mapiran.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Mapiranja konfigurabilnih atributa',
                     'description' => 'Upišite Bagisto kod atributa kako biste dodali dodatni atribut i mapirali ga.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Mapiranja polja kategorije',
                     'save'                   => 'Spremi',

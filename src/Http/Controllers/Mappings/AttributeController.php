@@ -4,88 +4,111 @@ namespace Webkul\Bagisto\Http\Controllers\Mappings;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\View\View;
 use Webkul\Admin\Http\Controllers\Controller;
 use Webkul\Attribute\Repositories\AttributeFamilyRepository;
 use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Bagisto\Enums\Export\CacheType;
+use Webkul\Bagisto\Enums\Export\MappingSection;
 use Webkul\Bagisto\Http\Requests\StandardAttributeRequest;
 use Webkul\Bagisto\Repositories\AttributeMappingRepository;
+use Webkul\Bagisto\Repositories\CredentialRepository;
 
 class AttributeController extends Controller
 {
+    protected const SUPPORTED_ATTRIBUTE_TYPES = [
+        'text',
+        'textarea',
+        'price',
+        'boolean',
+        'select',
+        'multiselect',
+        'datetime',
+        'date',
+        'image',
+        'gallery',
+        'file',
+        'checkbox',
+    ];
+
     public function __construct(
         protected AttributeRepository $attributeRepository,
         protected AttributeFamilyRepository $attributeFamilyRepository,
         protected AttributeMappingRepository $attributeMappingRepository,
+        protected CredentialRepository $credentialRepository,
     ) {}
 
-    public function index()
+    public function index(int $credentialId): View
     {
-        $bagistoAttributes = config('bagisto-attributes');
+        $credential = $this->credentialRepository->findOrFail($credentialId);
 
-        $bagistoAttributes = $this->translate($bagistoAttributes);
+        $bagistoAttributes = $this->translate(config('bagisto-attributes'));
 
         $attributes = $this->attributeRepository->all();
 
-        $standardAttributes = $this->attributeMappingRepository->findByField('section', 'standard_attribute')->first();
+        $standardAttributes = $this->attributeMappingRepository->forCredential($credential->id, MappingSection::STANDARD_ATTRIBUTE);
 
-        $additionalAttributes = $this->attributeMappingRepository->findByField('section', 'additional_attribute')->first()?->mapped_value ?? [];
+        $additionalAttributes = $this->attributeMappingRepository->forCredential($credential->id, MappingSection::ADDITIONAL_ATTRIBUTE)?->mapped_value ?? [];
 
         $configurableAttributes = json_encode($this->getConfigurableAttributes());
         $configurableAttributesDb = $standardAttributes->additional_info ?? [];
         $configurableSelectedAttributes = explode(',', ! empty($configurableAttributesDb['configurable_attribute']) ? $configurableAttributesDb['configurable_attribute'] : null);
 
-        return view('bagisto::export.mappings.attributes.index', compact(
+        $attributeTypeOptions = $this->attributeTypeOptions();
+
+        return view('bagisto::credentials.attribute-mapping', compact(
+            'credential',
             'bagistoAttributes',
             'attributes',
             'standardAttributes',
             'additionalAttributes',
             'configurableAttributes',
-            'configurableSelectedAttributes'
+            'configurableSelectedAttributes',
+            'attributeTypeOptions'
         ));
     }
 
-    /**
-     * Handles the process of storing or updating attribute mappings.
-     */
-    public function storeOrUpdate(StandardAttributeRequest $request): JsonResponse
+    protected function attributeTypeOptions(): string
     {
-        try {
-            // Format the data for attribute mapping
-            $formatedData = $this->setFormatForMapping(request()->all());
+        return (string) json_encode(array_map(fn (string $type): array => [
+            'id'    => $type,
+            'label' => trans('admin::app.catalog.attributes.create.'.$type),
+        ], self::SUPPORTED_ATTRIBUTE_TYPES));
+    }
 
-            // Check if standard attribute mapping exists, update if exists, otherwise create a new one
-            $standardAttributes = $this->attributeMappingRepository->findByField('section', 'standard_attribute')->first();
+    public function storeOrUpdate(StandardAttributeRequest $request, int $credentialId): JsonResponse
+    {
+        abort_unless(bouncer()->hasPermission('bagisto.credentials.attribute_mapping'), 403);
+
+        try {
+            $credential = $this->credentialRepository->findOrFail($credentialId);
+
+            $formatedData = $this->setFormatForMapping(request()->all());
 
             if (! empty($formatedData['standard_attribute']['fixed_value'])) {
                 $formatedData['standard_attribute']['fixed_value'] = $this->sortJsonKeysCustom($formatedData['standard_attribute']['fixed_value']);
             }
 
-            if ($standardAttributes) {
-                $standardAttributes->update($formatedData['standard_attribute']);
-            } else {
-                $this->attributeMappingRepository->create($formatedData['standard_attribute']);
-            }
+            $this->attributeMappingRepository->saveSection(
+                $credential->id,
+                MappingSection::STANDARD_ATTRIBUTE,
+                $formatedData['standard_attribute']
+            );
 
-            // if exist in cache then remove from cache
-            Cache::forget(CacheType::ATTRIBUTE_MAPPING->value);
+            Cache::forget(CacheType::ATTRIBUTE_MAPPING->forCredential($credential->id));
 
-            // Return a success response
             return new JsonResponse([
                 'message' => trans('bagisto::app.bagisto.bagisto-attributes.success-message'),
             ], 201);
         } catch (\Exception $e) {
-            // Return an error response
             return new JsonResponse([
                 'message' => $e->getMessage(),
             ], 400);
         }
     }
 
-    /**
-     * Arrange Data for the attribute mapping
-     */
     private function setFormatForMapping(array $data): array
     {
         $formatedData = [];
@@ -102,9 +125,7 @@ class AttributeController extends Controller
 
         $configurableAttribute['configurable_attribute'] = $data['configurable_attribute'] ?? null;
 
-        /** Format for standard attributes */
         $formatedData['standard_attribute'] = [
-            'section'         => 'standard_attribute',
             'mapped_value'    => $standardAttributes,
             'fixed_value'     => $fixedValue,
             'additional_info' => $configurableAttribute,
@@ -113,88 +134,85 @@ class AttributeController extends Controller
         return $formatedData;
     }
 
-    public function addAdditionalAttributes(Request $request)
+    public function addAdditionalAttributes(Request $request, int $credentialId): JsonResponse
     {
+        abort_unless(bouncer()->hasPermission('bagisto.credentials.attribute_mapping'), 403);
+
+        $credential = $this->credentialRepository->findOrFail($credentialId);
+
         $data = $request->validate([
             'code' => 'required|string',
             'type' => 'required|string',
         ]);
 
-        $bagistoAttributes = config('bagisto-attributes');
-        if (in_array($data['code'], array_column($bagistoAttributes, 'code'))) {
+        if (in_array($data['code'], array_column(config('bagisto-attributes'), 'code'))) {
             return new JsonResponse([
-                'message' => 'duplicate Attribute.',
+                'message' => trans('bagisto::app.bagisto.export.mapping.additional-attributes.duplicate'),
             ], 400);
         }
 
-        $additionalAttributes = [
-            'code'  => $data['code'],
-            'name'  => ucfirst($data['code']),
-            'type'  => $data['type'],
-        ];
+        $existing = $this->attributeMappingRepository->forCredential($credential->id, MappingSection::ADDITIONAL_ATTRIBUTE);
 
-        $formatedData = [
-            'section' => 'additional_attribute',
-        ];
+        $additional = is_array($existing?->mapped_value) ? $existing->mapped_value : [];
 
-        $additionalAttributeObj = $this->attributeMappingRepository->findByField('section', 'additional_attribute')->first();
-        if ($additionalAttributeObj) {
-            $count = is_array($additionalAttributeObj['mapped_value']) ? count($additionalAttributeObj['mapped_value']) : 0;
-            if ($count) {
-                foreach ($additionalAttributeObj['mapped_value'] as $key => $value) {
-                    $formatedData['mapped_value'][] = $value;
-                }
-            }
-            $formatedData['mapped_value'][] = $additionalAttributes;
-            $additionalAttributeObj->update($formatedData);
-        } else {
-            $formatedData['mapped_value'][] = $additionalAttributes;
-            $this->attributeMappingRepository->create($formatedData);
+        if (in_array($data['code'], array_column($additional, 'code'), true)) {
+            return new JsonResponse([
+                'message' => trans('bagisto::app.bagisto.export.mapping.additional-attributes.duplicate'),
+            ], 400);
         }
 
-        return response()->json(['message' => 'Attribute added successfully.']);
+        $additional[] = [
+            'code' => $data['code'],
+            'name' => ucfirst($data['code']),
+            'type' => $data['type'],
+        ];
+
+        $this->attributeMappingRepository->saveSection(
+            $credential->id,
+            MappingSection::ADDITIONAL_ATTRIBUTE,
+            ['mapped_value' => $additional]
+        );
+
+        Cache::forget(CacheType::ATTRIBUTE_MAPPING->forCredential($credential->id));
+
+        return new JsonResponse([
+            'message' => trans('bagisto::app.bagisto.export.mapping.additional-attributes.added'),
+        ]);
     }
 
-    public function removeAdditionalAttributes(Request $request)
+    public function removeAdditionalAttributes(Request $request, int $credentialId): JsonResponse
     {
-        $additionalAttributeObj = $this->attributeMappingRepository->findByField('section', 'additional_attribute')->first();
-        if ($additionalAttributeObj) {
-            if ($additionalAttributeObj['mapped_value']) {
-                $formatedData['mapped_value'] = [];
-                foreach ($additionalAttributeObj['mapped_value'] as $value) {
-                    if ($value['code'] == $request->code) {
-                        continue;
-                    }
-                    $formatedData['mapped_value'][] = $value;
-                }
-                $additionalAttributeObj->update($formatedData);
-            }
+        abort_unless(bouncer()->hasPermission('bagisto.credentials.attribute_mapping'), 403);
+
+        $credential = $this->credentialRepository->findOrFail($credentialId);
+
+        $code = $request->validate(['code' => 'required|string'])['code'];
+
+        $additionalObj = $this->attributeMappingRepository->forCredential($credential->id, MappingSection::ADDITIONAL_ATTRIBUTE);
+
+        if ($additionalObj && is_array($additionalObj->mapped_value)) {
+            $additionalObj->update([
+                'mapped_value' => array_values(array_filter(
+                    $additionalObj->mapped_value,
+                    fn ($attribute) => ($attribute['code'] ?? null) !== $code
+                )),
+            ]);
         }
 
-        $standardAttributeObj = $this->attributeMappingRepository->findByField('section', 'standard_attribute')->first();
-        if ($standardAttributeObj) {
-            if ($standardAttributeObj['mapped_value']) {
-                $formatedData = [
-                    'mapped_value' => [],
-                    'fixed_value'  => [],
-                ];
+        $standardObj = $this->attributeMappingRepository->forCredential($credential->id, MappingSection::STANDARD_ATTRIBUTE);
 
-                foreach ($standardAttributeObj['mapped_value'] as $bagistoCode => $unopimCode) {
-                    if ($bagistoCode == $request->code) {
-                        continue;
-                    }
-                    $formatedData['mapped_value'][$bagistoCode] = $unopimCode;
-                }
-                foreach ($standardAttributeObj['fixed_value'] as $bagistoCode => $fixedValue) {
-                    if ($bagistoCode == $request->code) {
-                        continue;
-                    }
-                    $formatedData['fixed_value'][$bagistoCode] = $fixedValue;
-                }
-
-                $standardAttributeObj->update($formatedData);
-            }
+        if ($standardObj) {
+            $standardObj->update([
+                'mapped_value' => Arr::except((array) $standardObj->mapped_value, [$code]),
+                'fixed_value'  => Arr::except((array) $standardObj->fixed_value, [$code]),
+            ]);
         }
+
+        Cache::forget(CacheType::ATTRIBUTE_MAPPING->forCredential($credential->id));
+
+        return new JsonResponse([
+            'message' => trans('bagisto::app.bagisto.export.mapping.additional-attributes.removed'),
+        ]);
     }
 
     public function translate(array $arrayData): array

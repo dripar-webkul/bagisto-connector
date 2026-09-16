@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto फ़िल्टर',
@@ -26,6 +25,12 @@ return [
             'type'               => 'उत्पाद प्रकार',
             'channel'            => 'चैनल',
             'locale'             => 'स्थान',
+            'channels'           => 'चैनल',
+            'channels-info'      => 'केवल वे चैनल जो चयनित क्रेडेंशियल से मैप किए गए हैं। सभी मैप किए गए चैनल निर्यात करने के लिए खाली छोड़ें।',
+            'locales'            => 'लोकेल',
+            'locales-info'       => 'केवल वे लोकेल जो चयनित क्रेडेंशियल से मैप किए गए हैं। सभी मैप किए गए लोकेल निर्यात करने के लिए खाली छोड़ें।',
+            'categories'         => 'श्रेणियाँ',
+            'categories-info'    => 'केवल ये श्रेणियाँ निर्यात की जाती हैं। इनकी मूल श्रेणियाँ भी निर्यात होती हैं, ताकि ट्री पूरा पहुँचे।',
             'code'               => 'कोड द्वारा फ़िल्टर करें',
             'sku'                => 'SKU द्वारा फ़िल्टर करें',
             'all'                => 'सभी',
@@ -33,22 +38,24 @@ return [
             'false'              => 'अक्षम (असत्य)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => 'क्रेडेंशियल',
+                'attribute-mapping' => 'एट्रिब्यूट मैपिंग',
+                'category-mapping'  => 'श्रेणी फ़ील्ड मैपिंग',
+            ],
             'index' => [
                 'title'      => 'साख',
                 'invalid'    => 'अमान्य साख',
                 'create-btn' => 'साख बनाएँ',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'आईडी',
                     'shop-url' => 'शॉप यूआरएल',
                     'email'    => 'ईमेल पता',
                     'edit'     => 'संपादित करें',
                     'delete'   => 'हटाएं',
                 ],
-
                 'create' => [
                     'title'    => 'साख बनाएँ',
                     'shop_url' => 'शॉप यूआरएल',
@@ -56,12 +63,10 @@ return [
                     'password' => 'पासवर्ड',
                     'save-btn' => 'सहेजें',
                 ],
-
                 'create-success' => 'साख सफलतापूर्वक बनाई गई।',
                 'update-success' => 'साख सफलतापूर्वक अपडेट की गई।',
                 'delete-success' => 'साख सफलतापूर्वक हटाई गई।',
             ],
-
             'edit' => [
                 'title'                     => 'साख संपादित करें',
                 'shop_url'                  => 'शॉप यूआरएल',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'UnoPim चैनल',
                 'unopim-locale'             => 'UnoPim स्थान',
                 'credential'                => 'साख',
+                'select-unopim-channel'     => 'UnoPim चैनल चुनें',
+                'select-unopim-locale'      => 'UnoPim लोकेल चुनें',
+                'server-down'               => 'Bagisto सर्वर अभी डाउन है, कृपया क्रेडेंशियल अपडेट करें या सर्वर को रीस्टार्ट करें।',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'श्रेणी फ़ील्ड मैपिंग सफलतापूर्वक सहेजी गई है',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'क्रेडेंशियल नहीं मिला।',
+                'attribute-not-found'         => 'विशेषता नहीं मिली।',
+                'no-locale-mapping'           => ':count श्रेणियाँ निर्यात नहीं हुईं: कोई उपयोगी लोकेल मैपिंग नहीं है। क्रेडेंशियल खोलें और चैनल तथा लोकेल मैपिंग फिर से सहेजें।',
+                'no-attribute-locale-mapping' => ':count विशेषताएँ निर्यात नहीं हुईं: चयनित चैनलों के लिए कोई Bagisto लोकेल मैपिंग नहीं है। क्रेडेंशियल खोलें और चैनल तथा लोकेल मैपिंग सहेजें।',
+                'invalid-locale-mapping'      => 'लोकेल मैपिंग प्रविष्टि अनदेखी की गई: Bagisto लोकेल “:locale” के लिए UnoPim लोकेल कोड अपेक्षित था, मिला :given।',
+                'category-ancestors-added'    => 'चयनित श्रेणियाँ ट्री में अपना स्थान बनाए रखें, इसके लिए :count मूल श्रेणियाँ निर्यात में जोड़ी गईं: :categories',
+                'variant-group-flattened'     => 'उत्पाद :identifier: वैरिएंट समूह को उसके वैरिएंट में समतल किया गया।',
+            ],
+            'skipped' => [
+                'skipped-heading'          => ':count उत्पाद निर्यात नहीं हुए',
+                'skipped-description'      => 'ये उत्पाद UnoPim में ही रह गए। नीचे बताया गया कारण ठीक करें और निर्यात फिर से चलाएँ — डाउनलोड लॉग में पूरा विवरण मौजूद है।',
+                'skipped-reason'           => 'निर्यात क्यों नहीं हुआ',
+                'excluded-heading'         => ':count फ़ाइलें निर्यात से बाहर रह गईं',
+                'excluded-description'     => 'ये उत्पाद Bagisto तक पहुँच गए, लेकिन नीचे दी गई फ़ाइलें छूट गईं। बाकी सब कुछ सामान्य रूप से निर्यात हो गया।',
+                'excluded-reason'          => 'फ़ाइल क्यों छोड़ी गई',
+                'product'                  => 'उत्पाद',
+                'missing-required-fields'  => 'उत्पाद :identifier निर्यात नहीं हुआ: Bagisto को :fields चाहिए, और मैप किए गए UnoPim एट्रिब्यूट में इस उत्पाद के लिए कोई मान नहीं था। मान सेट करें, या एट्रिब्यूट मैपिंग टैब में इस फ़ील्ड को निश्चित मान दें।',
+                'unsupported-type'         => 'उत्पाद :identifier निर्यात नहीं हुआ: उत्पाद प्रकार :type के लिए Bagisto में कोई समकक्ष नहीं है।',
+                'no-scope-match'           => 'उत्पाद :identifier निर्यात नहीं हुआ: चयनित चैनलों और लोकेल में से कोई भी इस Bagisto स्टोर से मैप नहीं है।',
+                'rejected-by-bagisto'      => 'Bagisto ने उत्पाद :identifier अस्वीकार कर दिया: :errors',
+                'request-failed'           => 'उत्पाद :identifier निर्यात नहीं हुआ क्योंकि Bagisto को भेजा गया अनुरोध विफल रहा: :errors',
+                'unsupported-media-type'   => 'उत्पाद :identifier: :file को छोड़ दिया गया क्योंकि Bagisto की उत्पाद छवियाँ केवल इमेज फ़ाइलें स्वीकार करती हैं।',
+                'unsupported-image-format' => 'उत्पाद :identifier: :file को छोड़ दिया गया क्योंकि Bagisto उस इमेज फ़ॉर्मैट को डिकोड नहीं कर सकता। JPG, PNG, GIF, WEBP, BMP या AVIF का उपयोग करें।',
+                'media-not-found'          => 'उत्पाद :identifier: :file को छोड़ दिया गया क्योंकि वह फ़ाइल अब स्टोरेज में नहीं है।',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => 'गुण मैपिंग्स',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'डेटा:',
                     'flash-message'     => 'कृपया एक मान्य गुण कोड और प्रकार प्रदान करें।',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => 'अतिरिक्त गुण मैपिंग्स',
-                    'description' => 'अतिरिक्त गुण जोड़ने और उसे मैप करने के लिए Bagisto गुण कोड लिखें।',
+                    'title'            => 'अतिरिक्त गुण मैपिंग्स',
+                    'description'      => 'अतिरिक्त गुण जोड़ने और उसे मैप करने के लिए Bagisto गुण कोड लिखें।',
+                    'attribute-code'   => 'Bagisto एट्रिब्यूट कोड',
+                    'attribute-type'   => 'एट्रिब्यूट प्रकार',
+                    'added'            => 'अतिरिक्त एट्रिब्यूट मैपिंग जोड़ी गई।',
+                    'removed'          => 'अतिरिक्त विशेषता मैपिंग हटा दी गई।',
+                    'duplicate'        => 'वह एट्रिब्यूट कोड पहले से मैप किया हुआ है।',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'कॉन्फ़िगर करने योग्य गुण मैपिंग्स',
                     'description' => 'अतिरिक्त गुण जोड़ने और उसे मैप करने के लिए Bagisto गुण कोड लिखें।',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'श्रेणी फ़ील्ड मैपिंग्स',
                     'save'                   => 'सहेजें',

@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagistoフィルター',
@@ -26,6 +25,12 @@ return [
             'type'               => '製品タイプ',
             'channel'            => 'チャネル',
             'locale'             => 'ロケール',
+            'channels'           => 'チャネル',
+            'channels-info'      => '選択した認証情報にマッピングされているチャネルのみ。空のままにすると、マッピングされたすべてのチャネルをエクスポートします。',
+            'locales'            => 'ロケール',
+            'locales-info'       => '選択した認証情報にマッピングされているロケールのみ。空のままにすると、マッピングされたすべてのロケールをエクスポートします。',
+            'categories'         => 'カテゴリ',
+            'categories-info'    => 'これらのカテゴリのみをエクスポートします。親カテゴリもエクスポートされるため、ツリーは完全な状態で届きます。',
             'code'               => 'コードでフィルター',
             'sku'                => 'SKUでフィルター',
             'all'                => 'すべて',
@@ -33,22 +38,24 @@ return [
             'false'              => '無効（偽）',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => '認証情報',
+                'attribute-mapping' => '属性マッピング',
+                'category-mapping'  => 'カテゴリフィールドマッピング',
+            ],
             'index' => [
                 'title'      => '認証情報',
                 'invalid'    => '無効な認証情報',
                 'create-btn' => '認証情報を作成',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'ショップURL',
                     'email'    => 'メールアドレス',
                     'edit'     => '編集',
                     'delete'   => '削除',
                 ],
-
                 'create' => [
                     'title'    => '認証情報を作成',
                     'shop_url' => 'ショップURL',
@@ -56,12 +63,10 @@ return [
                     'password' => 'パスワード',
                     'save-btn' => '保存',
                 ],
-
                 'create-success' => '認証情報が正常に作成されました。',
                 'update-success' => '認証情報が正常に更新されました。',
                 'delete-success' => '認証情報が正常に削除されました。',
             ],
-
             'edit' => [
                 'title'                     => '認証情報を編集',
                 'shop_url'                  => 'ショップURL',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'UnoPimチャネル',
                 'unopim-locale'             => 'UnoPimロケール',
                 'credential'                => '認証情報',
+                'select-unopim-channel'     => 'UnoPim のチャネルを選択',
+                'select-unopim-locale'      => 'UnoPim のロケールを選択',
+                'server-down'               => 'Bagistoサーバーは現在ダウンしています。認証情報を更新するか、サーバーを再起動してください。',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'カテゴリフィールドマッピングが正常に保存されました',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => '認証情報が見つかりません。',
+                'attribute-not-found'         => '属性が見つかりません。',
+                'no-locale-mapping'           => ':count 件のカテゴリをエクスポートできませんでした。使用できるロケールマッピングがありません。認証情報を開き、チャネルとロケールのマッピングを保存し直してください。',
+                'no-attribute-locale-mapping' => ':count 件の属性をエクスポートできませんでした。選択したチャネルに Bagisto のロケールマッピングがありません。認証情報を開き、チャネルとロケールのマッピングを保存してください。',
+                'invalid-locale-mapping'      => 'ロケールマッピングのエントリを無視しました。Bagisto ロケール「:locale」には UnoPim のロケールコードが必要ですが、:given を受け取りました。',
+                'category-ancestors-added'    => '選択したカテゴリがツリー内の位置を保てるよう、:count 件の親カテゴリをエクスポートに追加しました: :categories',
+                'variant-group-flattened'     => '商品 :identifier: バリアントグループをバリアントに展開しました。',
+            ],
+            'skipped' => [
+                'skipped-heading'          => ':count 件の商品がエクスポートされませんでした',
+                'skipped-description'      => 'これらの商品は UnoPim に残っています。以下の原因を解消してから再度エクスポートを実行してください — ダウンロードログに詳細がすべて記録されています。',
+                'skipped-reason'           => 'エクスポートされなかった理由',
+                'excluded-heading'         => ':count 件のファイルがエクスポートから除外されました',
+                'excluded-description'     => 'これらの商品は Bagisto に取り込まれましたが、以下のファイルは除外されました。それ以外はすべて正常にエクスポートされています。',
+                'excluded-reason'          => 'ファイルが除外された理由',
+                'product'                  => '商品',
+                'missing-required-fields'  => '商品 :identifier はエクスポートされませんでした: Bagisto では :fields が必須ですが、マッピングされた UnoPim 属性にこの商品の値がありませんでした。値を設定するか、「属性マッピング」タブでこの項目に固定値を指定してください。',
+                'unsupported-type'         => '商品 :identifier はエクスポートされませんでした: 商品タイプ :type に対応する Bagisto のタイプがありません。',
+                'no-scope-match'           => '商品 :identifier はエクスポートされませんでした: 選択したチャネルとロケールのいずれもこの Bagisto ストアにマッピングされていません。',
+                'rejected-by-bagisto'      => '商品 :identifier は Bagisto に拒否されました: :errors',
+                'request-failed'           => 'Bagisto へのリクエストが失敗したため、商品 :identifier はエクスポートされませんでした: :errors',
+                'unsupported-media-type'   => '商品 :identifier: Bagisto の商品画像は画像ファイルのみを受け付けるため、:file は除外されました。',
+                'unsupported-image-format' => '商品 :identifier: Bagisto がこの画像形式をデコードできないため、:file は除外されました。JPG、PNG、GIF、WEBP、BMP、AVIF のいずれかを使用してください。',
+                'media-not-found'          => '商品 :identifier: ファイルがストレージに存在しないため、:file は除外されました。',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => '属性マッピング',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'データ：',
                     'flash-message'     => '有効な属性コードとタイプを指定してください。',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => '追加属性マッピング',
-                    'description' => '追加の属性を追加してマッピングするには、Bagisto属性コードを入力してください。',
+                    'title'            => '追加属性マッピング',
+                    'description'      => '追加の属性を追加してマッピングするには、Bagisto属性コードを入力してください。',
+                    'attribute-code'   => 'Bagisto 属性コード',
+                    'attribute-type'   => '属性タイプ',
+                    'added'            => '追加の属性マッピングを追加しました。',
+                    'removed'          => '追加属性のマッピングを削除しました。',
+                    'duplicate'        => 'その属性コードはすでにマッピングされています。',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => '構成可能な属性マッピング',
                     'description' => '追加の属性を追加してマッピングするには、Bagisto属性コードを入力してください。',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'カテゴリフィールドマッピング',
                     'save'                   => '保存',

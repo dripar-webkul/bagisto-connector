@@ -6,14 +6,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Webkul\DataTransfer\Helpers\Export as BaseExport;
 
-/**
- * Export helper that also aggregates the "updated" count for the Job Tracker.
- */
 class Export extends BaseExport
 {
-    /**
-     * Mark the export as completed and persist the aggregated summary.
-     */
     public function completed(): void
     {
         $grammar = DB::rawQueryGrammar();
@@ -49,9 +43,6 @@ class Export extends BaseExport
         $this->jobLogger->info(trans('data_transfer::app.job.completed'));
     }
 
-    /**
-     * Cancel the export process.
-     */
     public function cancel(): void
     {
         $grammar = DB::rawQueryGrammar();
@@ -78,9 +69,6 @@ class Export extends BaseExport
         Event::dispatch('data_transfer.exports.cancelled', $export);
     }
 
-    /**
-     * Returns export stats including the updated count.
-     */
     public function stats(string $state): array
     {
         $total = $this->export->batches()->count();

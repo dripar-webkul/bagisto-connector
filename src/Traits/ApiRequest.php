@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\ValidationException;
 use Webkul\Bagisto\Enums\Export\CacheType;
 use Webkul\Bagisto\Http\Client\HttpClientFactory;
+use Webkul\Bagisto\Services\ApiService;
 
 trait ApiRequest
 {
@@ -14,14 +15,18 @@ trait ApiRequest
 
     protected $tokenReneratedAt = false;
 
-    /**
-     * Validation/error messages from the most recent API call (empty when it succeeded).
-     */
     protected array $lastApiErrors = [];
 
-    public function buildHttpRequest()
+    public function buildHttpRequest(bool $refresh = false): ApiService
     {
-        $this->httpClient = Cache::get(CacheType::BAGISTO_API_HTTP->value);
+        $cacheKey = CacheType::BAGISTO_API_HTTP->forCredential($this->credential['id'] ?? null);
+
+        if ($refresh) {
+            Cache::forget($cacheKey);
+        }
+
+        $this->httpClient = Cache::get($cacheKey);
+
         if (! $this->httpClient) {
             $httpClientFactory = new HttpClientFactory;
             $this->httpClient = $httpClientFactory->withBaseUri($this->credential['shop_url'])
@@ -29,13 +34,13 @@ trait ApiRequest
                 ->withPassword($this->credential['password'])
                 ->make();
 
-            Cache::put(CacheType::BAGISTO_API_HTTP->value, $this->httpClient, config('session.lifetime'));
+            Cache::put($cacheKey, $this->httpClient, config('session.lifetime'));
         }
 
         return $this->httpClient;
     }
 
-    public function setApiRequest($method, $endPoint, $data = [], array $options = [])
+    public function setApiRequest($method, $endPoint, $data = [], array $options = []): ?array
     {
         $this->lastApiErrors = [];
 
@@ -47,7 +52,7 @@ trait ApiRequest
         } catch (AuthenticationException $e) {
             if (! $this->tokenReneratedAt) {
                 $this->tokenReneratedAt = true;
-                $this->buildHttpRequest();
+                $this->buildHttpRequest(true);
 
                 return $this->setApiRequest($method, $endPoint, $data, $options);
             }
@@ -61,6 +66,8 @@ trait ApiRequest
             $this->lastApiErrors = ['exception' => [$e->getMessage()]];
             $this->logWarning($this->lastApiErrors, $data['sku'] ?? $data['code'] ?? 'bulk');
         }
+
+        return null;
     }
 
     public function logWarning(array $data, string $identifier): void

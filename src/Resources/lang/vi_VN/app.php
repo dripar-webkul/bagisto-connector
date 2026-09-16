@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bộ lọc Bagisto',
@@ -26,6 +25,12 @@ return [
             'type'               => 'Loại sản phẩm',
             'channel'            => 'Kênh',
             'locale'             => 'Ngôn ngữ',
+            'channels'           => 'Kênh',
+            'channels-info'      => 'Chỉ những kênh được ánh xạ với thông tin xác thực đã chọn. Để trống để xuất tất cả các kênh được ánh xạ.',
+            'locales'            => 'Ngôn ngữ',
+            'locales-info'       => 'Chỉ những ngôn ngữ được ánh xạ với thông tin xác thực đã chọn. Để trống để xuất tất cả các ngôn ngữ được ánh xạ.',
+            'categories'         => 'Danh mục',
+            'categories-info'    => 'Chỉ những danh mục này được xuất. Các danh mục cha của chúng cũng được xuất để cây danh mục còn nguyên vẹn.',
             'code'               => 'Lọc theo mã',
             'sku'                => 'Lọc theo SKU',
             'all'                => 'Tất cả',
@@ -33,22 +38,24 @@ return [
             'false'              => 'Đã tắt (Sai)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => 'Thông tin xác thực',
+                'attribute-mapping' => 'Ánh xạ thuộc tính',
+                'category-mapping'  => 'Ánh xạ trường danh mục',
+            ],
             'index' => [
                 'title'      => 'Thông tin xác thực',
                 'invalid'    => 'Thông tin xác thực không hợp lệ',
                 'create-btn' => 'Tạo thông tin xác thực',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'URL cửa hàng',
                     'email'    => 'Địa chỉ email',
                     'edit'     => 'Chỉnh sửa',
                     'delete'   => 'Xóa',
                 ],
-
                 'create' => [
                     'title'    => 'Tạo thông tin xác thực',
                     'shop_url' => 'URL cửa hàng',
@@ -56,12 +63,10 @@ return [
                     'password' => 'Mật khẩu',
                     'save-btn' => 'Lưu',
                 ],
-
                 'create-success' => 'Đã tạo thông tin xác thực thành công.',
                 'update-success' => 'Đã cập nhật thông tin xác thực thành công.',
                 'delete-success' => 'Đã xóa thông tin xác thực thành công.',
             ],
-
             'edit' => [
                 'title'                     => 'Chỉnh sửa thông tin xác thực',
                 'shop_url'                  => 'URL cửa hàng',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'Kênh UnoPim',
                 'unopim-locale'             => 'Ngôn ngữ UnoPim',
                 'credential'                => 'Thông tin xác thực',
+                'select-unopim-channel'     => 'Chọn kênh UnoPim',
+                'select-unopim-locale'      => 'Chọn ngôn ngữ UnoPim',
+                'server-down'               => 'Máy chủ Bagisto hiện đang ngừng hoạt động; vui lòng cập nhật thông tin xác thực hoặc khởi động lại máy chủ.',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'Ánh xạ trường danh mục đã được lưu thành công',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Không tìm thấy thông tin xác thực.',
+                'attribute-not-found'         => 'Không tìm thấy thuộc tính.',
+                'no-locale-mapping'           => ':count danh mục chưa được xuất: không có ánh xạ ngôn ngữ khả dụng. Mở thông tin xác thực và lưu lại ánh xạ kênh và ngôn ngữ.',
+                'no-attribute-locale-mapping' => ':count thuộc tính chưa được xuất: các kênh đã chọn không có ánh xạ ngôn ngữ Bagisto. Mở thông tin xác thực và lưu ánh xạ kênh và ngôn ngữ.',
+                'invalid-locale-mapping'      => 'Đã bỏ qua mục ánh xạ ngôn ngữ: cần mã ngôn ngữ UnoPim cho ngôn ngữ Bagisto “:locale”, nhưng nhận được :given.',
+                'category-ancestors-added'    => 'Đã thêm :count danh mục cha vào bản xuất để các danh mục đã chọn giữ đúng vị trí trong cây: :categories',
+                'variant-group-flattened'     => 'Sản phẩm :identifier: nhóm biến thể đã được dàn phẳng thành các biến thể của nó.',
+            ],
+            'skipped' => [
+                'skipped-heading'          => ':count sản phẩm chưa được xuất',
+                'skipped-description'      => 'Những sản phẩm này vẫn nằm trong UnoPim. Hãy khắc phục nguyên nhân bên dưới rồi chạy lại quá trình xuất — nhật ký tải xuống có đầy đủ chi tiết.',
+                'skipped-reason'           => 'Lý do không được xuất',
+                'excluded-heading'         => ':count tệp đã bị loại khỏi quá trình xuất',
+                'excluded-description'     => 'Những sản phẩm này đã vào được Bagisto, nhưng các tệp dưới đây bị bỏ qua. Mọi thứ khác đã được xuất bình thường.',
+                'excluded-reason'          => 'Lý do tệp bị bỏ qua',
+                'product'                  => 'Sản phẩm',
+                'missing-required-fields'  => 'Sản phẩm :identifier chưa được xuất: Bagisto yêu cầu :fields, nhưng thuộc tính UnoPim được ánh xạ không có giá trị cho sản phẩm này. Hãy nhập giá trị hoặc gán giá trị cố định cho trường này trong tab Ánh xạ thuộc tính.',
+                'unsupported-type'         => 'Sản phẩm :identifier chưa được xuất: loại sản phẩm :type không có loại tương ứng trong Bagisto.',
+                'no-scope-match'           => 'Sản phẩm :identifier chưa được xuất: không có kênh và ngôn ngữ nào đã chọn được ánh xạ tới cửa hàng Bagisto này.',
+                'rejected-by-bagisto'      => 'Bagisto đã từ chối sản phẩm :identifier: :errors',
+                'request-failed'           => 'Sản phẩm :identifier chưa được xuất vì yêu cầu tới Bagisto đã thất bại: :errors',
+                'unsupported-media-type'   => 'Sản phẩm :identifier: tệp :file bị bỏ qua vì ảnh sản phẩm của Bagisto chỉ chấp nhận tệp hình ảnh.',
+                'unsupported-image-format' => 'Sản phẩm :identifier: tệp :file bị bỏ qua vì Bagisto không giải mã được định dạng ảnh đó. Hãy dùng JPG, PNG, GIF, WEBP, BMP hoặc AVIF.',
+                'media-not-found'          => 'Sản phẩm :identifier: tệp :file bị bỏ qua vì tệp không còn trong kho lưu trữ.',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => 'Ánh xạ thuộc tính',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'dữ liệu:',
                     'flash-message'     => 'Vui lòng cung cấp mã và loại thuộc tính hợp lệ.',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => 'Ánh xạ thuộc tính bổ sung',
-                    'description' => 'Nhập mã thuộc tính Bagisto để thêm một thuộc tính bổ sung và ánh xạ nó.',
+                    'title'            => 'Ánh xạ thuộc tính bổ sung',
+                    'description'      => 'Nhập mã thuộc tính Bagisto để thêm một thuộc tính bổ sung và ánh xạ nó.',
+                    'attribute-code'   => 'Mã thuộc tính Bagisto',
+                    'attribute-type'   => 'Loại thuộc tính',
+                    'added'            => 'Đã thêm ánh xạ thuộc tính bổ sung.',
+                    'removed'          => 'Đã xóa ánh xạ thuộc tính bổ sung.',
+                    'duplicate'        => 'Mã thuộc tính đó đã được ánh xạ.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Ánh xạ thuộc tính có thể cấu hình',
                     'description' => 'Nhập mã thuộc tính Bagisto để thêm một thuộc tính bổ sung và ánh xạ nó.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Ánh xạ trường danh mục',
                     'save'                   => 'Lưu',

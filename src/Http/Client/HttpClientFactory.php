@@ -10,29 +10,14 @@ use Webkul\Bagisto\Services\Headers;
 
 final class HttpClientFactory
 {
-    /**
-     * The base URI for the requests.
-     */
     private ?string $baseUri = null;
 
-    /**
-     * The email used for authentication.
-     */
     private ?string $email = null;
 
-    /**
-     * The password used for authentication.
-     */
     private ?string $password = null;
 
-    /**
-     * The HTTP headers for the requests.
-     */
     private array $headers = [];
 
-    /**
-     * Sets the email for the API requests.
-     */
     public function withEmail(string $email): self
     {
         $this->email = trim($email);
@@ -40,9 +25,6 @@ final class HttpClientFactory
         return $this;
     }
 
-    /**
-     * Sets the password for the API requests.
-     */
     public function withPassword(?string $password): self
     {
         $this->password = $password;
@@ -50,10 +32,6 @@ final class HttpClientFactory
         return $this;
     }
 
-    /**
-     * Sets the base URI for the API requests.
-     * If no URI is provided, the factory will use the default URI.
-     */
     public function withBaseUri(string $baseUri): self
     {
         $this->baseUri = $baseUri;
@@ -61,9 +39,6 @@ final class HttpClientFactory
         return $this;
     }
 
-    /**
-     * Adds a custom HTTP header to the requests.
-     */
     public function withHttpHeader(string $name, string $value): self
     {
         $this->headers[$name] = $value;
@@ -71,13 +46,6 @@ final class HttpClientFactory
         return $this;
     }
 
-    /**
-     * Creates and returns an instance of the ApiService.
-     * If email and password are provided, it authenticates and includes a token in the headers.
-     *
-     * @throws \Exception
-     * @throws ValidationException
-     */
     public function make(): ApiService
     {
         $headers = Headers::create();
@@ -90,12 +58,6 @@ final class HttpClientFactory
         return new ApiService($this->baseUri, $headers);
     }
 
-    /**
-     * Authenticates with the provided email and password, and returns a token.
-     *
-     * @throws ValidationException
-     * @throws \Exception
-     */
     public function apiAuth(string $email, string $password): string
     {
         $contentType = ContentType::JSON->value;

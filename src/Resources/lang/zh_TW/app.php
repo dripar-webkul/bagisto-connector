@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto 篩選條件',
@@ -26,6 +25,12 @@ return [
             'type'               => '產品類型',
             'channel'            => '頻道',
             'locale'             => '來源語區',
+            'channels'           => '通路',
+            'channels-info'      => '僅顯示與所選憑證對應的通路。留空則匯出所有已對應的通路。',
+            'locales'            => '語系',
+            'locales-info'       => '僅顯示與所選憑證對應的語系。留空則匯出所有已對應的語系。',
+            'categories'         => '分類',
+            'categories-info'    => '僅匯出這些分類。其上層分類也會一併匯出，以確保分類樹完整。',
             'code'               => '依代碼篩選',
             'sku'                => '依 SKU 篩選',
             'all'                => '全部',
@@ -33,22 +38,24 @@ return [
             'false'              => '已停用（假）',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => '憑證',
+                'attribute-mapping' => '屬性對應',
+                'category-mapping'  => '分類欄位對應',
+            ],
             'index' => [
                 'title'      => '憑證',
                 'invalid'    => '無效的憑證',
                 'create-btn' => '建立憑證',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => '商店網址',
                     'email'    => '電子郵件地址',
                     'edit'     => '編輯',
                     'delete'   => '刪除',
                 ],
-
                 'create' => [
                     'title'    => '建立憑證',
                     'shop_url' => '商店網址',
@@ -56,12 +63,10 @@ return [
                     'password' => '密碼',
                     'save-btn' => '儲存',
                 ],
-
                 'create-success' => '憑證已成功建立。',
                 'update-success' => '憑證已成功更新。',
                 'delete-success' => '憑證已成功刪除。',
             ],
-
             'edit' => [
                 'title'                     => '編輯憑證',
                 'shop_url'                  => '商店網址',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'UnoPim 頻道',
                 'unopim-locale'             => 'UnoPim 語區',
                 'credential'                => '憑證',
+                'select-unopim-channel'     => '選擇 UnoPim 通路',
+                'select-unopim-locale'      => '選擇 UnoPim 語系',
+                'server-down'               => 'Bagisto 伺服器目前無法使用，請更新憑證或重新啟動伺服器。',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => '分類欄位對應已成功儲存',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => '找不到憑證。',
+                'attribute-not-found'         => '找不到屬性。',
+                'no-locale-mapping'           => ':count 個分類未匯出：沒有可用的語系對應。請開啟憑證並重新儲存通路與語系對應。',
+                'no-attribute-locale-mapping' => ':count 個屬性未匯出：所選通路沒有 Bagisto 語系對應。請開啟憑證並儲存通路與語系對應。',
+                'invalid-locale-mapping'      => '已忽略語系對應項目：Bagisto 語系「:locale」需要 UnoPim 語系代碼，但收到的是 :given。',
+                'category-ancestors-added'    => '已將 :count 個上層分類加入匯出，讓所選分類在分類樹中保持原有位置：:categories',
+                'variant-group-flattened'     => '商品 :identifier：變體群組已展開為各個變體。',
+            ],
+            'skipped' => [
+                'skipped-heading'          => '有 :count 項商品未匯出',
+                'skipped-description'      => '這些商品仍留在 UnoPim 中。請修正下方列出的原因後重新執行匯出 — 下載記錄中包含完整詳情。',
+                'skipped-reason'           => '未匯出的原因',
+                'excluded-heading'         => '有 :count 個檔案被排除於匯出之外',
+                'excluded-description'     => '這些商品已成功匯入 Bagisto，但下列檔案被略過。其餘內容均已正常匯出。',
+                'excluded-reason'          => '檔案被略過的原因',
+                'product'                  => '商品',
+                'missing-required-fields'  => '商品 :identifier 未匯出：Bagisto 要求填寫 :fields，而對應的 UnoPim 屬性在此商品上沒有值。請設定一個值，或在「屬性對應」分頁中為該欄位指定固定值。',
+                'unsupported-type'         => '商品 :identifier 未匯出：商品類型 :type 在 Bagisto 中沒有對應類型。',
+                'no-scope-match'           => '商品 :identifier 未匯出：所選通路與語系均未對應到此 Bagisto 商店。',
+                'rejected-by-bagisto'      => '商品 :identifier 遭 Bagisto 拒絕：:errors',
+                'request-failed'           => '商品 :identifier 未匯出，因為向 Bagisto 發送的請求失敗：:errors',
+                'unsupported-media-type'   => '商品 :identifier：檔案 :file 被略過，因為 Bagisto 商品圖片僅接受圖片檔案。',
+                'unsupported-image-format' => '商品 :identifier：檔案 :file 被略過，因為 Bagisto 無法解碼該圖片格式。請使用 JPG、PNG、GIF、WEBP、BMP 或 AVIF。',
+                'media-not-found'          => '商品 :identifier：檔案 :file 被略過，因為該檔案已不在儲存空間中。',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => '屬性對應',
@@ -180,17 +214,19 @@ return [
                     'data'              => '資料：',
                     'flash-message'     => '請提供有效的屬性代碼與類型。',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => '附加屬性對應',
-                    'description' => '請輸入 Bagisto 屬性代碼以新增附加屬性並進行對應。',
+                    'title'            => '附加屬性對應',
+                    'description'      => '請輸入 Bagisto 屬性代碼以新增附加屬性並進行對應。',
+                    'attribute-code'   => 'Bagisto 屬性代碼',
+                    'attribute-type'   => '屬性類型',
+                    'added'            => '已新增附加屬性對應。',
+                    'removed'          => '已移除附加屬性對應。',
+                    'duplicate'        => '該屬性代碼已對應。',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => '可配置屬性對應',
                     'description' => '請輸入 Bagisto 屬性代碼以新增附加屬性並進行對應。',
                 ],
-
                 'category-fields' => [
                     'title'                  => '分類欄位對應',
                     'save'                   => '儲存',

@@ -2,6 +2,8 @@
 
 namespace Webkul\Bagisto\Tests\Unit;
 
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Psr\Log\LoggerInterface;
 use Tests\TestCase;
@@ -24,6 +26,8 @@ class ExporterTest extends TestCase
 
     private $jobLogger;
 
+    private $productRepository;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -32,7 +36,7 @@ class ExporterTest extends TestCase
         $fileBuffer = Mockery::mock(FlatItemBuffer::class);
         $bagistoMapping = Mockery::mock(BagistoDataMapping::class);
         $attrRepo = Mockery::mock(AttributeRepository::class);
-        $prodRepo = Mockery::mock(ProductRepository::class);
+        $prodRepo = $this->productRepository = Mockery::mock(ProductRepository::class);
         $catRepo = Mockery::mock(CategoryRepository::class);
         $attrOptionRepo = Mockery::mock(AttributeOptionRepository::class);
         $attrMappingRepo = Mockery::mock(AttributeMappingRepository::class);
@@ -67,6 +71,92 @@ class ExporterTest extends TestCase
     public function test_exporter_instantiation()
     {
         $this->assertInstanceOf(Exporter::class, $this->exporter);
+    }
+
+    public function test_keep_own_identity_fields_drops_inherited_sku_and_url_key()
+    {
+        $resolved = [
+            'common' => [
+                'sku'      => 'parent-sku',
+                'url_key'  => 'parent-url-key',
+                'brand'    => 'acme',
+                'material' => 'cotton',
+            ],
+        ];
+
+        $own = [
+            'common' => [
+                'color' => 'red',
+            ],
+        ];
+
+        $method = new \ReflectionMethod($this->exporter, 'keepOwnIdentityFields');
+        $method->setAccessible(true);
+        $result = $method->invoke($this->exporter, $resolved, $own);
+
+        $this->assertArrayNotHasKey('sku', $result['common']);
+        $this->assertArrayNotHasKey('url_key', $result['common']);
+        $this->assertSame('acme', $result['common']['brand']);
+        $this->assertSame('cotton', $result['common']['material']);
+    }
+
+    public function test_keep_own_identity_fields_preserves_the_variants_own_identity()
+    {
+        $resolved = [
+            'common' => [
+                'sku'     => 'parent-sku',
+                'url_key' => 'parent-url-key',
+                'brand'   => 'acme',
+            ],
+        ];
+
+        $own = [
+            'common' => [
+                'sku'     => 'variant-sku',
+                'url_key' => 'variant-url-key',
+            ],
+        ];
+
+        $method = new \ReflectionMethod($this->exporter, 'keepOwnIdentityFields');
+        $method->setAccessible(true);
+        $result = $method->invoke($this->exporter, $resolved, $own);
+
+        $this->assertSame('variant-sku', $result['common']['sku']);
+        $this->assertSame('variant-url-key', $result['common']['url_key']);
+        $this->assertSame('acme', $result['common']['brand']);
+    }
+
+    public function test_keep_own_identity_fields_guards_nested_scopes()
+    {
+        $resolved = [
+            'channel_locale_specific' => [
+                'default' => [
+                    'en_US' => [
+                        'url_key' => 'parent-url-key',
+                        'name'    => 'Parent Name',
+                    ],
+                ],
+            ],
+        ];
+
+        $own = [
+            'channel_locale_specific' => [
+                'default' => [
+                    'en_US' => [
+                        'name' => 'Variant Name',
+                    ],
+                ],
+            ],
+        ];
+
+        $method = new \ReflectionMethod($this->exporter, 'keepOwnIdentityFields');
+        $method->setAccessible(true);
+        $result = $method->invoke($this->exporter, $resolved, $own);
+
+        $scope = $result['channel_locale_specific']['default']['en_US'];
+
+        $this->assertArrayNotHasKey('url_key', $scope);
+        $this->assertSame('Parent Name', $scope['name']);
     }
 
     public function test_apply_fixed_values_defaults_visible_individually_for_variant()
@@ -109,6 +199,101 @@ class ExporterTest extends TestCase
         $method->invokeArgs($this->exporter, [&$mergedFields, null]);
 
         $this->assertSame('1', $mergedFields['visible_individually']);
+    }
+
+    public function test_map_attributes_combines_multiple_mapped_attributes_into_one_value()
+    {
+        $this->setProperty($this->exporter, 'mappingAttributes', [
+            'standard_attribute' => (object) ['mapped_value' => ['images' => ['image_1', 'image_2']]],
+            'image_attribute'    => (object) ['mapped_value' => []],
+        ]);
+
+        $mergedFields = [
+            'image_1' => 'storage#image-one.jpg',
+            'image_2' => 'storage#image-two.jpg',
+        ];
+
+        $method = new \ReflectionMethod($this->exporter, 'mapAttributesToBagisto');
+        $method->setAccessible(true);
+        $method->invokeArgs($this->exporter, [&$mergedFields]);
+
+        $this->assertSame('storage#image-one.jpg,storage#image-two.jpg', $mergedFields['images']);
+    }
+
+    public function test_map_attributes_skips_mapped_attributes_without_values()
+    {
+        $this->setProperty($this->exporter, 'mappingAttributes', [
+            'standard_attribute' => (object) ['mapped_value' => ['images' => ['image_1', 'image_2']]],
+            'image_attribute'    => (object) ['mapped_value' => []],
+        ]);
+
+        $mergedFields = ['image_1' => 'storage#image-one.jpg'];
+
+        $method = new \ReflectionMethod($this->exporter, 'mapAttributesToBagisto');
+        $method->setAccessible(true);
+        $method->invokeArgs($this->exporter, [&$mergedFields]);
+
+        $this->assertSame('storage#image-one.jpg', $mergedFields['images']);
+    }
+
+    public function test_map_attributes_keeps_single_attribute_mapping()
+    {
+        $this->setProperty($this->exporter, 'mappingAttributes', [
+            'standard_attribute' => (object) ['mapped_value' => ['images' => 'image_1']],
+            'image_attribute'    => (object) ['mapped_value' => []],
+        ]);
+
+        $mergedFields = ['image_1' => 'storage#image-one.jpg'];
+
+        $method = new \ReflectionMethod($this->exporter, 'mapAttributesToBagisto');
+        $method->setAccessible(true);
+        $method->invokeArgs($this->exporter, [&$mergedFields]);
+
+        $this->assertSame('storage#image-one.jpg', $mergedFields['images']);
+    }
+
+    public function test_s3_media_urls_are_generated_from_the_active_s3_disk()
+    {
+        Config::set('filesystems.default', 's3');
+        Config::set('filesystems.disks.s3', [
+            'driver'     => 'local',
+            'root'       => storage_path('framework/testing/disks/s3'),
+            'url'        => 'https://cdn.example.com',
+            'visibility' => 'public',
+        ]);
+
+        Storage::fake('s3');
+        Storage::disk('s3')->put('product/1/image/a.webp', 'image');
+
+        $method = new \ReflectionMethod($this->exporter, 'makeDamPublicUrl');
+        $method->setAccessible(true);
+
+        $this->assertSame(
+            'https://cdn.example.com/product/1/image/a.webp',
+            $method->invoke($this->exporter, 'product/1/image/a.webp')
+        );
+    }
+
+    public function test_s3_media_paths_are_resolved_from_the_active_s3_disk()
+    {
+        Config::set('filesystems.default', 's3');
+        Config::set('filesystems.disks.s3', [
+            'driver'     => 'local',
+            'root'       => storage_path('framework/testing/disks/s3'),
+            'url'        => 'https://cdn.example.com',
+            'visibility' => 'public',
+        ]);
+
+        Storage::fake('s3');
+        Storage::disk('s3')->put('product/1/image/a.webp', 'image');
+
+        $method = new \ReflectionMethod($this->exporter, 'getExistingFilePath');
+        $method->setAccessible(true);
+
+        $this->assertSame(
+            'https://cdn.example.com/product/1/image/a.webp',
+            $method->invoke($this->exporter, 'product/1/image/a.webp')
+        );
     }
 
     public function test_super_attributes_flattens_a_one_level_variant_tree()
@@ -226,6 +411,73 @@ class ExporterTest extends TestCase
         $item = $this->configurable([], [$this->leaf('shirt-red', ['color' => 'red'])]);
 
         $this->assertSame('', $this->exporter->getSuperAttributes($item));
+    }
+
+    public function test_associations_keep_only_skus_that_still_exist()
+    {
+        $this->expectSkuLookup(['shirt-red', 'ghost-sku'], ['shirt-red']);
+
+        $this->assertSame('shirt-red', $this->associationsFormat('shirt-red, ghost-sku'));
+    }
+
+    public function test_associations_are_looked_up_once_per_sku()
+    {
+        $this->expectSkuLookup(['shirt-red', 'shirt-blue'], ['shirt-red', 'shirt-blue']);
+
+        $this->assertSame('shirt-red,shirt-blue', $this->associationsFormat('shirt-red,shirt-blue'));
+        $this->assertSame('shirt-blue', $this->associationsFormat('shirt-blue'));
+    }
+
+    public function test_associations_are_null_when_the_product_has_none()
+    {
+        $this->productRepository->shouldReceive('whereIn')->never();
+
+        $this->assertNull($this->associationsFormat(null));
+    }
+
+    private function expectSkuLookup(array $queried, array $found): void
+    {
+        $rows = [];
+
+        foreach ($found as $sku => $common) {
+            $rows[] = new class(is_int($sku) ? $common : $sku, is_int($sku) ? [] : $common)
+            {
+                public function __construct(public string $sku, private array $common) {}
+
+                public function toArray(): array
+                {
+                    return ['sku' => $this->sku, 'values' => ['common' => $this->common]];
+                }
+            };
+        }
+
+        $this->productRepository->shouldReceive('whereIn')
+            ->once()
+            ->with('sku', $queried)
+            ->andReturn(Mockery::mock(['get' => collect($rows)]));
+    }
+
+    public function test_associations_are_rewritten_to_the_mapped_bagisto_sku()
+    {
+        $this->setProperty($this->exporter, 'mappingAttributes', [
+            'standard_attribute' => (object) ['mapped_value' => ['sku' => 'product_number'], 'fixed_value' => []],
+        ]);
+
+        $this->expectSkuLookup(['shirt-red'], ['shirt-red' => ['product_number' => 'PN-RED']]);
+
+        $this->assertSame('PN-RED', $this->associationsFormat('shirt-red'));
+    }
+
+    private function associationsFormat(?string $upSells): ?string
+    {
+        $item = $upSells === null
+            ? ['values' => []]
+            : ['values' => ['associations' => ['up_sells' => explode(',', $upSells)]]];
+
+        $method = new \ReflectionMethod($this->exporter, 'getAssociationsFormat');
+        $method->setAccessible(true);
+
+        return $method->invoke($this->exporter, $item, 'up_sells');
     }
 
     private function configurable(array $axisCodes, array $variants): array

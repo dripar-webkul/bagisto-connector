@@ -11,7 +11,6 @@ return [
             ],
         ],
     ],
-
     'exporters' => [
         'bagisto' => [
             'filters'            => 'Bagisto-filters',
@@ -26,6 +25,12 @@ return [
             'type'               => 'Producttype',
             'channel'            => 'Kanaal',
             'locale'             => 'Taal',
+            'channels'           => 'Kanalen',
+            'channels-info'      => 'Alleen de kanalen die aan de geselecteerde inloggegevens zijn gekoppeld. Laat leeg om alle gekoppelde kanalen te exporteren.',
+            'locales'            => 'Talen',
+            'locales-info'       => 'Alleen de talen die aan de geselecteerde inloggegevens zijn gekoppeld. Laat leeg om alle gekoppelde talen te exporteren.',
+            'categories'         => 'Categorieën',
+            'categories-info'    => 'Alleen deze categorieën worden geëxporteerd. Hun bovenliggende categorieën worden ook geëxporteerd, zodat de boom volledig aankomt.',
             'code'               => 'Filteren op code',
             'sku'                => 'Filteren op SKU',
             'all'                => 'Alle',
@@ -33,22 +38,24 @@ return [
             'false'              => 'Uitgeschakeld (Onwaar)',
         ],
     ],
-
     'bagisto' => [
         'credentials' => [
+            'tabs' => [
+                'credential'        => 'Inloggegevens',
+                'attribute-mapping' => 'Attribuuttoewijzing',
+                'category-mapping'  => 'Categorievelden koppelen',
+            ],
             'index' => [
                 'title'      => 'API-gegevens',
                 'invalid'    => 'Ongeldige gegevens',
                 'create-btn' => 'Gegevens aanmaken',
-
-                'datagrid' => [
+                'datagrid'   => [
                     'id'       => 'ID',
                     'shop-url' => 'Winkel-URL',
                     'email'    => 'E-mailadres',
                     'edit'     => 'Bewerken',
                     'delete'   => 'Verwijderen',
                 ],
-
                 'create' => [
                     'title'    => 'Gegevens aanmaken',
                     'shop_url' => 'Winkel-URL',
@@ -56,12 +63,10 @@ return [
                     'password' => 'Wachtwoord',
                     'save-btn' => 'Opslaan',
                 ],
-
                 'create-success' => 'Gegevens zijn succesvol aangemaakt.',
                 'update-success' => 'Gegevens zijn succesvol bijgewerkt.',
                 'delete-success' => 'Gegevens zijn succesvol verwijderd.',
             ],
-
             'edit' => [
                 'title'                     => 'Gegevens bewerken',
                 'shop_url'                  => 'Winkel-URL',
@@ -78,6 +83,9 @@ return [
                 'unopim-channel'            => 'UnoPim-kanaal',
                 'unopim-locale'             => 'UnoPim-taal',
                 'credential'                => 'Gegevens',
+                'select-unopim-channel'     => 'UnoPim-kanaal selecteren',
+                'select-unopim-locale'      => 'UnoPim-taal selecteren',
+                'server-down'               => 'De Bagisto-server is momenteel niet bereikbaar; werk de inloggegevens bij of herstart de server.',
             ],
         ],
         'bagisto-attributes' => [
@@ -164,6 +172,32 @@ return [
             'success-message' => 'De koppeling van categorievelden is succesvol opgeslagen',
         ],
         'export' => [
+            'errors' => [
+                'credential-not-found'        => 'Inloggegevens niet gevonden.',
+                'attribute-not-found'         => 'Attribuut niet gevonden.',
+                'no-locale-mapping'           => ':count categorieën zijn niet geëxporteerd: geen bruikbare taalkoppeling. Open de inloggegevens en sla de kanaal- en taalkoppeling opnieuw op.',
+                'no-attribute-locale-mapping' => ':count attributen zijn niet geëxporteerd: de geselecteerde kanalen hebben geen Bagisto-taalkoppeling. Open de inloggegevens en sla de kanaal- en taalkoppeling op.',
+                'invalid-locale-mapping'      => 'Taalkoppeling genegeerd: er werd een UnoPim-taalcode verwacht voor de Bagisto-taal “:locale”, maar :given is ontvangen.',
+                'category-ancestors-added'    => ':count bovenliggende categorieën zijn aan de export toegevoegd zodat de geselecteerde categorieën hun plaats in de boom behouden: :categories',
+                'variant-group-flattened'     => 'Product :identifier: variantgroep is afgevlakt naar de bijbehorende varianten.',
+            ],
+            'skipped' => [
+                'skipped-heading'          => ':count product(en) zijn niet geëxporteerd',
+                'skipped-description'      => 'Deze producten zijn in UnoPim gebleven. Los de onderstaande oorzaak op en voer de export opnieuw uit — het downloadlogboek bevat alle details.',
+                'skipped-reason'           => 'Waarom het niet is geëxporteerd',
+                'excluded-heading'         => ':count bestand(en) zijn buiten de export gelaten',
+                'excluded-description'     => 'Deze producten hebben Bagisto bereikt, maar de onderstaande bestanden zijn achtergebleven. Al het overige is normaal geëxporteerd.',
+                'excluded-reason'          => 'Waarom het bestand is overgeslagen',
+                'product'                  => 'Product',
+                'missing-required-fields'  => 'Product :identifier is niet geëxporteerd: Bagisto vereist :fields, en het toegewezen UnoPim-attribuut had geen waarde voor dit product. Stel een waarde in of geef het veld een vaste waarde op het tabblad Attribuuttoewijzing.',
+                'unsupported-type'         => 'Product :identifier is niet geëxporteerd: producttype :type heeft geen equivalent in Bagisto.',
+                'no-scope-match'           => 'Product :identifier is niet geëxporteerd: geen van de geselecteerde kanalen en locales is toegewezen aan deze Bagisto-winkel.',
+                'rejected-by-bagisto'      => 'Product :identifier is door Bagisto geweigerd: :errors',
+                'request-failed'           => 'Product :identifier is niet geëxporteerd omdat het verzoek aan Bagisto is mislukt: :errors',
+                'unsupported-media-type'   => 'Product :identifier: :file is overgeslagen omdat Bagisto-productafbeeldingen alleen afbeeldingsbestanden accepteren.',
+                'unsupported-image-format' => 'Product :identifier: :file is overgeslagen omdat Bagisto dat afbeeldingsformaat niet kan decoderen. Gebruik JPG, PNG, GIF, WEBP, BMP of AVIF.',
+                'media-not-found'          => 'Product :identifier: :file is overgeslagen omdat het bestand niet meer in de opslag staat.',
+            ],
             'mapping' => [
                 'attributes' => [
                     'title'             => 'Attribuutkoppelingen',
@@ -180,17 +214,19 @@ return [
                     'data'              => 'gegevens:',
                     'flash-message'     => 'Geef een geldige attribuutcode en -type op.',
                 ],
-
                 'additional-attributes' => [
-                    'title'       => 'Aanvullende attribuutkoppelingen',
-                    'description' => 'Schrijf de Bagisto-attribuutcode om een extra attribuut toe te voegen en te koppelen.',
+                    'title'            => 'Aanvullende attribuutkoppelingen',
+                    'description'      => 'Schrijf de Bagisto-attribuutcode om een extra attribuut toe te voegen en te koppelen.',
+                    'attribute-code'   => 'Bagisto-attribuutcode',
+                    'attribute-type'   => 'Attribuuttype',
+                    'added'            => 'Extra attribuuttoewijzing toegevoegd.',
+                    'removed'          => 'Aanvullende attribuuttoewijzing verwijderd.',
+                    'duplicate'        => 'Die attribuutcode is al toegewezen.',
                 ],
-
                 'configurable-attributes' => [
                     'title'       => 'Configureerbare attribuutkoppelingen',
                     'description' => 'Schrijf de Bagisto-attribuutcode om een extra attribuut toe te voegen en te koppelen.',
                 ],
-
                 'category-fields' => [
                     'title'                  => 'Categorieveldkoppelingen',
                     'save'                   => 'Opslaan',

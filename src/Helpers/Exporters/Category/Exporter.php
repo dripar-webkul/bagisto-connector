@@ -2,13 +2,19 @@
 
 namespace Webkul\Bagisto\Helpers\Exporters\Category;
 
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Webkul\Bagisto\Enums\Export\BagistoImageFormat;
 use Webkul\Bagisto\Enums\Export\CacheType;
+use Webkul\Bagisto\Enums\Export\DamFileType;
+use Webkul\Bagisto\Enums\Export\MappingSection;
 use Webkul\Bagisto\Enums\Services\MethodType;
 use Webkul\Bagisto\Repositories\BagistoDataMapping;
 use Webkul\Bagisto\Repositories\CategoryFieldMappingRepository;
 use Webkul\Bagisto\Repositories\CredentialRepository;
+use Webkul\Bagisto\Support\CategoryScope;
+use Webkul\Bagisto\Support\ScopeFilters;
 use Webkul\Bagisto\Traits\ApiRequest as ApiRequestTrait;
 use Webkul\Bagisto\Traits\Credential as CredentialTrait;
 use Webkul\Bagisto\Traits\ExportSummary as ExportSummaryTrait;
@@ -30,63 +36,40 @@ class Exporter extends BaseExporter
 
     public const ENTITY_TYPE = 'category';
 
-    /*
-     * For exporting file
-     */
+    protected const MAX_ANCESTOR_DEPTH = 20;
+
+    protected const DAM_ASSET_FIELD_TYPE = 'asset';
+
+    protected const DAM_ASSET_REPOSITORY = 'Webkul\\DAM\\Repositories\\AssetRepository';
+
+    protected const DAM_DIRECTORY_MODEL = 'Webkul\\DAM\\Models\\Directory';
+
     protected bool $exportsFile = false;
 
-    /**
-     * Current crenetial.
-     *
-     * @var array
-     */
-    protected $credential = [];
+    protected array $credential = [];
 
-    /**
-     * @var array
-     */
-    protected $mappingFields = [];
+    protected array $mappingFields = [];
 
-    /**
-     * @var array
-     */
-    protected $jobFilters = [];
+    protected array $jobFilters = [];
 
-    /**
-     * @var array
-     */
     protected $categoryFields = [];
 
-    /**
-     * @var array
-     */
-    protected $storeSlug = [];
+    protected array $storeSlug = [];
 
-    /**
-     * Memoised fallback list of Bagisto filterable attribute IDs.
-     */
     protected ?array $defaultFilterableAttributeIds = null;
 
-    /**
-     * Create a new instance of the exporter.
-     */
     public function __construct(
         protected JobTrackBatchRepository $exportBatchRepository,
         protected FileExportFileBuffer $exportFileBuffer,
         protected BagistoDataMapping $bagistoDataMappingRepository,
         protected CategoryFieldRepository $categoryFieldRepository,
         protected CategoryFieldMappingRepository $categoryFieldMappingRepository,
-        protected CredentialRepository $credentialRepository
+        protected CredentialRepository $credentialRepository,
     ) {
         parent::__construct($exportBatchRepository, $exportFileBuffer, $categoryFieldRepository);
     }
 
-    /**
-     * Initializes the data for the export process.
-     *
-     * @return void
-     */
-    public function initialize()
+    public function initialize(): void
     {
         $this->initializeCredential($this->getFilters());
 
@@ -97,12 +80,7 @@ class Exporter extends BaseExporter
         $this->initializeJobFilters();
     }
 
-    /**
-     * Initializes categoryFields for the export process.
-     *
-     * @return void
-     */
-    public function initializeCategoryFields()
+    public function initializeCategoryFields(): void
     {
         $this->categoryFields = Cache::get(CacheType::UNOPIM_CATEGORY_FIELDS->value, []);
         if (empty($this->categoryFields)) {
@@ -112,18 +90,15 @@ class Exporter extends BaseExporter
         }
     }
 
-    /**
-     * Initializes mappingField for the export process.
-     *
-     * @return void
-     */
-    public function initializeMappingFields()
+    public function initializeMappingFields(): void
     {
-        $this->mappingFields = Cache::get(CacheType::CATEGORY_FIELD_MAPPING->value, []);
-        if (empty($this->mappingFields)) {
-            $mapping = $this->categoryFieldMappingRepository->findByField('section', 'standard_field')->first();
+        $cacheKey = CacheType::CATEGORY_FIELD_MAPPING->forCredential($this->credential['id'] ?? null);
 
-            // ensure we always have an object with expected properties to avoid null pointer errors
+        $this->mappingFields = Cache::get($cacheKey, []);
+
+        if (empty($this->mappingFields)) {
+            $mapping = $this->categoryFieldMappingRepository->forCredential($this->credential['id'] ?? null, MappingSection::STANDARD_FIELD);
+
             if (! $mapping) {
                 $mapping = (object) [
                     'mapped_value' => [],
@@ -132,69 +107,46 @@ class Exporter extends BaseExporter
             }
 
             $this->mappingFields = [
-                'standard_field' => $mapping,
+                MappingSection::STANDARD_FIELD->value => $mapping,
             ];
 
-            Cache::put(CacheType::CATEGORY_FIELD_MAPPING->value, $this->mappingFields, config('session.lifetime'));
+            Cache::put($cacheKey, $this->mappingFields, config('session.lifetime'));
         }
     }
 
-    /**
-     * Initializes Job Filters for the export process.
-     */
     public function initializeJobFilters(): void
     {
-        $this->jobFilters = Cache::get(CacheType::CATEGORY_JOB_FILTERS->value, []);
-        if (empty($this->jobFilters)) {
-            $filters = $this->getFilters();
+        $filters = $this->getFilters();
 
-            // defaults to avoid undefined variable notices
-            $filtersLocales = [];
-            $exportBagistoChannel = [];
-            $exportBagistoLocales = [];
+        $filtersChannels = ScopeFilters::channelCodes($filters);
+        $filtersLocales = ScopeFilters::localeCodes($filters);
 
-            if (! empty($filters['locale'])) {
-                $filtersLocales = explode(',', $filters['locale']);
+        $bagistoLocales = $this->getMappedLocales();
+        $bagistoChannels = $this->getMappedChannels();
+
+        $exportBagistoChannel = [];
+        $exportBagistoLocales = [];
+
+        foreach ($bagistoChannels as $bagistoChannel => $unopimChannel) {
+            if ($filtersChannels !== [] && ! in_array($unopimChannel, $filtersChannels, true)) {
+                continue;
             }
 
-            $bagistoLocales = $this->getMappedLocales();
-            $bagistoChannels = $this->getMappedChannels();
+            $exportBagistoChannel[$unopimChannel] = $bagistoChannel;
 
-            if (empty($filters['channel'])) {
-                foreach ($bagistoChannels as $bChannel => $uChannel) {
-                    $exportBagistoChannel[$uChannel] = $bChannel;
-                    $mappedLocales = $bagistoLocales[$bChannel] ?? [];
-                    foreach ($mappedLocales as $bagistoLocaleCode => $unopimLocaleCode) {
-                        if (empty($filtersLocales) || in_array($unopimLocaleCode, $filtersLocales)) {
-                            $exportBagistoLocales[$bagistoLocaleCode] = $unopimLocaleCode;
-                        }
-                    }
-                }
-            } else {
-                $bagistoChannel = array_search($filters['channel'], $bagistoChannels);
-                if ($bagistoChannel !== false && $bagistoChannel !== null) {
-                    $exportBagistoChannel[$filters['channel']] = $bagistoChannel;
-                    $mappedLocales = $bagistoLocales[$bagistoChannel] ?? [];
-                    foreach ($mappedLocales as $bagistoLocaleCode => $unopimLocaleCode) {
-                        if (empty($filtersLocales) || in_array($unopimLocaleCode, $filtersLocales)) {
-                            $exportBagistoLocales[$bagistoLocaleCode] = $unopimLocaleCode;
-                        }
-                    }
+            foreach ($bagistoLocales[$bagistoChannel] ?? [] as $bagistoLocaleCode => $unopimLocaleCode) {
+                if ($filtersLocales === [] || in_array($unopimLocaleCode, $filtersLocales, true)) {
+                    $exportBagistoLocales[$bagistoLocaleCode] = $unopimLocaleCode;
                 }
             }
-
-            $this->jobFilters = [
-                'channel' => $exportBagistoChannel,
-                'locales' => $exportBagistoLocales,
-            ];
-
-            Cache::put(CacheType::CATEGORY_JOB_FILTERS->value, $this->jobFilters, config('session.lifetime'));
         }
+
+        $this->jobFilters = [
+            'channel' => $exportBagistoChannel,
+            'locales' => $exportBagistoLocales,
+        ];
     }
 
-    /**
-     * Start the export process
-     */
     public function exportBatch(JobTrackBatchContract $batch, $filePath): bool
     {
         $this->initialize();
@@ -203,29 +155,86 @@ class Exporter extends BaseExporter
 
         $this->write($preparedData, $batch->id);
 
-        /**
-         * Update export batch process state summary
-         */
         $this->updateBatchState($batch->id, Export::STATE_PROCESSED);
 
         return true;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function getResults()
+    protected function getResults(): ?\Iterator
     {
         $filters = $this->getFilters();
-        if (! empty($filters['code'])) {
 
-            return $this->source->whereIn('code', $this->convertCommaSeparatedToArray($filters['code']))->orderBy('parent_id')->with('parent_category')->get()?->getIterator();
+        $selectedCodes = array_values(array_unique(array_merge(
+            empty($filters['code']) ? [] : $this->parseIdentifiers($filters['code']),
+            ScopeFilters::categoryCodes($filters),
+        )));
+
+        if ($selectedCodes === []) {
+            return $this->channelScopedSource()
+                ->orderBy('parent_id')
+                ->with('parent_category')
+                ->get()
+                ?->getIterator();
         }
 
-        return $this->source->orderBy('parent_id')->with('parent_category')->all()?->getIterator();
+        $exportedCodes = $this->withAncestorCodes($selectedCodes);
+
+        return $this->channelScopedSource()
+            ->whereIn('code', $exportedCodes)
+            ->orderBy('parent_id')
+            ->with('parent_category')
+            ->get()
+            ?->getIterator();
     }
 
-    public function write($items, $batchId)
+    protected function channelScopedSource(): mixed
+    {
+        return CategoryScope::scopeQuery($this->source, ScopeFilters::channelCodes($this->getFilters()));
+    }
+
+    protected function withAncestorCodes(array $codes): array
+    {
+        $model = $this->source->getModel();
+
+        $model = $model instanceof EloquentBuilder ? $model->getModel() : $model;
+
+        $query = fn (): EloquentBuilder => $model->newQuery();
+
+        $resolved = array_flip($codes);
+        $ancestors = [];
+
+        $parentIds = $query()->whereIn('code', $codes)->pluck('parent_id')->filter()->unique()->all();
+
+        for ($depth = 0; $depth < self::MAX_ANCESTOR_DEPTH && $parentIds !== []; $depth++) {
+            $parents = $query()->whereIn('id', $parentIds)->get(['id', 'code', 'parent_id']);
+
+            $parentIds = [];
+
+            foreach ($parents as $parent) {
+                if (isset($resolved[$parent->code])) {
+                    continue;
+                }
+
+                $resolved[$parent->code] = true;
+                $ancestors[] = $parent->code;
+
+                if ($parent->parent_id) {
+                    $parentIds[] = $parent->parent_id;
+                }
+            }
+        }
+
+        if ($ancestors !== []) {
+            $this->jobLogger?->info(trans('bagisto::app.bagisto.export.errors.category-ancestors-added', [
+                'count'      => count($ancestors),
+                'categories' => implode(', ', $ancestors),
+            ]));
+        }
+
+        return array_keys($resolved);
+    }
+
+    public function write($items, $batchId): void
     {
         foreach ($items as $item) {
             $id = $item['id'];
@@ -352,9 +361,6 @@ class Exporter extends BaseExporter
         $this->logSkippedItem($item, $response);
     }
 
-    /**
-     * Recreate a category whose Bagisto mapping became stale, then refresh the mapping.
-     */
     private function recreateMissingCategory(array $item, array $options, $id, $batchId, $parentCode): void
     {
         $locale = $item['locale'];
@@ -377,9 +383,6 @@ class Exporter extends BaseExporter
         }
     }
 
-    /**
-     * Whether the most recent API error indicates the target entity no longer exists in Bagisto (HTTP 404).
-     */
     private function isMissingEntityError(): bool
     {
         return array_key_exists('endpoint', $this->lastApiErrors);
@@ -396,9 +399,6 @@ class Exporter extends BaseExporter
         );
     }
 
-    /**
-     * Prepare categories from current batch
-     */
     public function prepareCategories(JobTrackBatchContract $batch, mixed $filePath): array
     {
         $locales = $this->getExportableLocales();
@@ -406,10 +406,9 @@ class Exporter extends BaseExporter
         if ($locales === []) {
             $this->skippedItemsCount += count($batch->data);
 
-            $this->jobLogger?->warning(
-                count($batch->data).' categories not exported: no usable locale mapping. '
-                .'Open the credential and re-save the channel and locale mapping.'
-            );
+            $this->jobLogger?->warning(trans('bagisto::app.bagisto.export.errors.no-locale-mapping', [
+                'count' => count($batch->data),
+            ]));
 
             return [];
         }
@@ -425,11 +424,6 @@ class Exporter extends BaseExporter
         return $categories;
     }
 
-    /**
-     * A half-saved credential mapping can leave a locale entry holding an array
-     * where a locale code belongs, which would fatal the whole batch. Drop those
-     * and say why, so the run reports a skip instead of dying.
-     */
     private function getExportableLocales(): array
     {
         $locales = [];
@@ -441,11 +435,10 @@ class Exporter extends BaseExporter
                 continue;
             }
 
-            $this->jobLogger?->warning(
-                'Locale mapping entry ignored: expected a UnoPim locale code for Bagisto locale "'
-                .(is_string($bagistoLocale) ? $bagistoLocale : gettype($bagistoLocale)).'", got '
-                .gettype($unopimLocale).' ('.json_encode($unopimLocale).').'
-            );
+            $this->jobLogger?->warning(trans('bagisto::app.bagisto.export.errors.invalid-locale-mapping', [
+                'locale' => is_string($bagistoLocale) ? $bagistoLocale : gettype($bagistoLocale),
+                'given'  => gettype($unopimLocale).' ('.json_encode($unopimLocale).')',
+            ]));
         }
 
         return $locales;
@@ -464,7 +457,7 @@ class Exporter extends BaseExporter
             'id'       => $rowData['id'],
             'code'     => $rowData['code'],
             'name'     => $rowData['name'] ?? $rowData['code'],
-            'locale'   => $bagistoLocale ?? 'all',
+            'locale'   => $bagistoLocale,
             'position' => 1,
         ], $additionalData, $attributes);
 
@@ -521,7 +514,7 @@ class Exporter extends BaseExporter
         return $this->defaultFilterableAttributeIds = $ids;
     }
 
-    public function getParentId($id = null)
+    public function getParentId($id = null): ?string
     {
         if (! empty($id)) {
             $mapData = $this->getMapping($this->credential['id'], $id);
@@ -532,9 +525,6 @@ class Exporter extends BaseExporter
         return null;
     }
 
-    /**
-     * Sets category field values for a product. If an category field is not present in the given values array,
-     */
     protected function setFieldsAdditionalData(array $additionalData, $filePath, $options = []): array
     {
         $fieldValues = [];
@@ -543,6 +533,20 @@ class Exporter extends BaseExporter
 
         foreach ($standardFields as $key => $mappingField) {
             $field = $this->categoryFieldRepository->where('code', $mappingField)->first();
+
+            if (! $field) {
+                continue;
+            }
+
+            if ($field->type === self::DAM_ASSET_FIELD_TYPE) {
+                $fileFullPath = $this->getFirstAssetFilePath($additionalData[$mappingField] ?? null);
+                if ($fileFullPath) {
+                    $fieldValues[$key] = $fileFullPath;
+                }
+
+                continue;
+            }
+
             if (in_array($field->type, [FieldValidator::FILE_FIELD_TYPE, FieldValidator::IMAGE_FIELD_TYPE])) {
                 $fileFullPath = $this->getExistingFilePath($field, $additionalData);
                 if ($fileFullPath) {
@@ -597,7 +601,34 @@ class Exporter extends BaseExporter
         return $item;
     }
 
-    protected function getExistingFilePath($field, $additionalData)
+    protected function getFirstAssetFilePath(mixed $value): ?string
+    {
+        $ids = $this->parseIdentifiers($value);
+
+        if ($ids === [] || ! class_exists(self::DAM_ASSET_REPOSITORY)) {
+            return null;
+        }
+
+        $asset = app(self::DAM_ASSET_REPOSITORY)->find($ids[0]);
+
+        if (! $asset || empty($asset->path)) {
+            return null;
+        }
+
+        if (! DamFileType::isImage($asset->file_type) || ! BagistoImageFormat::accepts($asset->path)) {
+            return null;
+        }
+
+        $disk = class_exists(self::DAM_DIRECTORY_MODEL)
+            ? (self::DAM_DIRECTORY_MODEL)::getAssetDisk()
+            : config('filesystems.default');
+
+        return Storage::disk($disk)->exists($asset->path)
+            ? Storage::disk($disk)->path($asset->path)
+            : null;
+    }
+
+    protected function getExistingFilePath($field, $additionalData): ?string
     {
         $existingFilePath = $additionalData[$field->code] ?? null;
         if ($existingFilePath && Storage::exists($existingFilePath)) {

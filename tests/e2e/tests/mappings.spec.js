@@ -3,8 +3,8 @@ const { test, expect } = require('../utils/fixtures');
 const CREDENTIAL_ID = process.env.E2E_CREDENTIAL_ID || 1;
 
 const URLS = {
-    attributeMapping: `admin/bagisto/attributes-mapping/${CREDENTIAL_ID}`,
-    categoryMapping:  `admin/bagisto/category-fields-mapping/${CREDENTIAL_ID}`,
+    attributeMapping: `admin/bagisto/credentials/${CREDENTIAL_ID}/attribute-mapping`,
+    categoryMapping:  `admin/bagisto/credentials/${CREDENTIAL_ID}/category-mapping`,
 };
 
 async function goToPage(adminPage, url) {
@@ -93,7 +93,7 @@ test.describe('Bagisto Attribute Mappings', () => {
         await expect(saveBtn).toBeVisible({ timeout: 15_000 });
 
         const responsePromise = adminPage.waitForResponse(
-            res => /attributes-mapping\/storeOrUpdate/.test(res.url()),
+            res => /credentials\/\d+\/attribute-mapping$/.test(res.url()),
             { timeout: 25_000 }
         ).catch(() => null);
 
@@ -148,7 +148,7 @@ test.describe('Bagisto Category Fields Mapping', () => {
         await expect(saveBtn).toBeVisible({ timeout: 15_000 });
 
         const responsePromise = adminPage.waitForResponse(
-            res => /category-fields-mapping\/storeOrUpdate/.test(res.url()),
+            res => /credentials\/\d+\/category-mapping$/.test(res.url()),
             { timeout: 25_000 }
         ).catch(() => null);
 
@@ -165,3 +165,6 @@ test.describe('Bagisto Category Fields Mapping', () => {
 // this package (see credentials/edit.blade.php — `<v-store-config>`). There are
 // no standalone /channel-mapping or /locale-mapping routes, so those tests have
 // been removed; they would always skip.
+//
+// Both mapping screens are tabs of the credential, so they live under
+// /admin/bagisto/credentials/{id}/... rather than their own top-level routes.
